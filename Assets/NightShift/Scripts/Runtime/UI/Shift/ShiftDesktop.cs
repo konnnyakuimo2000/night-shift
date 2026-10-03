@@ -140,7 +140,7 @@ namespace NightShift.UI.Shift
         public void HandleShortcuts(List<Shortcut> keys)
         {
             if (keys.Contains(Shortcut.ToggleDebug)) DebugPanelView.Open(this);
-            if (keys.Contains(Shortcut.ToggleOverlay)) _overlay.Toggle();
+            if (keys.Contains(Shortcut.ToggleOverlay)) ToggleOverlay();
 
             if (_pause != null)
             {
@@ -189,6 +189,8 @@ namespace NightShift.UI.Shift
                 }
             }
         }
+
+        public void ToggleOverlay() => _overlay.Toggle();
 
         // ---------------- Pause ----------------
         public void OpenPause()

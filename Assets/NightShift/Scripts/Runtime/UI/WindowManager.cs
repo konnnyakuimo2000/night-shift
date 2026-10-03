@@ -64,8 +64,9 @@ namespace NightShift.UI
                 pos = new Vector2(40 + (_cascade % 8) * 24, 20 + (_cascade % 8) * 22);
                 _cascade++;
             }
-            if (pos.x + spec.Width > size.x) pos.x = Mathf.Max(0, size.x - spec.Width);
-            if (pos.y + spec.Height > size.y) pos.y = Mathf.Max(0, size.y - spec.Height);
+            // 初回フレームではCanvasのサイズが未確定のことがあるため、妥当なサイズの時だけ画面内に収める
+            if (size.x > 200 && pos.x + spec.Width > size.x) pos.x = Mathf.Max(0, size.x - spec.Width);
+            if (size.y > 200 && pos.y + spec.Height > size.y) pos.y = Mathf.Max(0, size.y - spec.Height);
             w.SetPosition(pos.x, pos.y);
             Focus(w);
             return w;
