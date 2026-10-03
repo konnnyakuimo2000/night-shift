@@ -77,6 +77,10 @@ namespace NightShift.Data
         [Tooltip("待機できる最大時間（ゲーム内分）。これを過ぎたら強制的に発生")]
         public float tutorialGateMaxDelayMinutes = 30f;
 
+        [Header("運用担当者への作業依頼")]
+        [Tooltip("ログインパスワードの変更依頼を出す時刻（ゲーム内分）。負の値で出さない")]
+        public float passwordChangeAtMinute = -1f;
+
         [Header("ルール")]
         public PolicyRuleSet policy = new PolicyRuleSet();
 

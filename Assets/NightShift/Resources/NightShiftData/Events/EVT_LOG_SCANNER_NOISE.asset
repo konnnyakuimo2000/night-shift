@@ -15,9 +15,9 @@ MonoBehaviour:
   eventId: LOG_SCANNER_NOISE
   category: 2
   kind: 2
-  minimumDay: 1
+  minimumDay: 3
   maximumDay: 7
-  triggerWindow: {x: 0, y: 240}
+  triggerWindow: {x: 0, y: 0}
   weight: 1
   severity: 0
   userType: 1
@@ -29,6 +29,7 @@ MonoBehaviour:
     requiredNormalTargets: []
     requireOnShift: 1
     requireVpnEnabled: 0
+    requireVpnDisabled: 0
     requireLaptop: 0
     preferUnused: 1
   accountName: 
@@ -39,7 +40,7 @@ MonoBehaviour:
   accessType: TCP
   isMalicious: 0
   expectedAction: 0
-  timeoutMinutes: 25
+  timeoutMinutes: 30
   preferWhileRemoteActive: 0
   notifyAsSecurityAlert: 0
   logEventType: FW

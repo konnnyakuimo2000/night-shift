@@ -23,7 +23,7 @@ namespace NightShift.Events
         bool _hadOpenTasks;
 
         /// <summary>プレイヤーが対応すべきタスク（保留中の要求・未対応の問い合わせ）の数</summary>
-        public int OpenPlayerTasks => _s.Requests.Pending.Count + _s.HelpDesk.OpenCount;
+        public int OpenPlayerTasks => _s.Requests.Pending.Count + _s.HelpDesk.OpenCount + _s.OpenTaskCount;
 
         bool IsGated(float time) => time < _s.Day.tutorialGateUntilMinute;
 
@@ -50,6 +50,12 @@ namespace NightShift.Events
                 ScheduleDefinition(def, slot.window, slot.label);
             }
             HelpDeskGen.ScheduleDay(Scheduler, day);
+            if (day.passwordChangeAtMinute >= 0)
+            {
+                float t = day.passwordChangeAtMinute;
+                if (IsGated(t)) Scheduler.AddGated(t, day.tutorialGateMaxDelayMinutes, "TASK PASSWORD", SpawnPasswordTask);
+                else Scheduler.Add(t, "TASK PASSWORD", SpawnPasswordTask);
+            }
             Threats.ScheduleDay(Scheduler, day);
         }
 
@@ -118,6 +124,16 @@ namespace NightShift.Events
                 Scheduler.Add(_s.Time.CurrentMinute + def.followUpDelayMinutes, "followup " + f.eventId, () => Spawn(f));
             }
             return e;
+        }
+
+        /// <summary>運用担当者へのパスワード変更依頼</summary>
+        public void SpawnPasswordTask()
+        {
+            if (_s.HasOpenTask(OperatorTask.PasswordChange)) return;
+            _s.AddTask(OperatorTask.PasswordChange, "ログインパスワードの変更");
+            _s.Logs.Add(_s.Time.CurrentMinute, "AUTH-SRV01", "-", _s.OperatorName, "ACCOUNT", "NOTICE", "初期パスワードの変更依頼");
+            _s.Notifications.Notify(NotificationType.Info, "情報システム部からの依頼",
+                "初期パスワードのままです。システム設定からパスワードを変更してください。", _s.Time.CurrentMinute, () => _s.Ui?.OpenPasswordChange());
         }
 
         void OnResolved(EventInstance e)

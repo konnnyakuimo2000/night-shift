@@ -69,7 +69,7 @@ namespace NightShift.Events
                     break;
                 case UserType.NamedAccount:
                     e.DisplayUser = string.IsNullOrEmpty(def.accountName) ? "admin" : def.accountName;
-                    e.DisplayEmployeeId = "-";
+                    e.DisplayEmployeeId = string.IsNullOrEmpty(def.displayEmployeeId) ? "-" : def.displayEmployeeId;
                     // 社員と同名アカウントでも Employee は紐付けない（社員として認証されていない）
                     break;
             }

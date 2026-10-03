@@ -10,93 +10,74 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 37f31fe98f238094b9b3677ba6515054, type: 3}
-  m_Name: DAY1_FirstShift
+  m_Name: DAY1_FIRSTSHIFT
   m_EditorClassIdentifier: 
   dayNumber: 1
   title: FIRST SHIFT
   dateLabel: "1998/05/20 (\u6C34)"
+  clockInDateLabel: "1998/05/19 (\u706B)"
   startMinute: 0
   endMinute: 240
-  realSecondsPerGameMinute: 2
+  realSecondsPerGameMinute: 1.5
   endWarningMinute: 230
   graceRealSeconds: 20
   briefingFrom: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u90E8 \u8AB2\u9577 \u68EE\u7530"
   briefingBody: "\u591C\u9593IT\u62C5\u5F53\u3068\u3057\u3066\u3001\u4ECA\u591C\u304B\u3089\u3088\u308D\u3057\u304F\u304A\u9858\u3044\u3057\u307E\u3059\u3002\n\u696D\u52D9\u6642\u9593\u306F
     <b>00:00\u301C04:00</b> \u3067\u3059\u3002<b>\u6642\u9593\u306F\u6B62\u307E\u308A\u307E\u305B\u3093</b>\uFF08Esc
-    \u3067\u4E00\u6642\u505C\u6B62\u3067\u304D\u307E\u3059\uFF09\u3002\n\u4ECA\u591C\u306F\u55B6\u696D\u90E8\u30FB\u958B\u767A\u90E8\u30FB\u4EBA\u4E8B\u90E8\u30FB\u7D4C\u7406\u90E8\u306E\u4E00\u90E8\u3068\u3001\u30AB\u30B9\u30BF\u30DE\u30FC\u30B5\u30DD\u30FC\u30C8\u90E8\uFF08\u591C\u52E4\uFF09\u304C\u52E4\u52D9\u3057\u3066\u3044\u307E\u3059\u3002\n\n\u25A0
-    \u4E3B\u306A\u696D\u52D9\n\u30FB<b>\u63A5\u7D9A\u8981\u6C42\u306E\u5BE9\u67FB</b>\uFF08\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u63A5\u7D9A\u76E3\u8996\uFF09\n\u30FB\u793E\u54E1\u304B\u3089\u306E<b>IT\u554F\u3044\u5408\u308F\u305B</b>\u3078\u306E\u5BFE\u5FDC\uFF08\u76F8\u8AC7\u3078\u306E\u56DE\u7B54\uFF0F\u30EA\u30E2\u30FC\u30C8\u30B5\u30DD\u30FC\u30C8\uFF09\n\u30FB\u30B7\u30B9\u30C6\u30E0\u30ED\u30B0\u306E\u78BA\u8A8D\n\n\u25A0
-    \u63A5\u7D9A\u5BE9\u67FB\u306E\u57FA\u672C\u30EB\u30FC\u30EB"
+    \u3067\u4E00\u6642\u505C\u6B62\u3067\u304D\u307E\u3059\uFF09\u3002\n\n\u25A0
+    \u672C\u65E5\u306E\u696D\u52D9\n\u30FB<b>\u63A5\u7D9A\u8981\u6C42\u306E\u5BE9\u67FB</b>\uFF08\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u63A5\u7D9A\u76E3\u8996\uFF09\n\u3000\u793E\u5185\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u3078\u306E\u63A5\u7D9A\u8981\u6C42\u3092\u3001\u793E\u54E1\u60C5\u5831\u3068\u7167\u3089\u3057\u5408\u308F\u305B\u3066\u8A31\u53EF\u30FB\u62D2\u5426\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n\u25A0
+    \u63A5\u7D9A\u5BE9\u67FB\u306E\u30EB\u30FC\u30EB"
   rules:
-  - "<b>\u767B\u9332\u6E08\u307F\u306E\u793E\u54E1\u7AEF\u672B</b>\u304B\u3089\u3001\u901A\u5E38\u696D\u52D9\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u901A\u4FE1\u306F
-    <color=#0030A0><b>\u539F\u5247\u8A31\u53EF</b></color> \u3059\u308B\u3002"
-  - "<b>\u672A\u767B\u9332\u306E\u7AEF\u672B</b>\u304B\u3089\u3001\u793E\u5185\u306E\u91CD\u8981\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u63A5\u7D9A\u306F
-    <color=#B00000><b>\u7981\u6B62</b></color>\u3002"
-  - "<b>\u793E\u5916</b>\u304B\u3089<b>\u7BA1\u7406\u7CFB\u30B7\u30B9\u30C6\u30E0</b>\uFF08ADMIN-SRV01
-    \u7B49\uFF09\u3078\u306E\u63A5\u7D9A\u306F <color=#B00000><b>\u7981\u6B62</b></color>\u3002"
-  - "\u7BA1\u7406\u7CFB\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u63A5\u7D9A\u306F\u3001\u5229\u7528\u8005\u306E
-    <color=#8A4B00><b>\u7BA1\u7406\u8005\u6A29\u9650\u3092\u78BA\u8A8D</b></color>
-    \u3059\u308B\u3053\u3068\u3002"
-  - "\u793E\u5916\u304B\u3089\u306E\u63A5\u7D9A(VPN)\u306F\u3001<color=#8A4B00><b>VPN\u5229\u7528\u3092\u8A31\u53EF\u3055\u308C\u305F\u793E\u54E1\u306E\u767B\u9332\u7AEF\u672B</b></color>
-    \u306B\u9650\u308B\u3002"
-  briefingFooter: "\u5229\u7528\u8005\u306E\u6240\u5C5E\u30FB\u767B\u9332\u7AEF\u672B\u30FB\u6A29\u9650\u306F
-    <color=#8A4B00><b>\u300C\u793E\u54E1\u60C5\u5831\u306E\u691C\u7D22\u30FB\u53C2\u7167\u300D</b></color>
-    \u3067\u78BA\u8A8D\u3067\u304D\u307E\u3059\u3002\n\u30B5\u30FC\u30D0\u30FC\u904B\u7528\u7BA1\u7406\u306F\u660E\u65E5\u304B\u3089\u62C5\u5F53\u7BC4\u56F2\u306B\u52A0\u308F\u308A\u307E\u3059\uFF08\u672C\u65E5\u306F\u76E3\u8996\u306E\u307F\uFF09\u3002\n<b>\u8FF7\u3063\u305F\u3089\u3001\u307E\u305A\u8ABF\u3079\u308B\u3053\u3068\u3002</b>\n\n\u203B
-    \u64CD\u4F5C\u65B9\u6CD5\u3084\u30C8\u30E9\u30D6\u30EB\u5BFE\u5FDC\u306F\u6DFB\u4ED8\u306E\u30DE\u30CB\u30E5\u30A2\u30EB\u3092\u53C2\u7167\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\u203B
-    \u3053\u306E\u696D\u52D9\u9023\u7D61\u306F\u3001\u30BF\u30B9\u30AF\u30D0\u30FC\u306E
+  - "<b>\u793E\u54E1</b>\u304C<b>\u81EA\u5206\u306E\u767B\u9332\u7AEF\u672B</b>\u304B\u3089\u63A5\u7D9A\u3059\u308B\u5834\u5408\u306F
+    <color=#0030A0><b>\u8A31\u53EF</b></color> \u3059\u308B\u3002"
+  - "<b>\u793E\u54E1\u3068\u3057\u3066\u767B\u9332\u3055\u308C\u3066\u3044\u306A\u3044\u5229\u7528\u8005</b>\u3001\u307E\u305F\u306F
+    <b>\u305D\u306E\u793E\u54E1\u306E\u767B\u9332\u7AEF\u672B\u3067\u306F\u306A\u3044\u7AEF\u672B</b>
+    \u304B\u3089\u306E\u63A5\u7D9A\u306F <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  newRuleStartIndex: -1
+  briefingFooter: "\u5229\u7528\u8005\u3068\u7AEF\u672B\u306F <color=#8A4B00><b>\u300C\u793E\u54E1\u60C5\u5831\u306E\u691C\u7D22\u30FB\u53C2\u7167\u300D</b></color>
+    \u3067\u78BA\u8A8D\u3067\u304D\u307E\u3059\u3002\n\u672C\u65E5\u4F7F\u3046\u306E\u306F\u300C\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u63A5\u7D9A\u76E3\u8996\u300D\u3068\u300C\u793E\u54E1\u60C5\u5831\u306E\u691C\u7D22\u30FB\u53C2\u7167\u300D\u3060\u3051\u3067\u3059\u3002\u307B\u304B\u306E\u30B7\u30B9\u30C6\u30E0\u306F\u3001\u6163\u308C\u3066\u304D\u305F\u3089\u9806\u306B\u62C5\u5F53\u3057\u3066\u3044\u305F\u3060\u304D\u307E\u3059\u3002\n<b>\u8FF7\u3063\u305F\u3089\u3001\u307E\u305A\u8ABF\u3079\u308B\u3053\u3068\u3002</b>\n\n\u203B
+    \u64CD\u4F5C\u65B9\u6CD5\u306A\u3069\u306F\u6DFB\u4ED8\u306E\u30DE\u30CB\u30E5\u30A2\u30EB\u3092\u53C2\u7167\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u3053\u306E\u696D\u52D9\u9023\u7D61\u306F\u3001\u30BF\u30B9\u30AF\u30D0\u30FC\u306E
     [\u696D\u52D9\u9023\u7D61] \u304B\u3089\u3044\u3064\u3067\u3082\u78BA\u8A8D\u3067\u304D\u307E\u3059\u3002"
   attachments:
   - {fileID: 11400000, guid: 1bff7a1e20937204eb4983f6b3674a89, type: 2}
-  - {fileID: 11400000, guid: 0906b99c5869d874d8c23df8ff2623b4, type: 2}
-  - {fileID: 11400000, guid: 0c1849e2d856559499e44f1577441c16, type: 2}
   fixedEvents:
   - {fileID: 11400000, guid: e30797a0b356fe04781f74d482a75fdb, type: 2}
-  - {fileID: 11400000, guid: 766da28e513a6da4b86eef6f1db12df1, type: 2}
-  - {fileID: 11400000, guid: b713f4b41a2cd7a4786711ca4cb019b2, type: 2}
-  - {fileID: 11400000, guid: e2b3b72b26c16ec4e810c2fecab93add, type: 2}
-  - {fileID: 11400000, guid: 8fa567c1aa534054db4325681a72a7b6, type: 2}
-  - {fileID: 11400000, guid: a7abd8a261dde044ba12ff01354a57b5, type: 2}
-  - {fileID: 11400000, guid: 6cfa6d6031d8d2f4398f4bc269d662c5, type: 2}
+  - {fileID: 11400000, guid: 759be658f35bb474ca23c182b29e1005, type: 2}
+  - {fileID: 11400000, guid: 247b2fde195b9904b94ae1e47dd3e00d, type: 2}
+  - {fileID: 11400000, guid: b637070d11aba01408fef2b7a901a6e4, type: 2}
+  - {fileID: 11400000, guid: cbf00373ca662e1458b8ca144f16e0a4, type: 2}
   randomSlots:
   - label: routine-1
-    window: {x: 56, y: 66}
+    window: {x: 8, y: 14}
     pool:
     - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
-    - {fileID: 11400000, guid: 1a5b672491c2bc74ca0ff49619f7e1cb, type: 2}
   - label: routine-2
-    window: {x: 105, y: 114}
+    window: {x: 40, y: 55}
     pool:
     - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
   - label: routine-3
-    window: {x: 166, y: 180}
+    window: {x: 95, y: 110}
     pool:
     - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
-    - {fileID: 11400000, guid: 1a5b672491c2bc74ca0ff49619f7e1cb, type: 2}
   - label: routine-4
-    window: {x: 212, y: 224}
+    window: {x: 150, y: 170}
     pool:
     - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
-  - label: scan-noise
-    window: {x: 60, y: 75}
-    pool:
-    - {fileID: 11400000, guid: ae65c6e749ba38541a5c13d20e4d0b33, type: 2}
-  helpDesk:
-  - {fileID: 11400000, guid: 3fd1e54c9a7a8894b95939be01a165c2, type: 2}
-  - {fileID: 11400000, guid: e834ced35264e3d42b94c1549fb123b0, type: 2}
-  - {fileID: 11400000, guid: 36ccb9c7e1d8ffd4da2d26344e8000a8, type: 2}
-  - {fileID: 11400000, guid: 6261ae40acaca1541b3b3730a1bb472d, type: 2}
-  threats:
-  - {fileID: 11400000, guid: 9405a2b6c2f606d4b8681180ca3cee3d, type: 2}
-  - {fileID: 11400000, guid: 14f574eeaa294254a80a3e2ea2e0590f, type: 2}
+  helpDesk: []
+  threats: []
   backgroundTrafficTemplate: {fileID: 0}
   backgroundLogChance: 0.3
   backgroundActivityScale: 1
-  tutorialGateUntilMinute: 90
+  tutorialGateUntilMinute: 240
   tutorialGateBreathMinutes: 2
   tutorialGateMaxDelayMinutes: 30
   policy:
-    blockExternalToAdministrative: 1
-    blockUnregisteredToCritical: 1
+    blockExternalToAdministrative: 0
+    blockUnregisteredDevice: 1
+    blockUnregisteredToCritical: 0
     blockUnknownUser: 1
-    requirePermission: 1
-    requireVpnPermission: 1
-  unlockedFeatures: []
+    requirePermission: 0
+    requireVpnPermission: 0
+  unlockedFeatures:
+  - CONNECTION_MONITOR
+  - EMPLOYEE_DIRECTORY

@@ -10,35 +10,35 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62edd6c1e4f726439a7d85a52522454, type: 3}
-  m_Name: EVT_REQ_DIRECTORY_HR
+  m_Name: EVT_D2_REQ_OTHER_EMPLOYEES_PC
   m_EditorClassIdentifier: 
-  eventId: REQ_DIRECTORY_HR
+  eventId: D2_REQ_OTHER_EMPLOYEES_PC
   category: 0
   kind: 1
   minimumDay: 1
   maximumDay: 7
-  triggerWindow: {x: 10, y: 13}
+  triggerWindow: {x: 100, y: 112}
   weight: 1
-  severity: 0
+  severity: 1
   userType: 0
   employeeConditions:
     departments: []
     excludeDepartments: []
-    requiredPermissions:
-    - {fileID: 11400000, guid: 74359a25ba2e3834b80d7ff13573a385, type: 2}
+    requiredPermissions: []
     excludedPermissions: []
     requiredNormalTargets:
-    - HR
+    - FILE
     requireOnShift: 1
     requireVpnEnabled: 0
+    requireVpnDisabled: 0
     requireLaptop: 0
     preferUnused: 1
   accountName: 
-  sourceType: 0
+  sourceType: 6
   deviceNamePattern: 
   destinationMode: 0
-  destination: {fileID: 11400000, guid: 22e5ca4bb63575145b7f1c051b4c63ab, type: 2}
-  accessType: HR SYSTEM
+  destination: {fileID: 11400000, guid: ac4d108d5a938e0499b1d0aad2134cc0, type: 2}
+  accessType: FILE READ
   isMalicious: 0
   expectedAction: 0
   timeoutMinutes: 30

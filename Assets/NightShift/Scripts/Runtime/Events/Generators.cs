@@ -208,8 +208,13 @@ namespace NightShift.Events
                 {
                     var st = step;
                     int index = i;
-                    scheduler.Add(start + step.offsetMinutes + i * step.repeatIntervalMinutes, $"THREAT {def.scenarioId}: {step.label}",
-                        () => ExecuteStep(run, st, index));
+                    float when = start + step.offsetMinutes + i * step.repeatIntervalMinutes;
+                    string label = $"THREAT {def.scenarioId}: {step.label}";
+                    // チュートリアル中はプレイヤーが判断する要求だけ「1件ずつ」の対象にする（ログは流れる）
+                    if (step.kind == ThreatStepKind.ConnectionRequest && when < _s.Day.tutorialGateUntilMinute)
+                        scheduler.AddGated(when, _s.Day.tutorialGateMaxDelayMinutes, label, () => ExecuteStep(run, st, index));
+                    else
+                        scheduler.Add(when, label, () => ExecuteStep(run, st, index));
                 }
             }
             return run;

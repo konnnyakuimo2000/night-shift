@@ -80,7 +80,7 @@ namespace NightShift.UI.Screens
                 Centered($"続きから（DAY {reachedDay}）", onContinue, "clock", 32).Label.fontStyle = FontStyle.Bold;
             Centered("終了(X)", onQuit, "exit", 28);
 
-            var foot = UIFactory.Label(root.transform, "DAY 1-3 Tutorial  —  マウス＋キーボードでプレイ / Esc: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
+            var foot = UIFactory.Label(root.transform, "DAY 1-6 Tutorial  —  マウス＋キーボードでプレイ / Esc: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
             foot.rectTransform.anchorMin = new Vector2(0, 0); foot.rectTransform.anchorMax = new Vector2(1, 0);
             foot.rectTransform.pivot = new Vector2(0.5f, 0);
             foot.rectTransform.offsetMin = new Vector2(0, 14); foot.rectTransform.offsetMax = new Vector2(0, 32);
@@ -188,9 +188,7 @@ namespace NightShift.UI.Screens
     // ============================================================
     public static class LoginScreen
     {
-        public const string ExpectedPassword = "nexus98";
-
-        public static GameObject Build(RectTransform parent, GameDatabase db, string operatorId, Action onSuccess, Action onCancel)
+        public static GameObject Build(RectTransform parent, GameDatabase db, Core.OperatorAccount account, Action onSuccess, Action onCancel)
         {
             var root = UIFactory.Solid(parent, RetroTheme.Desktop, "Login");
             root.rectTransform.Stretch();
@@ -199,8 +197,8 @@ namespace NightShift.UI.Screens
             var wm = WindowManager.Create(host);
             var w = wm.Open(new WindowSpec
             {
-                Id = "login", Title = $"{db.systemName} - ログイン", Icon = "lock", Width = 400, Height = 230,
-                Closable = true, Minimizable = false, Maximizable = false, Position = new Vector2(440, 260)
+                Id = "login", Title = $"{db.systemName} - ログイン", Icon = "lock", Width = 400, Height = 250,
+                Closable = true, Minimizable = false, Maximizable = false, Position = new Vector2(440, 250)
             }, out _);
             w.CanClose = () => { onCancel(); return false; };
             var c = w.Content;
@@ -213,17 +211,27 @@ namespace NightShift.UI.Screens
             bic.rectTransform.Place(10, 6, 32, 32);
 
             UIFactory.Label(c, "ユーザーID(U):", 20, 60, 100, 20);
-            var id = UIFactory.Input(c, 120, 60, 200, 20, operatorId);
+            var id = UIFactory.Input(c, 120, 60, 200, 20, account.UserId);
             UIFactory.Label(c, "パスワード(P):", 20, 88, 100, 20);
             var pw = UIFactory.Input(c, "", true);
             ((RectTransform)pw.transform).Place(120, 88, 200, 20);
             var err = UIFactory.Label(c, "", 20, 114, 360, 18, 12);
             err.color = new Color(0.7f, 0, 0);
 
+            GameObject note = null;
+            void BuildNote()
+            {
+                if (note != null) UnityEngine.Object.Destroy(note);
+                note = StickyNote(root.transform, account);
+            }
+
+            bool busy = false;
             void Submit()
             {
-                if (string.Equals(id.text.Trim(), operatorId, StringComparison.OrdinalIgnoreCase) && pw.text == ExpectedPassword)
+                if (busy) return;
+                if (account.Matches(id.text, pw.text))
                 {
+                    busy = true;
                     err.color = RetroTheme.TextBlue;
                     err.text = "ログインしています...";
                     AudioFx.Click();
@@ -232,6 +240,7 @@ namespace NightShift.UI.Screens
                 else
                 {
                     AudioFx.Error();
+                    err.color = new Color(0.7f, 0, 0);
                     err.text = "ユーザーIDまたはパスワードが正しくありません。";
                     pw.text = "";
                     pw.ActivateInputField();
@@ -239,19 +248,49 @@ namespace NightShift.UI.Screens
             }
             UIFactory.Button(c, "OK", 150, 142, 90, 24, Submit);
             UIFactory.Button(c, "キャンセル", 250, 142, 90, 24, onCancel);
+            var forgot = UIFactory.FlatButton(c, "パスワードを忘れた場合(F)", () =>
+            {
+                // 情報システム部に連絡して初期化してもらう（回数は記録され、後の日の評価・脆弱性に影響し得る）
+                account.ResetToInitial();
+                AudioFx.Notify();
+                err.color = RetroTheme.TextBlue;
+                err.text = "情報システム部に連絡し、パスワードを初期化しました。";
+                BuildNote();
+                pw.text = "";
+                pw.ActivateInputField();
+            });
+            forgot.Label.color = RetroTheme.TextBlue;
+            forgot.Rect.Place(20, 174, 200, 20);
             pw.onEndEdit.AddListener(_ => { if (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter)) Submit(); });
             Delay.Run(root.gameObject, 0.05f, () => pw.ActivateInputField());
 
-            // モニターに貼られた付箋
-            var note = UIFactory.Solid(root.transform, RetroTheme.Note, "StickyNote");
+            BuildNote();
+            return root.gameObject;
+        }
+
+        /// <summary>
+        /// モニターに貼られた付箋。初期パスワードの間は前任者のメモ。
+        /// 変更後は、プレイヤーが「付箋に書いた」場合だけ新しいパスワードが貼られている（脆弱性の種）。
+        /// </summary>
+        static GameObject StickyNote(Transform parent, Core.OperatorAccount account)
+        {
+            string text;
+            if (!account.Changed)
+                text = $"夜間担当の方へ\n\nID : {account.UserId}\nPW : {Core.OperatorAccount.InitialPassword}\n\n※初日だけ。あとで変えること！\n　　　　　　　— K.";
+            else if (account.WrittenDown)
+                text = $"自分用メモ\n\nID : {account.UserId}\nPW : {account.Password}";
+            else
+                return null;
+
+            var note = UIFactory.Solid(parent, RetroTheme.Note, "StickyNote");
             note.rectTransform.anchorMin = note.rectTransform.anchorMax = new Vector2(1, 0);
             note.rectTransform.pivot = new Vector2(1, 0);
             note.rectTransform.sizeDelta = new Vector2(170, 130);
             note.rectTransform.anchoredPosition = new Vector2(-60, 60);
-            note.rectTransform.localRotation = Quaternion.Euler(0, 0, 4);
-            var nt = UIFactory.Label(note.transform, $"夜間担当の方へ\n\nID : {operatorId}\nPW : {ExpectedPassword}\n\n※初日だけ。あとで変えること！\n　　　　　　　— K.", 12, TextAnchor.UpperLeft, new Color(0.15f, 0.15f, 0.3f));
+            note.rectTransform.localRotation = Quaternion.Euler(0, 0, account.Changed ? -3 : 4);
+            var nt = UIFactory.Label(note.transform, text, 12, TextAnchor.UpperLeft, new Color(0.15f, 0.15f, 0.3f));
             nt.rectTransform.Stretch(10, 10, 8, 8);
-            return root.gameObject;
+            return note.gameObject;
         }
     }
 

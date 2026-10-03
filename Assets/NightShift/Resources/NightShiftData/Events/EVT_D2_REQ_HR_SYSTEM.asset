@@ -10,36 +10,36 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62edd6c1e4f726439a7d85a52522454, type: 3}
-  m_Name: EVT_REQ_FINAL_NO_ADMIN
+  m_Name: EVT_D2_REQ_HR_SYSTEM
   m_EditorClassIdentifier: 
-  eventId: REQ_FINAL_NO_ADMIN
+  eventId: D2_REQ_HR_SYSTEM
   category: 0
   kind: 1
   minimumDay: 1
   maximumDay: 7
-  triggerWindow: {x: 198, y: 204}
+  triggerWindow: {x: 10, y: 14}
   weight: 1
-  severity: 2
+  severity: 0
   userType: 0
   employeeConditions:
-    departments:
-    - "\u55B6\u696D\u90E8"
+    departments: []
     excludeDepartments: []
-    requiredPermissions: []
-    excludedPermissions:
-    - {fileID: 11400000, guid: d0ce9c5970dabd845b4f0faf744a1a12, type: 2}
-    - {fileID: 11400000, guid: 08c50d0c41061a04e8953e735f227c8a, type: 2}
-    requiredNormalTargets: []
+    requiredPermissions:
+    - {fileID: 11400000, guid: 74359a25ba2e3834b80d7ff13573a385, type: 2}
+    excludedPermissions: []
+    requiredNormalTargets:
+    - HR
     requireOnShift: 1
     requireVpnEnabled: 0
+    requireVpnDisabled: 0
     requireLaptop: 0
     preferUnused: 1
   accountName: 
   sourceType: 0
   deviceNamePattern: 
   destinationMode: 0
-  destination: {fileID: 11400000, guid: eccb02d823086c94ba187b0ed4bcf88e, type: 2}
-  accessType: ADMIN LOGIN
+  destination: {fileID: 11400000, guid: 22e5ca4bb63575145b7f1c051b4c63ab, type: 2}
+  accessType: HR SYSTEM
   isMalicious: 0
   expectedAction: 0
   timeoutMinutes: 30

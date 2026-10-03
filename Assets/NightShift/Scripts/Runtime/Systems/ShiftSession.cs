@@ -11,6 +11,7 @@ namespace NightShift.Systems
         void OpenConnectionMonitor(EventInstance focus);
         void OpenHelpDesk(Ticket focus);
         void OpenLogViewer();
+        void OpenPasswordChange();
         void ShowStatus(string message);
     }
 
@@ -43,6 +44,36 @@ namespace NightShift.Systems
         public ShiftPhase Phase { get; private set; } = ShiftPhase.NotStarted;
         public bool EndWarningIssued { get; private set; }
         public float GraceRemaining { get; private set; }
+
+        readonly System.Collections.Generic.List<OperatorTask> _tasks = new System.Collections.Generic.List<OperatorTask>();
+        public System.Collections.Generic.IReadOnlyList<OperatorTask> Tasks => _tasks;
+        public event Action TasksChanged;
+
+        public int OpenTaskCount
+        {
+            get { int n = 0; foreach (var t in _tasks) if (!t.Done) n++; return n; }
+        }
+
+        public OperatorTask AddTask(string id, string title)
+        {
+            var t = new OperatorTask { TaskId = id, Title = title, CreatedAt = Time.CurrentMinute };
+            _tasks.Add(t);
+            TasksChanged?.Invoke();
+            return t;
+        }
+
+        public void CompleteTask(string id)
+        {
+            foreach (var t in _tasks)
+                if (t.TaskId == id && !t.Done) { t.Done = true; t.DoneAt = Time.CurrentMinute; }
+            TasksChanged?.Invoke();
+        }
+
+        public bool HasOpenTask(string id)
+        {
+            foreach (var t in _tasks) if (t.TaskId == id && !t.Done) return true;
+            return false;
+        }
 
         public event Action EndWarning;
         public event Action ShiftEnded;      // 04:00

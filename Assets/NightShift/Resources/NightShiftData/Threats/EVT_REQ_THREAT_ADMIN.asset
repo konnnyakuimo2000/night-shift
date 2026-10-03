@@ -17,7 +17,7 @@ MonoBehaviour:
   kind: 1
   minimumDay: 1
   maximumDay: 7
-  triggerWindow: {x: 0, y: 240}
+  triggerWindow: {x: 0, y: 0}
   weight: 1
   severity: 3
   userType: 2
@@ -29,6 +29,7 @@ MonoBehaviour:
     requiredNormalTargets: []
     requireOnShift: 1
     requireVpnEnabled: 0
+    requireVpnDisabled: 0
     requireLaptop: 0
     preferUnused: 1
   accountName: admin

@@ -30,6 +30,8 @@ namespace NightShift.Core
         public const string DefaultOperatorName = "night01";
         /// <summary>タイムカードで入力したユーザー名。ログインIDとして使う。</summary>
         public string OperatorName { get; private set; } = DefaultOperatorName;
+        /// <summary>プレイヤーのアカウント（パスワード等）。日をまたいで保持する。</summary>
+        public OperatorAccount Account { get; private set; } = new OperatorAccount();
 
         public RectTransform ScreenLayer { get; private set; }
         public RectTransform OverlayLayer { get; private set; }
@@ -123,10 +125,11 @@ namespace NightShift.Core
         public void ShowClockIn() => SetScreen(ClockInScreen.Build(ScreenLayer, Database.GetDay(CurrentDay), OperatorName, name =>
         {
             OperatorName = name;
+            if (Account.UserId != name) { Account.UserId = name; Account.Save(); }
             ShowLogin();
         }), GameState.ClockIn);
 
-        public void ShowLogin() => SetScreen(LoginScreen.Build(ScreenLayer, Database, OperatorName, ShowDayIntro, ShowTitle), GameState.Login);
+        public void ShowLogin() => SetScreen(LoginScreen.Build(ScreenLayer, Database, Account, ShowDayIntro, ShowTitle), GameState.Login);
 
         public void ShowDayIntro()
         {
@@ -173,6 +176,9 @@ namespace NightShift.Core
             ClearScreen();
             DisposeShift(keepSession: true);
             SaveProgress(CurrentDay + 1);
+            if (day.passwordChangeAtMinute >= 0 || Account.Changed)
+                result.Stats.Add(new System.Collections.Generic.KeyValuePair<string, string>("Operator Password",
+                    Account.Changed ? $"変更済み（強度: {PasswordPolicy.StrengthLabel(Account.Strength)}{(Account.WrittenDown ? "・付箋あり" : "")}）" : "未変更（初期パスワード）"));
             SetScreen(EvaluationScreen.Build(ScreenLayer, day, result, GoToNextDay, RestartDay), GameState.Evaluation);
         }
 
@@ -221,12 +227,15 @@ namespace NightShift.Core
         void StartNewGame()
         {
             CurrentDay = 1;
+            Account = OperatorAccount.NewGame(OperatorName);
+            Account.Save();
             ShowClockIn();
         }
 
         void ContinueGame()
         {
             CurrentDay = ReachedDay;
+            Account = OperatorAccount.Load();
             try { OperatorName = PlayerPrefs.GetString(NameKey, OperatorName); } catch { }
             ShowClockIn();
         }

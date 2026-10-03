@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62edd6c1e4f726439a7d85a52522454, type: 3}
-  m_Name: EVT_REQ_DEV_FILE_LOOKS_ODD
+  m_Name: EVT_D2_REQ_DEV_FILE_LOOKS_ODD
   m_EditorClassIdentifier: 
-  eventId: REQ_DEV_FILE_LOOKS_ODD
+  eventId: D2_REQ_DEV_FILE_LOOKS_ODD
   category: 0
   kind: 1
   minimumDay: 1
   maximumDay: 7
-  triggerWindow: {x: 83, y: 88}
+  triggerWindow: {x: 80, y: 88}
   weight: 1
   severity: 0
   userType: 0
@@ -32,6 +32,7 @@ MonoBehaviour:
     - FILE
     requireOnShift: 1
     requireVpnEnabled: 0
+    requireVpnDisabled: 0
     requireLaptop: 0
     preferUnused: 1
   accountName: 

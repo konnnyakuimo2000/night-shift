@@ -77,10 +77,10 @@ namespace NightShift.UI.Shift
             UIFactory.Button(eg, "Overlay (F11)", 292, 60, 140, 24, () => _d.ToggleOverlay());
 
             var dg = UIFactory.Group(c, "DAY移動（最初から開始）", 0, 232, 450, 54);
-            for (int i = 1; i <= 3; i++)
+            for (int i = 1; i <= 6; i++)
             {
                 int day = i;
-                var b = UIFactory.Button(dg, $"DAY{day}", (i - 1) * 100, 0, 94, 22, () => _d.Game.StartDay(day));
+                var b = UIFactory.Button(dg, $"DAY{day}", (i - 1) * 72, 0, 68, 22, () => _d.Game.StartDay(day));
                 b.Interactable = _d.Game.Database.FindDay(day) != null;
             }
 

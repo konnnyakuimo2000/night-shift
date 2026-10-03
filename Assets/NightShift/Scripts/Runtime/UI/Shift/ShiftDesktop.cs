@@ -104,6 +104,7 @@ namespace NightShift.UI.Shift
         public void OpenConnectionMonitor(EventInstance focus) => ConnectionMonitorView.Open(this, focus);
         public void OpenHelpDesk(Ticket focus) => HelpDeskView.Open(this, focus);
         public void OpenLogViewer() => LogViewerView.Open(this, null);
+        public void OpenPasswordChange() => PasswordChangeView.Open(this);
 
         public void ShowStatus(string message)
         {

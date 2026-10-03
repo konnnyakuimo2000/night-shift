@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   definitionId: A2_ATTACHMENT
   type: 0
-  minimumDay: 1
+  minimumDay: 3
   maximumDay: 7
-  triggerWindow: {x: 96, y: 101}
+  triggerWindow: {x: 15, y: 20}
   requester:
     departments: []
     excludeDepartments: []
@@ -25,6 +25,7 @@ MonoBehaviour:
     requiredNormalTargets: []
     requireOnShift: 1
     requireVpnEnabled: 0
+    requireVpnDisabled: 0
     requireLaptop: 0
     preferUnused: 1
   subject: "\u77E5\u3089\u306A\u3044\u4F1A\u793E\u304B\u3089Excel\u30D5\u30A1\u30A4\u30EB\u304C\u5C4A\u3044\u305F"

@@ -71,8 +71,10 @@ namespace NightShift.Data
         [Header("利用者")]
         public UserType userType = UserType.Employee;
         public EmployeeCondition employeeConditions = new EmployeeCondition();
-        [Tooltip("NamedAccount の場合のアカウント名")]
+        [Tooltip("NamedAccount の場合のアカウント名（例: admin、退職者の氏名）")]
         public string accountName;
+        [Tooltip("NamedAccount の場合に表示する社員番号（社員名簿に存在しない番号など）。空なら -")]
+        public string displayEmployeeId;
 
         [Header("接続元")]
         public SourceType sourceType = SourceType.RegisteredDevice;

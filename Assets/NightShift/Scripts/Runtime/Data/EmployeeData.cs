@@ -37,6 +37,9 @@ namespace NightShift.Data
         public string department;
         public string position;
 
+        [Tooltip("顔写真（未設定なら社員番号から自動生成）")]
+        public Sprite portrait;
+
         [Header("端末")]
         [Tooltip("登録端末（社内PC）")]
         public string deviceId;

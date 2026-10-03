@@ -31,6 +31,7 @@ MonoBehaviour:
     - MAIL
     requireOnShift: 1
     requireVpnEnabled: 0
+    requireVpnDisabled: 0
     requireLaptop: 0
     preferUnused: 1
   accountName: 

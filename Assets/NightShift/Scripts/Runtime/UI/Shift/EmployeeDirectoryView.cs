@@ -66,17 +66,18 @@ namespace NightShift.UI.Shift
             _table = TableView.CreateStretch(rg, 0, 0, 0, 0,
                 new TableColumn("社員番号", 76), new TableColumn("氏名", 110), new TableColumn("所属", 150),
                 new TableColumn("役職", 130), new TableColumn("登録端末", 110), new TableColumn("勤務状態", 70));
-            _table.DoubleClicked += o => EmployeeDetailView.Open(_d, (EmployeeData)o, _results);
+            _table.DoubleClicked += o => { if (_d.Unlocked(Features.EmployeeDetail)) EmployeeDetailView.Open(_d, (EmployeeData)o, _results); };
 
             _count = UIFactory.Label(c, "", 0, 390, 160, 24);
-            UIFactory.Button(c, "詳細表示(D)", 400, 388, 150, 26, ShowDetail, "people");
+            var detailBtn = UIFactory.Button(c, "詳細表示(D)", 400, 388, 150, 26, ShowDetail, "people");
+            detailBtn.Interactable = _d.Unlocked(Features.EmployeeDetail);
             UIFactory.Button(c, "閉じる(C)", 570, 388, 150, 26, _w.RequestClose, "exit");
 
             _w.Accelerators[KeyCode.F] = Search;
             _w.Accelerators[KeyCode.Return] = Search;
             _w.Accelerators[KeyCode.KeypadEnter] = Search;
             _w.Accelerators[KeyCode.R] = () => Clear(true);
-            _w.Accelerators[KeyCode.D] = ShowDetail;
+            if (_d.Unlocked(Features.EmployeeDetail)) _w.Accelerators[KeyCode.D] = ShowDetail;
             _w.Accelerators[KeyCode.C] = _w.RequestClose;
             _w.Accelerators[KeyCode.UpArrow] = () => _table.MoveSelection(-1);
             _w.Accelerators[KeyCode.DownArrow] = () => _table.MoveSelection(1);
@@ -106,7 +107,8 @@ namespace NightShift.UI.Shift
             ).ToList();
             _table.SetRows(_results, e => new[] { e.employeeId, e.fullName, e.department, e.position, e.deviceId, e.onShift ? "勤務中" : "退勤" });
             _count.text = $"件数:  {_results.Count} 件";
-            _w.SetStatus(0, _results.Count == 0 ? "該当する社員は見つかりませんでした。" : "ダブルクリックまたは [詳細表示] で社員情報を表示します。");
+            _w.SetStatus(0, _results.Count == 0 ? "該当する社員は見つかりませんでした。"
+                : _d.Unlocked(Features.EmployeeDetail) ? "ダブルクリックまたは [詳細表示] で社員情報を表示します。" : "検索結果の一覧を表示しています。");
             if (_results.Count > 0) _table.Select(0);
         }
 
@@ -129,9 +131,10 @@ namespace NightShift.UI.Shift
 
         public static void Open(ShiftDesktop d, EmployeeData e, List<EmployeeData> list)
         {
+            if (!d.Require(Features.EmployeeDetail)) return;
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = "employee", Title = "社員情報の参照", Icon = "people", Width = 520, Height = 560, Maximizable = false,
+                Id = "employee", Title = "社員情報の参照", Icon = "people", Width = 640, Height = 560, Maximizable = false,
                 Menus = ShiftDesktop.StandardMenus(d), StatusCells = 2, StatusWidths = new float[] { 160 }
             }, out bool created);
             var v = created ? w.gameObject.AddComponent<EmployeeDetailView>() : w.GetComponent<EmployeeDetailView>();
@@ -211,6 +214,21 @@ namespace NightShift.UI.Shift
             Row("VPN利用:", e.vpnEnabled ? "許可" : "不可", 0, 92, 140);
             Row("VPN端末:", string.IsNullOrEmpty(e.laptopDeviceId) ? "-" : e.laptopDeviceId, 250, 70, 130); y += 24;
             Row("勤務時間:", e.workHours, 0, 92, 200); y += 30;
+
+            // 顔写真
+            var frame = UIFactory.Image(_body, RetroTheme.Field, Color.white, "PhotoFrame");
+            frame.rectTransform.Place(514, 0, 102, 126);
+            var photo = UIFactory.Image(frame.transform, PortraitPainter.Get(e), Color.white, "Photo");
+            photo.type = Image.Type.Simple;
+            photo.rectTransform.Stretch(3, 3, 3, 3);
+            UIFactory.Label(_body, "顔写真", 514, 128, 102, 16, 11, TextAnchor.MiddleCenter).color = RetroTheme.Shadow;
+
+            if (!_d.Unlocked(Features.EmployeePermissions))
+            {
+                var lg = UIFactory.Group(_body, "【権限情報】", 0, y, 490, 70);
+                UIFactory.Label(lg, "権限情報の閲覧は、現在の担当範囲では許可されていません。", 12, TextAnchor.MiddleLeft).rectTransform.Stretch();
+                return;
+            }
 
             var perms = new List<PermissionDefinition>(_d.Game.Database.permissions);
             perms.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));

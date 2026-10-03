@@ -33,6 +33,7 @@ namespace NightShift.UI.Shift
                 M("   サーバー運用管理", null, "server", Data.Features.ServerManagement),
                 MenuItem.Sep(),
                 new MenuItem("   業務連絡（ルール・マニュアル）", () => BriefingView.Open(d, null)) { Icon = "mail" },
+                new MenuItem("   パスワードの変更", () => PasswordChangeView.Open(d)) { Icon = "lock" },
                 MenuItem.Sep(),
                 new MenuItem("6. システム設定", () => SettingsView.Open(d)) { Icon = "gear" },
                 new MenuItem("7. 業務終了", () => TryEndShift(d)) { Icon = "exit" },
@@ -150,6 +151,7 @@ namespace NightShift.UI.Shift
             {
                 sb.AppendLine($"保留中の接続要求: {s.Requests.Pending.Count} 件");
                 if (_d.Unlocked(Data.Features.HelpDesk)) sb.AppendLine($"未対応の問い合わせ: {s.HelpDesk.OpenCount} 件");
+                foreach (var task in s.Tasks) if (!task.Done) sb.AppendLine($"依頼: {task.Title}（未完了）");
                 sb.AppendLine($"業務終了まで: {Mathf.Max(0, Mathf.CeilToInt(s.Day.endMinute - s.Time.CurrentMinute))} 分");
                 if (s.HelpDesk.ActiveSession != null) sb.AppendLine($"リモート接続中: {s.HelpDesk.ActiveSession.PC.Hostname}");
                 if (s.EndWarningIssued) sb.AppendLine("\n※ 業務終了が近づいています。");
@@ -385,7 +387,7 @@ namespace NightShift.UI.Shift
         {
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = "システム設定", Icon = "gear", Width = 400, Height = 300, Maximizable = false,
+                Id = Id, Title = "システム設定", Icon = "gear", Width = 400, Height = 340, Maximizable = false,
                 Menus = ShiftDesktop.StandardMenus(d), StatusCells = 1
             }, out bool created);
             if (!created) return;
@@ -398,6 +400,8 @@ namespace NightShift.UI.Shift
             var click = UIFactory.Check(g, "クリック音", AudioFx.ClickEnabled, v => AudioFx.ClickEnabled = v);
             click.GetComponent<RectTransform>().Place(190, 0, 150, 20);
 
+            UIFactory.Button(c, "パスワードの変更(P)...", 0, 222, 180, 26, () => PasswordChangeView.Open(d), "lock");
+            w.Accelerators[KeyCode.P] = () => PasswordChangeView.Open(d);
             var kg = UIFactory.Group(c, "キーボード", 0, 86, 380, 130);
             var cap = UIFactory.Check(kg, "OSショートカットの取り込み（未対応）", false, null);
             cap.GetComponent<RectTransform>().Place(0, 0, 360, 20);

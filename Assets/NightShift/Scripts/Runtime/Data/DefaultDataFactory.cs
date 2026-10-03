@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 5;
+        public const int DataVersion = 6;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -180,7 +180,7 @@ namespace NightShift.Data
             routine.timeoutMinutes = 25;
 
             var routineVpn = Ev("REQ_ROUTINE_VPN", Vector2.zero);
-            routineVpn.minimumDay = 3;
+            routineVpn.minimumDay = 5;
             routineVpn.sourceType = SourceType.RegisteredLaptopExternal;
             routineVpn.employeeConditions.requireVpnEnabled = true;
             routineVpn.employeeConditions.requireLaptop = true;
@@ -195,7 +195,7 @@ namespace NightShift.Data
             firstNormal.destination = mail; firstNormal.accessType = "MAIL";
 
             var scanLog = Ev("LOG_SCANNER_NOISE", Vector2.zero);
-            scanLog.minimumDay = 3;
+            scanLog.minimumDay = 5;
             scanLog.category = EventCategory.Threat;
             scanLog.kind = EventKind.LogEntry;
             scanLog.userType = UserType.Unknown;
@@ -204,7 +204,7 @@ namespace NightShift.Data
             scanLog.logEventType = "FW";
             scanLog.logResult = "DENY";
 
-            // --- DAY1: 社員と端末 ---
+            // --- ヘルパー ---
             EventDefinition Unregistered(string id, Vector2 w)
             {
                 var e = Ev(id, w);
@@ -225,75 +225,102 @@ namespace NightShift.Data
                 e.destination = dest; e.accessType = access;
                 return e;
             }
+            // 社員名簿に存在しない利用者（退職者・ゲストなど）
+            EventDefinition NotAnEmployee(string id, Vector2 w, string name, string empId, SourceType source, string devicePattern, NetworkNodeDefinition dest, string access)
+            {
+                var e = Ev(id, w);
+                e.severity = Severity.Medium;
+                e.userType = UserType.NamedAccount;
+                e.accountName = name;
+                e.displayEmployeeId = empId;
+                e.sourceType = source;
+                e.deviceNamePattern = devicePattern;
+                e.destination = dest; e.accessType = access;
+                return e;
+            }
+            EventDefinition NoPermission(string id, Vector2 w, string dept, string missingPerm, NetworkNodeDefinition dest, string access)
+            {
+                var e = Ev(id, w);
+                e.severity = Severity.Medium;
+                if (!string.IsNullOrEmpty(dept)) e.employeeConditions.departments.Add(dept);
+                e.employeeConditions.excludedPermissions.Add(perms[missingPerm]);
+                e.destination = dest; e.accessType = access;
+                return e;
+            }
+            EventDefinition ExternalUnknownAdmin(string id, Vector2 w)
+            {
+                var e = Ev(id, w);
+                e.category = EventCategory.Threat;
+                e.notifyAsSecurityAlert = true;
+                e.severity = Severity.High;
+                e.userType = UserType.Unknown;
+                e.sourceType = SourceType.ExternalUnknown;
+                e.deviceNamePattern = "UNKNOWN-{n}";
+                e.destination = admin; e.accessType = "ADMIN LOGIN";
+                e.isMalicious = true;
+                e.timeoutMinutes = 40;
+                return e;
+            }
 
-            var d1Unregistered = Unregistered("D1_REQ_UNREGISTERED_DEVICE", new Vector2(22, 28));
-            var d1OtherDevice = OtherDevice("D1_REQ_OTHER_EMPLOYEES_PC", new Vector2(70, 80), mail, "MAIL", "MAIL");
-            var d1Unknown = Ev("D1_REQ_UNKNOWN_USER", new Vector2(120, 135));
-            d1Unknown.category = EventCategory.Threat;
-            d1Unknown.notifyAsSecurityAlert = true;
-            d1Unknown.severity = Severity.High;
-            d1Unknown.userType = UserType.Unknown;
-            d1Unknown.sourceType = SourceType.ExternalUnknown;
+            // --- DAY1: 社員かどうか ---
+            var d1Former = NotAnEmployee("D1_REQ_FORMER_EMPLOYEE", new Vector2(20, 26), "木村 進", "E-0009", SourceType.UnregisteredDevice, "SALES-PC1{n}", mail, "MAIL");
+            var d1Unknown = ExternalUnknownAdmin("D1_REQ_UNKNOWN_USER", new Vector2(90, 105));
             d1Unknown.deviceNamePattern = "UNKNOWN-14";
-            d1Unknown.destination = admin; d1Unknown.accessType = "ADMIN LOGIN";
-            d1Unknown.isMalicious = true;
-            d1Unknown.timeoutMinutes = 40;
-            var d1Final = OtherDevice("D1_REQ_FINAL_OTHER_DEVICE", new Vector2(195, 205), file, "FILE READ", "FILE");
-            d1Final.employeeConditions.requiredPermissions.Add(perms["FILE_ACCESS"]);
+            var d1Final = NotAnEmployee("D1_REQ_FINAL_GUEST", new Vector2(190, 205), "guest", "-", SourceType.UnregisteredDevice, "PC-GUEST{n}", file, "FILE READ");
 
-            // --- DAY2: 権限 ---
-            var d2HR = Ev("D2_REQ_HR_SYSTEM", new Vector2(10, 14));
-            d2HR.employeeConditions.requiredPermissions.Add(perms["HR_ACCESS"]);
-            d2HR.employeeConditions.requiredNormalTargets.Add("HR");
-            d2HR.destination = app; d2HR.accessType = "HR SYSTEM";
+            // --- DAY2: 端末 ---
+            var d2Unregistered = Unregistered("D2_REQ_UNREGISTERED_DEVICE", new Vector2(20, 28));
+            var d2OtherDevice = OtherDevice("D2_REQ_OTHER_EMPLOYEES_PC", new Vector2(60, 75), mail, "MAIL", "MAIL");
+            var d2Former = NotAnEmployee("D2_REQ_FORMER_EMPLOYEE", new Vector2(130, 140), "田村 洋子", "E-0099", SourceType.UnregisteredDevice, "HR-PC0{n}", app, "HR SYSTEM");
+            var d2Final = OtherDevice("D2_REQ_FINAL_OTHER_DEVICE", new Vector2(195, 205), file, "FILE READ", "FILE");
+            d2Final.employeeConditions.requiredPermissions.Add(perms["FILE_ACCESS"]);
 
-            var d2NoAccounting = Ev("D2_REQ_NO_ACCOUNTING", new Vector2(30, 36));
-            d2NoAccounting.severity = Severity.Medium;
-            d2NoAccounting.employeeConditions.departments.Add("営業部");
-            d2NoAccounting.employeeConditions.excludedPermissions.Add(perms["ACCOUNTING_ACCESS"]);
-            d2NoAccounting.destination = app; d2NoAccounting.accessType = "ACCOUNTING SYSTEM";
+            // --- DAY3: 権限 ---
+            var d3HR = Ev("D3_REQ_HR_SYSTEM", new Vector2(10, 14));
+            d3HR.employeeConditions.requiredPermissions.Add(perms["HR_ACCESS"]);
+            d3HR.employeeConditions.requiredNormalTargets.Add("HR");
+            d3HR.destination = app; d3HR.accessType = "HR SYSTEM";
+            var d3NoAccounting = NoPermission("D3_REQ_NO_ACCOUNTING", new Vector2(30, 36), "営業部", "ACCOUNTING_ACCESS", app, "ACCOUNTING SYSTEM");
+            var d3LooksOdd = Ev("D3_REQ_DEV_FILE_LOOKS_ODD", new Vector2(70, 80));
+            d3LooksOdd.employeeConditions.departments.Add("開発部");
+            d3LooksOdd.employeeConditions.requiredPermissions.Add(perms["FILE_ACCESS"]);
+            d3LooksOdd.employeeConditions.requiredNormalTargets.Add("FILE");
+            d3LooksOdd.destination = file; d3LooksOdd.accessType = "FILE WRITE";
+            var d3Unregistered = Unregistered("D3_REQ_UNREGISTERED_DEVICE", new Vector2(130, 140));
+            var d3Final = NoPermission("D3_REQ_FINAL_NO_ADMIN", new Vector2(195, 204), "営業部", "SERVER_ADMIN", admin, "ADMIN LOGIN");
+            d3Final.employeeConditions.excludedPermissions.Add(perms["LOCAL_ADMIN"]);
 
-            var d2LooksOdd = Ev("D2_REQ_DEV_FILE_LOOKS_ODD", new Vector2(80, 88));
-            d2LooksOdd.employeeConditions.departments.Add("開発部");
-            d2LooksOdd.employeeConditions.requiredPermissions.Add(perms["FILE_ACCESS"]);
-            d2LooksOdd.employeeConditions.requiredNormalTargets.Add("FILE");
-            d2LooksOdd.destination = file; d2LooksOdd.accessType = "FILE WRITE";
+            // --- DAY4: ITサポート ---
+            var d4NoDev = NoPermission("D4_REQ_NO_DEV", new Vector2(70, 80), "カスタマーサポート部", "DEV_ACCESS", app, "DEV REPOSITORY");
+            var d4OtherDevice = OtherDevice("D4_REQ_OTHER_EMPLOYEES_PC", new Vector2(130, 140), file, "FILE READ", "FILE");
+            var d4Final = NoPermission("D4_REQ_FINAL_NO_HR", new Vector2(195, 204), "営業部", "HR_ACCESS", app, "HR SYSTEM");
 
-            var d2OtherDevice = OtherDevice("D2_REQ_OTHER_EMPLOYEES_PC", new Vector2(100, 112), file, "FILE READ", "FILE");
+            // --- DAY5: 社外 ---
+            var d5VpnLegit = Ev("D5_REQ_VPN_LEGIT", new Vector2(25, 32));
+            d5VpnLegit.sourceType = SourceType.RegisteredLaptopExternal;
+            d5VpnLegit.employeeConditions.requireVpnEnabled = true;
+            d5VpnLegit.employeeConditions.requireLaptop = true;
+            d5VpnLegit.destination = auth; d5VpnLegit.accessType = "VPN LOGIN";
+            var d5ExternalAdmin = ExternalUnknownAdmin("D5_REQ_EXTERNAL_ADMIN", new Vector2(55, 65));
+            var d5NoVpn = Ev("D5_REQ_NO_VPN", new Vector2(100, 110));
+            d5NoVpn.severity = Severity.Medium;
+            d5NoVpn.sourceType = SourceType.RegisteredDeviceExternal;
+            d5NoVpn.employeeConditions.requireVpnDisabled = true;
+            d5NoVpn.destination = auth; d5NoVpn.accessType = "VPN LOGIN";
+            var d5Final = Ev("D5_REQ_FINAL_VPN_TO_ADMIN", new Vector2(195, 204));
+            d5Final.severity = Severity.Medium;
+            d5Final.sourceType = SourceType.RegisteredLaptopExternal;
+            d5Final.employeeConditions.requireVpnEnabled = true;
+            d5Final.employeeConditions.requireLaptop = true;
+            d5Final.destination = admin; d5Final.accessType = "ADMIN LOGIN";
 
-            var d2Final = Ev("D2_REQ_FINAL_NO_ADMIN", new Vector2(198, 204));
-            d2Final.severity = Severity.Medium;
-            d2Final.employeeConditions.departments.Add("営業部");
-            d2Final.employeeConditions.excludedPermissions.Add(perms["SERVER_ADMIN"]);
-            d2Final.employeeConditions.excludedPermissions.Add(perms["LOCAL_ADMIN"]);
-            d2Final.destination = admin; d2Final.accessType = "ADMIN LOGIN";
+            // --- DAY6: 総仕上げ ---
+            var d6Suspicious = ExternalUnknownAdmin("D6_REQ_SUSPICIOUS_DURING_REMOTE", new Vector2(30, 55));
+            d6Suspicious.preferWhileRemoteActive = true; // 唯一の意図的な同時発生
+            var d6Unregistered = Unregistered("D6_REQ_UNREGISTERED_DEVICE", new Vector2(150, 160));
+            var d6Final = NotAnEmployee("D6_REQ_FINAL_FORMER_VPN", new Vector2(200, 206), "木村 進", "E-0009", SourceType.ExternalUnknown, "NB-KIMURA", auth, "VPN LOGIN");
 
-            // --- DAY3: 社外と攻撃 ---
-            var d3Suspicious = Ev("D3_REQ_FIRST_SUSPICIOUS", new Vector2(44, 62));
-            d3Suspicious.category = EventCategory.Threat;
-            d3Suspicious.preferWhileRemoteActive = true;
-            d3Suspicious.notifyAsSecurityAlert = true;
-            d3Suspicious.severity = Severity.High;
-            d3Suspicious.userType = UserType.Unknown;
-            d3Suspicious.sourceType = SourceType.ExternalUnknown;
-            d3Suspicious.deviceNamePattern = "UNKNOWN-{n}";
-            d3Suspicious.destination = admin; d3Suspicious.accessType = "ADMIN LOGIN";
-            d3Suspicious.isMalicious = true;
-            d3Suspicious.timeoutMinutes = 40;
-
-            var d3VpnLegit = Ev("D3_REQ_VPN_LEGIT", new Vector2(130, 140));
-            d3VpnLegit.sourceType = SourceType.RegisteredLaptopExternal;
-            d3VpnLegit.employeeConditions.requireVpnEnabled = true;
-            d3VpnLegit.employeeConditions.requireLaptop = true;
-            d3VpnLegit.destination = auth; d3VpnLegit.accessType = "VPN LOGIN";
-
-            var d3NoVpn = Ev("D3_REQ_FINAL_NO_VPN", new Vector2(196, 204));
-            d3NoVpn.severity = Severity.Medium;
-            d3NoVpn.sourceType = SourceType.RegisteredDeviceExternal;
-            d3NoVpn.employeeConditions.requireVpnDisabled = true;
-            d3NoVpn.destination = auth; d3NoVpn.accessType = "VPN LOGIN";
-
-            // ---------------- Threat scenario (DAY3) ----------------
+            // ---------------- Threat scenario ----------------
             var threatReq = Ev("REQ_THREAT_ADMIN", Vector2.zero, "Threats");
             threatReq.category = EventCategory.Threat;
             threatReq.userType = UserType.NamedAccount;
@@ -308,9 +335,9 @@ namespace NightShift.Data
 
             var threat = b.Add(ScriptableObject.CreateInstance<ThreatScenarioDefinition>(), "Threats", "THREAT_WebProbeToAdmin");
             threat.scenarioId = "THREAT_WEB_PROBE";
-            threat.minimumDay = 3;
+            threat.minimumDay = 6;
             threat.designNote = "外部の攻撃者（自動スクリプト＋手動操作）が公開Webを探索し、管理サーバーへのログインを試みる。ログを見れば同一レンジのIPと気付ける。";
-            threat.startWindow = new Vector2(100, 107);
+            threat.startWindow = new Vector2(90, 97);
             threat.sourceIpPrefix = "198.51.100.";
             threat.steps.Add(new ThreatStep { label = "公開Webへのアクセス", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = web, eventType = "HTTP", result = "200", detail = "GET / (python-urllib/2.0)" });
             threat.steps.Add(new ThreatStep { label = "管理ページ探索", offsetMinutes = 4, kind = ThreatStepKind.LogEntry, destination = web, eventType = "HTTP", result = "404", detail = "GET /admin/|GET /manager/html|GET /login.cgi|GET /cgi-bin/admin.pl", repeat = 4, repeatIntervalMinutes = 0.6f });
@@ -320,9 +347,9 @@ namespace NightShift.Data
 
             var noise = b.Add(ScriptableObject.CreateInstance<ThreatScenarioDefinition>(), "Threats", "THREAT_ScannerNoise");
             noise.scenarioId = "THREAT_SCANNER_NOISE";
-            noise.minimumDay = 3;
+            noise.minimumDay = 5;
             noise.designNote = "インターネット上の一般的な自動スキャン。ファイアウォールで拒否されるだけ。";
-            noise.startWindow = new Vector2(66, 74);
+            noise.startWindow = new Vector2(40, 50);
             noise.sourceIpPrefix = "203.0.113.";
             noise.steps.Add(new ThreatStep { label = "ポートスキャン", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = web, eventType = "FW", result = "DENY", detail = "TCP 21|TCP 23|TCP 445|TCP 1433|TCP 3306", repeat = 5, repeatIntervalMinutes = 0.3f });
 
@@ -334,7 +361,7 @@ namespace NightShift.Data
                 return h;
             }
 
-            var hdA1 = H("A1_PASSWORD_PHONE", HelpDeskType.Binary, new Vector2(18, 22), 2);
+            var hdA1 = H("A1_PASSWORD_PHONE", HelpDeskType.Binary, new Vector2(10, 14), 4);
             hdA1.subject = "パスワードを教えてほしいと言われた";
             hdA1.message = "{dept}の{name}です。\nさきほど「本社の情報システムの者」と名乗る人から電話があり、緊急のメンテナンスなので私のパスワードを教えてほしいと言われました。\n折り返すと言って一度切ったのですが、教えても大丈夫でしょうか？";
             hdA1.correctOption = "パスワードは誰にも教えないよう伝え、電話の内容を記録して報告してもらう。";
@@ -342,7 +369,7 @@ namespace NightShift.Data
             hdA1.replyAfterAnswer = "わかりました。そのようにします。";
             hdA1.reminderMessage = "すみません、先ほどの件どうしたらいいでしょうか…？";
 
-            var hdR1 = H("R1_NO_INTERNET", HelpDeskType.Remote, new Vector2(40, 46), 2);
+            var hdR1 = H("R1_NO_INTERNET", HelpDeskType.Remote, new Vector2(40, 46), 4);
             hdR1.subject = "インターネットにつながらない";
             hdR1.message = "{dept}の{name}です。\nさっきから急にインターネットにつながらなくなりました。メールも送れません。\n見てもらえますか？（端末: {device}）";
             hdR1.pcProfile = profile;
@@ -352,7 +379,7 @@ namespace NightShift.Data
             hdR1.failureReply = "うーん、まだつながらないみたいです…。";
             hdR1.reminderMessage = "まだつながらないです…。急ぎのメールがあって。";
 
-            var hdA2 = H("A2_ATTACHMENT", HelpDeskType.Binary, new Vector2(15, 20), 3);
+            var hdA2 = H("A2_ATTACHMENT", HelpDeskType.Binary, new Vector2(12, 16), 5);
             hdA2.subject = "知らない会社からExcelファイルが届いた";
             hdA2.message = "{dept}の{name}です。\n知らない会社から「請求書の件」という件名でExcelファイルが届きました。\n取引先かもしれないのですが、開いて大丈夫ですか？";
             hdA2.correctOption = "開かずに、送信元や取引関係を確認してから判断するよう伝える。";
@@ -360,7 +387,7 @@ namespace NightShift.Data
             hdA2.replyAfterAnswer = "了解です。確認してみます。";
             hdA2.reminderMessage = "あの、さっきのファイル、開いちゃっていいですかね？";
 
-            var hdR2 = H("R2_CANNOT_PRINT", HelpDeskType.Remote, new Vector2(34, 40), 3);
+            var hdR2 = H("R2_CANNOT_PRINT", HelpDeskType.Remote, new Vector2(25, 31), 6);
             hdR2.subject = "印刷できない";
             hdR2.message = "{dept}の{name}です。\n見積書を印刷しようとしても、プリンターから何も出てきません。\nプリンターの電源は入っています。朝イチで使いたいので、見てもらえますか？（端末: {device}）";
             hdR2.pcProfile = profile;
@@ -391,11 +418,18 @@ namespace NightShift.Data
                 $"・要求には {B("受付からの期限")} があります。期限を過ぎた要求は自動的に破棄されます。",
                 "・確認する項目: 利用者 / 社員番号 / 端末 / 接続元（社内・社外） / 接続先 / 接続種別");
             Sec(manualSystem, Features.EmployeeDirectory,
-                B("■ 社員情報の検索・参照"),
-                "社員番号・氏名・部署・端末番号で検索できます（部分一致）。ダブルクリックまたは [詳細表示] で詳細を表示します。",
+                B("■ 社員情報の検索"),
+                "社員番号・氏名・部署・端末番号で検索できます（部分一致）。検索結果には社員番号・氏名・所属・役職・登録端末が表示されます。",
+                $"・{Col("該当する社員が見つからない", Deny)} 場合、その利用者は社員として登録されていません。");
+            Sec(manualSystem, Features.EmployeeDetail,
+                B("■ 社員情報の詳細表示"),
+                "検索結果をダブルクリックするか [詳細表示] で、顔写真・端末・勤務状態などの詳細を表示します。",
                 $"・{B("登録端末")} … その社員に割り当てられたPC。{B("VPN端末")} は社外接続用の登録ノートPCです。",
-                $"・{Col("該当する社員が見つからない", Deny)} 場合、その利用者・端末は社員として登録されていません。",
+                $"・{Col("社員本人でも、別の端末からの接続は認められません。", Deny)}");
+            Sec(manualSystem, Features.EmployeePermissions,
+                B("■ 権限情報"),
                 $"・{B("システム利用権限 / 管理者権限")} … ○ は権限あり、× は権限なし。",
+                $"・接続種別ごとに必要な権限は {Col("「社内サーバー構成資料」", Check)} を参照してください。",
                 $"・{B("通常利用システム")} … その社員が普段使うシステム。{Col("権限とは別の情報", Check)} です。");
             Sec(manualSystem, Features.HelpDesk,
                 B("■ ITサポート受付管理"),
@@ -411,17 +445,20 @@ namespace NightShift.Data
                 B("■ ネットワークマップ"),
                 "通信の流れ（接続元 → 接続先）を表示します。サーバーは監視のみで、操作はできません。");
             Sec(manualSystem, "",
+                B("■ アカウント"),
+                $"・ログインパスワードは [システム設定] → [パスワードの変更] で変更できます。{B("パスワードは他人に教えないこと。")}",
+                "",
                 B("■ キーボード操作"),
                 "・ウィンドウ切替: Ctrl+Tab / Alt+PageUp　・ウィンドウを閉じる: Ctrl+F4　・一時停止: Esc",
-                "・業務メニューの各システムは、メインメニューで 1〜7 のキーでも開けます。");
+                "・メインメニューの各システムは 1〜7 のキーでも開けます。");
             Sec(manualSystem, Features.RemoteSupport,
                 B("■ リモートPCのキーボード操作"),
                 "・スタート Alt+Home / ファイル名を指定して実行 Ctrl+Alt+R / エクスプローラー Ctrl+Alt+E",
                 "・設定 Ctrl+Alt+I / デスクトップ Ctrl+Alt+D / タスク マネージャー Ctrl+Alt+End / 更新 F5",
                 "（Windows キーや Alt+Tab は手元のPCが処理するため、上記の代替キーを使ってください）");
 
-            var manualServer = Doc("SERVER_GUIDE", "社内サーバー構成資料", "社内サーバー構成資料.doc", "server", "",
-                $"本資料は社内ネットワークとサーバーの概要です。サーバーの管理操作（サービス停止・再起動など）は、まだ担当範囲ではありません。");
+            var manualServer = Doc("SERVER_GUIDE", "社内サーバー構成資料", "社内サーバー構成資料.doc", "server", Features.EmployeePermissions,
+                "本資料は社内ネットワークとサーバーの概要です。サーバーの管理操作（サービス停止・再起動など）は、まだ担当範囲ではありません。");
             Sec(manualServer, "",
                 B("■ ネットワークの区分"),
                 $"・{B("社外 (INTERNET)")} … インターネット。すべての社外からの通信は FIREWALL を通ります。",
@@ -464,28 +501,33 @@ namespace NightShift.Data
                 "・エクスプローラー（Ctrl+Alt+E）… ファイル・共有フォルダー（\\\\FILE-SRV01）",
                 $"・{Col("システムのプロセスは終了しないでください。", Deny)}");
 
-            // ---------------- Days ----------------
-            string[] ruleTexts =
-            {
-                $"{B("社員")}が{B("自分の登録端末")}から接続する場合は {Col("許可", Allow)} する。",
-                $"{B("社員として登録されていない利用者")}、または {B("その社員の登録端末ではない端末")} からの接続は {Col("拒否", Deny)}。",
-                $"接続先のシステムを使うには {B("権限")} が必要。社員情報で {Col("接続種別に必要な権限", Check)} を確認し、× なら {Col("拒否", Deny)}。",
-                $"{B("社外")}から{B("管理系システム")}（ADMIN-SRV01 等）への接続は {Col("禁止", Deny)}。",
-                $"社外からの接続 (VPN) は、{Col("VPN利用を許可された社員の登録端末", Check)} に限る。",
-            };
+            // ---------------- Rules ----------------
+            string rRegistered = $"{B("社員として登録されている利用者")}からの接続は {Col("許可", Allow)} する。";
+            string rUnknown = $"{B("社員として登録されていない利用者")}からの接続は {Col("拒否", Deny)}。（社員番号・氏名で検索して確認）";
+            string rOwnDevice = $"{B("社員")}が{B("自分の登録端末")}から接続する場合は {Col("許可", Allow)} する。";
+            string rDevice = $"{B("その社員の登録端末ではない端末")}からの接続は、社員本人でも {Col("拒否", Deny)}。";
+            string rPermission = $"接続先を使うには {B("権限")} が必要。{Col("接続種別に必要な権限", Check)} を確認し、× なら {Col("拒否", Deny)}。";
+            string rExternalAdmin = $"{B("社外")}から{B("管理系システム")}（ADMIN-SRV01 等）への接続は {Col("禁止", Deny)}。";
+            string rVpn = $"社外からの接続 (VPN) は、{Col("VPN利用を許可された社員の登録端末", Check)} に限る。";
 
-            DayDefinition Day(int n, string title, string date, string clockIn, float speed, float gateUntil, int ruleCount, int newFrom)
+            // ---------------- Days ----------------
+            var allFeatures = new List<string>();
+            DayDefinition Day(int n, string title, string date, string clockIn, float speed, string[] rules, int newFrom, params string[] newFeatures)
             {
                 var d = b.Add(ScriptableObject.CreateInstance<DayDefinition>(), "Days", $"DAY{n}_{title.Replace(" ", "")}");
                 d.dayNumber = n; d.title = title; d.dateLabel = date; d.clockInDateLabel = clockIn;
                 d.realSecondsPerGameMinute = speed;
                 d.briefingFrom = "情報システム部 課長 森田";
-                for (int i = 0; i < ruleCount; i++) d.rules.Add(ruleTexts[i]);
+                d.rules.AddRange(rules);
                 d.newRuleStartIndex = newFrom;
-                d.tutorialGateUntilMinute = gateUntil;
-                d.tutorialGateBreathMinutes = 2f;
-                d.tutorialGateMaxDelayMinutes = 30f;
+                // チュートリアル: 終日「1件ずつ」。強制発生はしない
+                d.tutorialGateUntilMinute = d.endMinute;
+                d.tutorialGateBreathMinutes = 1.5f;
+                d.tutorialGateMaxDelayMinutes = 9999f;
                 d.backgroundLogChance = 0.3f;
+                allFeatures.AddRange(newFeatures);
+                d.unlockedFeatures.AddRange(allFeatures);
+                d.attachments.AddRange(new[] { manualSystem, manualServer, manualTrouble });
                 db.days.Add(d);
                 return d;
             }
@@ -495,91 +537,124 @@ namespace NightShift.Data
                 s.pool.AddRange(pool);
                 d.randomSlots.Add(s);
             }
+            PolicyRuleSet Policy(bool device, bool permission, bool external) => new PolicyRuleSet
+            {
+                blockUnknownUser = true,
+                blockUnregisteredDevice = device,
+                requirePermission = permission,
+                blockExternalToAdministrative = external,
+                blockUnregisteredToCritical = external,
+                requireVpnPermission = external
+            };
             const string Footer = "\n※ 操作方法などは添付のマニュアルを参照してください。この業務連絡は、タスクバーの [業務連絡] からいつでも確認できます。";
+            string Tasks(params string[] lines) => "■ 本日の業務\n" + string.Join("\n", lines) + "\n\n■ 接続審査のルール";
 
-            // DAY1
-            var day1 = Day(1, "FIRST SHIFT", "1998/05/20 (水)", "1998/05/19 (火)", 1.5f, 240f, 2, -1);
+            // DAY1: 社員かどうか
+            var day1 = Day(1, "FIRST SHIFT", "1998/05/18 (月)", "1998/05/17 (日)", 1.25f, new[] { rRegistered, rUnknown }, -1,
+                Features.ConnectionMonitor, Features.EmployeeDirectory);
             day1.briefingBody =
                 "夜間IT担当として、今夜からよろしくお願いします。\n" +
-                $"業務時間は {B("00:00〜04:00")} です。{B("時間は止まりません")}（Esc で一時停止できます）。\n\n" +
-                "■ 本日の業務\n" +
-                $"・{B("接続要求の審査")}（ネットワーク接続監視）\n" +
-                "　社内ネットワークへの接続要求を、社員情報と照らし合わせて許可・拒否してください。\n\n" +
-                "■ 接続審査のルール";
+                $"業務時間は {B("00:00〜04:00")} です。{B("時間は止まりません")}（Esc で一時停止できます）。\n" +
+                "最初の数日は、業務に慣れてもらうため、仕事を1件ずつ回します。\n\n" +
+                Tasks($"・{B("接続要求の審査")}（ネットワーク接続監視）", "　接続要求の利用者が、社員として登録されているかを確認してください。");
             day1.briefingFooter =
-                $"利用者と端末は {Col("「社員情報の検索・参照」", Check)} で確認できます。\n" +
-                "本日使うのは「ネットワーク接続監視」と「社員情報の検索・参照」だけです。ほかのシステムは、慣れてきたら順に担当していただきます。\n" +
+                $"利用者は {Col("「社員情報の検索・参照」", Check)} で、社員番号や氏名から検索できます。\n" +
+                "本日使うのは「ネットワーク接続監視」と「社員情報の検索・参照」だけです。\n" +
                 $"{B("迷ったら、まず調べること。")}\n" + Footer;
-            day1.policy = new PolicyRuleSet
-            {
-                blockUnknownUser = true, blockUnregisteredDevice = true,
-                blockExternalToAdministrative = false, blockUnregisteredToCritical = false, requirePermission = false, requireVpnPermission = false
-            };
-            day1.unlockedFeatures.AddRange(new[] { Features.ConnectionMonitor, Features.EmployeeDirectory });
-            day1.attachments.Add(manualSystem);
-            day1.fixedEvents.AddRange(new[] { firstNormal, d1Unregistered, d1OtherDevice, d1Unknown, d1Final });
+            day1.policy = Policy(false, false, false);
+            day1.fixedEvents.AddRange(new[] { firstNormal, d1Former, d1Unknown, d1Final });
             Slot(day1, "routine-1", 8, 14, routine);
             Slot(day1, "routine-2", 40, 55, routine);
-            Slot(day1, "routine-3", 95, 110, routine);
-            Slot(day1, "routine-4", 150, 170, routine);
+            Slot(day1, "routine-3", 120, 140, routine);
 
-            // DAY2
-            var day2 = Day(2, "ACCESS RIGHTS", "1998/05/21 (木)", "1998/05/20 (水)", 1.75f, 120f, 3, 2);
+            // DAY2: 端末 + パスワード変更
+            var day2 = Day(2, "DEVICES", "1998/05/19 (火)", "1998/05/18 (月)", 1.4f, new[] { rOwnDevice, rUnknown, rDevice }, 2,
+                Features.EmployeeDetail);
             day2.briefingBody =
                 "昨夜はお疲れさまでした。\n" +
-                $"本日から {Col("ITサポート受付管理", Allow)}（社員からの相談・リモートサポート）も担当していただきます。\n\n" +
-                "■ 本日の業務\n" +
-                $"・{B("接続要求の審査")}\n" +
-                $"・社員からの{B("IT問い合わせ")}への対応（相談への回答／リモートサポート）\n\n" +
-                "■ 接続審査のルール";
+                $"本日から {Col("社員情報の詳細表示", Allow)}（顔写真・登録端末など）が使えます。\n" +
+                $"また、{B("ログインパスワードがまだ初期設定のまま")}です。業務中に変更をお願いします。\n\n" +
+                Tasks($"・{B("接続要求の審査")} … 利用者だけでなく、{B("接続してきた端末")}も確認してください。",
+                      $"・{B("パスワードの変更")} … [システム設定] → [パスワードの変更]");
             day2.briefingFooter =
-                $"接続種別ごとに必要な権限は、添付の {Col("「社内サーバー構成資料」", Check)} で確認できます。\n" +
-                $"リモートサポートの手順は {Col("「トラブル対応マニュアル」", Check)} を参照してください。\n" +
-                $"{B("社員本人で、本人の端末でも、権限がなければ拒否です。")}\n" + Footer;
-            day2.policy = new PolicyRuleSet
-            {
-                blockUnknownUser = true, blockUnregisteredDevice = true, requirePermission = true,
-                blockExternalToAdministrative = false, blockUnregisteredToCritical = false, requireVpnPermission = false
-            };
-            day2.unlockedFeatures.AddRange(new[] { Features.ConnectionMonitor, Features.EmployeeDirectory, Features.HelpDesk, Features.RemoteSupport });
-            day2.attachments.AddRange(new[] { manualSystem, manualServer, manualTrouble });
-            day2.fixedEvents.AddRange(new[] { firstNormal, d2HR, d2NoAccounting, d2LooksOdd, d2OtherDevice, d2Final });
-            day2.helpDesk.AddRange(new[] { hdA1, hdR1 });
-            Slot(day2, "routine-1", 55, 65, routine);
-            Slot(day2, "routine-2", 130, 150, routine);
-            Slot(day2, "routine-3", 170, 185, routine);
+                $"社員の登録端末は、社員情報の {Col("詳細表示", Check)} で確認できます。\n" +
+                $"{B("社員本人でも、他人の端末や私物の端末からの接続は認められません。")}\n" + Footer;
+            day2.policy = Policy(true, false, false);
+            day2.passwordChangeAtMinute = 6f;
+            day2.fixedEvents.AddRange(new[] { firstNormal, d2Unregistered, d2OtherDevice, d2Former, d2Final });
+            Slot(day2, "routine-1", 35, 45, routine);
+            Slot(day2, "routine-2", 95, 110, routine);
+            Slot(day2, "routine-3", 160, 175, routine);
 
-            // DAY3
-            var day3 = Day(3, "OUTSIDE THE WALL", "1998/05/22 (金)", "1998/05/21 (木)", 2f, 60f, 5, 3);
+            // DAY3: 権限
+            var day3 = Day(3, "ACCESS RIGHTS", "1998/05/20 (水)", "1998/05/19 (火)", 1.5f, new[] { rOwnDevice, rUnknown, rDevice, rPermission }, 3,
+                Features.EmployeePermissions);
             day3.briefingBody =
-                $"本日から {Col("システムログ", Allow)}・{Col("ネットワークマップ", Allow)}・{Col("セキュリティ情報", Allow)} も利用できます。\n" +
-                $"{B("社外からの接続")}や、{B("不審な通信")}にも注意してください。\n\n" +
-                "■ 本日の業務\n" +
-                $"・{B("接続要求の審査")}\n" +
-                $"・{B("IT問い合わせ")}への対応\n" +
-                $"・{B("システムログ・ネットワークの監視")}\n\n" +
-                "■ 接続審査のルール";
+                $"本日から社員情報で {Col("権限情報", Allow)} を閲覧できます。\n" +
+                $"{B("社員本人で、本人の端末でも、権限がなければ拒否")}です。\n\n" +
+                Tasks($"・{B("接続要求の審査")} … 利用者・端末に加えて、{B("接続先に必要な権限")}を確認してください。");
             day3.briefingFooter =
+                $"接続種別ごとに必要な権限は、添付の {Col("「社内サーバー構成資料」", Check)} で確認できます。\n" +
+                $"{B("怪しく見えても、ルールを満たしていれば許可です。")}\n" + Footer;
+            day3.policy = Policy(true, true, false);
+            day3.fixedEvents.AddRange(new[] { firstNormal, d3HR, d3NoAccounting, d3LooksOdd, d3Unregistered, d3Final });
+            Slot(day3, "routine-1", 45, 55, routine);
+            Slot(day3, "routine-2", 100, 115, routine);
+            Slot(day3, "routine-3", 160, 175, routine);
+
+            // DAY4: ITサポート
+            var day4 = Day(4, "HELP DESK", "1998/05/21 (木)", "1998/05/20 (水)", 1.75f, new[] { rOwnDevice, rUnknown, rDevice, rPermission }, -1,
+                Features.HelpDesk, Features.RemoteSupport);
+            day4.briefingBody =
+                $"本日から {Col("ITサポート受付管理", Allow)}（社員からの相談・リモートサポート）も担当していただきます。\n\n" +
+                Tasks($"・{B("接続要求の審査")}", $"・社員からの{B("IT問い合わせ")}への対応（相談への回答／リモートサポート）");
+            day4.briefingFooter =
+                $"リモートサポートの手順は {Col("「トラブル対応マニュアル」", Check)} を参照してください。\n" +
+                $"{B("直ったことを自分で確認してから報告すること。")}\n" + Footer;
+            day4.policy = Policy(true, true, false);
+            day4.fixedEvents.AddRange(new[] { firstNormal, d4NoDev, d4OtherDevice, d4Final });
+            day4.helpDesk.AddRange(new[] { hdA1, hdR1 });
+            Slot(day4, "routine-1", 25, 30, routine);
+            Slot(day4, "routine-2", 95, 110, routine);
+            Slot(day4, "routine-3", 160, 175, routine);
+
+            // DAY5: 社外
+            var day5 = Day(5, "OUTSIDE THE WALL", "1998/05/22 (金)", "1998/05/21 (木)", 2f,
+                new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternalAdmin, rVpn }, 4,
+                Features.SystemLog, Features.NetworkMap, Features.SecurityInfo);
+            day5.briefingBody =
+                $"本日から {Col("システムログ", Allow)}・{Col("ネットワークマップ", Allow)}・{Col("セキュリティ情報", Allow)} も利用できます。\n" +
+                $"{B("社外からの接続")}にも注意してください。社外から社内のシステムを使うには VPN が必要です。\n\n" +
+                Tasks($"・{B("接続要求の審査")}", $"・{B("IT問い合わせ")}への対応", $"・{B("システムログ・ネットワークの監視")}");
+            day5.briefingFooter =
                 $"不審な要求があったら、{Col("システムログ", Check)} で同じ接続元の記録がないか確認してください。\n" +
-                "サーバー運用管理は来週から担当範囲に加わる予定です。\n" +
                 $"{B("迷ったら、まず調べること。")}\n" + Footer;
-            day3.policy = new PolicyRuleSet
-            {
-                blockUnknownUser = true, blockUnregisteredDevice = true, requirePermission = true,
-                blockExternalToAdministrative = true, blockUnregisteredToCritical = true, requireVpnPermission = true
-            };
-            day3.unlockedFeatures.AddRange(new[] { Features.ConnectionMonitor, Features.EmployeeDirectory, Features.HelpDesk, Features.RemoteSupport,
-                Features.SystemLog, Features.NetworkMap, Features.SecurityInfo });
-            day3.attachments.AddRange(new[] { manualSystem, manualServer, manualTrouble });
-            day3.fixedEvents.AddRange(new[] { firstNormal, d3Suspicious, d3VpnLegit, d3NoVpn });
-            day3.helpDesk.AddRange(new[] { hdA2, hdR2 });
-            day3.threats.Add(noise);
-            day3.threats.Add(threat);
-            Slot(day3, "routine-1", 24, 32, routine);
-            Slot(day3, "routine-2", 78, 92, routine, routineVpn);
-            Slot(day3, "routine-3", 150, 170, routine, routineVpn);
-            Slot(day3, "routine-4", 210, 224, routine);
-            Slot(day3, "scan-noise", 60, 75, scanLog);
+            day5.policy = Policy(true, true, true);
+            day5.fixedEvents.AddRange(new[] { firstNormal, d5VpnLegit, d5ExternalAdmin, d5NoVpn, d5Final });
+            day5.helpDesk.Add(hdA2);
+            day5.threats.Add(noise);
+            Slot(day5, "routine-1", 75, 90, routine, routineVpn);
+            Slot(day5, "routine-2", 130, 145, routine);
+            Slot(day5, "routine-3", 160, 175, routine, routineVpn);
+
+            // DAY6: 総仕上げ
+            var day6 = Day(6, "LONG NIGHT", "1998/05/25 (月)", "1998/05/24 (日)", 2f,
+                new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternalAdmin, rVpn }, -1);
+            day6.briefingBody =
+                "研修期間の最終日です。これまでの業務をすべて担当していただきます。\n" +
+                $"{B("リモートサポート中にも、他の業務は待ってくれません。")}\n\n" +
+                Tasks($"・{B("接続要求の審査")}", $"・{B("IT問い合わせ")}への対応", $"・{B("システムログ・ネットワークの監視")}");
+            day6.briefingFooter =
+                $"同じ接続元から何度もアクセスがある場合は、{Col("システムログ", Check)} で前後の記録を確認してください。\n" +
+                "来週からはサーバー運用管理も担当範囲に加わる予定です。\n" + Footer;
+            day6.policy = Policy(true, true, true);
+            day6.fixedEvents.AddRange(new[] { firstNormal, d6Suspicious, d6Unregistered, d6Final });
+            day6.helpDesk.Add(hdR2);
+            day6.threats.Add(noise);
+            day6.threats.Add(threat);
+            Slot(day6, "routine-1", 60, 75, routine);
+            Slot(day6, "routine-2", 120, 140, routine, routineVpn);
+            Slot(day6, "routine-3", 170, 185, routine);
 
             return b;
         }

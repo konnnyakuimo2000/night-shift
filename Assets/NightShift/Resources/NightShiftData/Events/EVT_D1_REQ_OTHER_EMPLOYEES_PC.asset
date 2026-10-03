@@ -10,38 +10,40 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62edd6c1e4f726439a7d85a52522454, type: 3}
-  m_Name: EVT_REQ_FIRST_SUSPICIOUS
+  m_Name: EVT_D1_REQ_OTHER_EMPLOYEES_PC
   m_EditorClassIdentifier: 
-  eventId: REQ_FIRST_SUSPICIOUS
-  category: 2
+  eventId: D1_REQ_OTHER_EMPLOYEES_PC
+  category: 0
   kind: 1
   minimumDay: 1
   maximumDay: 7
-  triggerWindow: {x: 46, y: 64}
+  triggerWindow: {x: 70, y: 80}
   weight: 1
-  severity: 3
-  userType: 1
+  severity: 1
+  userType: 0
   employeeConditions:
     departments: []
     excludeDepartments: []
     requiredPermissions: []
     excludedPermissions: []
-    requiredNormalTargets: []
+    requiredNormalTargets:
+    - MAIL
     requireOnShift: 1
     requireVpnEnabled: 0
+    requireVpnDisabled: 0
     requireLaptop: 0
     preferUnused: 1
   accountName: 
-  sourceType: 3
-  deviceNamePattern: UNKNOWN-14
+  sourceType: 6
+  deviceNamePattern: 
   destinationMode: 0
-  destination: {fileID: 11400000, guid: eccb02d823086c94ba187b0ed4bcf88e, type: 2}
-  accessType: ADMIN LOGIN
-  isMalicious: 1
+  destination: {fileID: 11400000, guid: ecc50913cfb1d7c48b0982405b1850ee, type: 2}
+  accessType: MAIL
+  isMalicious: 0
   expectedAction: 0
-  timeoutMinutes: 40
-  preferWhileRemoteActive: 1
-  notifyAsSecurityAlert: 1
+  timeoutMinutes: 30
+  preferWhileRemoteActive: 0
+  notifyAsSecurityAlert: 0
   logEventType: 
   logResult: 
   followUp: {fileID: 0}
