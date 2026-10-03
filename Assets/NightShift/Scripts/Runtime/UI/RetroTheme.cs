@@ -39,7 +39,20 @@ namespace NightShift.UI
         static Color C(int r, int g, int b) => new Color(r / 255f, g / 255f, b / 255f, 1f);
 
         // ---- fonts ----
-        static Font _ui, _mono;
+        static Font _ui, _mono, _reading;
+
+        /// <summary>メール・マニュアルなど長文用の読みやすいフォント</summary>
+        public static Font ReadingFont
+        {
+            get
+            {
+                if (_reading == null)
+                    _reading = Font.CreateDynamicFontFromOSFont(new[] { "Meiryo UI", "Meiryo", "Yu Gothic UI", "Yu Gothic", "MS UI Gothic", "Arial" }, 14);
+                if (_reading == null) _reading = UIFont;
+                return _reading;
+            }
+        }
+        public const int ReadingFontSize = 14;
         public static Font UIFont
         {
             get

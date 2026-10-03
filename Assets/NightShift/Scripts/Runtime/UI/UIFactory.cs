@@ -305,6 +305,22 @@ namespace NightShift.UI
             return sb;
         }
 
+        /// <summary>
+        /// 長文表示用のスクロール領域。本文の高さはレイアウトが自動計算するので、文字が詰まったり見切れたりしない。
+        /// </summary>
+        public static Text ScrollText(Transform parent, string text, out ScrollRect scroll)
+        {
+            scroll = Scroll(parent, out var content, true);
+            var vl = VerticalList(content, 0, 12);
+            vl.padding = new RectOffset(14, 14, 10, 16);
+            var t = Label(content, text, RetroTheme.ReadingFontSize, TextAnchor.UpperLeft, new Color(0.1f, 0.1f, 0.12f));
+            t.font = RetroTheme.ReadingFont;
+            t.lineSpacing = 1.15f;
+            t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            return t;
+        }
+
         /// <summary>コンテンツ高さを子要素に合わせる縦並びレイアウト</summary>
         public static VerticalLayoutGroup VerticalList(RectTransform content, float spacing = 0, int padding = 0)
         {

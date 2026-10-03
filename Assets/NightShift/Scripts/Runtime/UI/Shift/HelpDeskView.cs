@@ -57,6 +57,9 @@ namespace NightShift.UI.Shift
             _conversation = UIFactory.Label(_convContent, "", 12, TextAnchor.UpperLeft);
             _conversation.rectTransform.Stretch(6, 4, 6, 0);
             _conversation.verticalOverflow = VerticalWrapMode.Overflow;
+            _conversation.font = RetroTheme.ReadingFont;
+            _conversation.fontSize = 13;
+            _conversation.lineSpacing = 1.1f;
 
             var ag = UIFactory.Group(c, "対応", 486, 176, 314, 274);
             // 二択

@@ -49,6 +49,8 @@ namespace NightShift.Data
         [TextArea(4, 12)] public string briefingBody;
         public List<string> rules = new List<string>();
         [TextArea] public string briefingFooter;
+        [Tooltip("業務連絡に添付する文書（マニュアル等）")]
+        public List<DocumentDefinition> attachments = new List<DocumentDefinition>();
 
         [Header("イベント")]
         public List<EventDefinition> fixedEvents = new List<EventDefinition>();

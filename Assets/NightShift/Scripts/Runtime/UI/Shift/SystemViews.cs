@@ -159,7 +159,7 @@ namespace NightShift.UI.Shift
     }
 
     // ============================================================
-    /// <summary>業務連絡（Morning Briefing）。長文チュートリアルではなく、簡潔なルール提示のみ。</summary>
+    /// <summary>業務連絡（メール）。簡潔なルール提示＋添付マニュアル。いつでも再表示できる。</summary>
     public class BriefingView : MonoBehaviour
     {
         public const string Id = "briefing";
@@ -169,8 +169,8 @@ namespace NightShift.UI.Shift
             bool preShift = !d.ShiftStarted && onStart != null;
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = $"業務連絡 - DAY {d.S.Day.dayNumber}", Icon = "mail", Width = 600, Height = 540,
-                Closable = !preShift, Minimizable = !preShift, Maximizable = false, Position = new Vector2(330, 60)
+                Id = Id, Title = $"業務連絡 - DAY {d.S.Day.dayNumber}", Icon = "mail", Width = 680, Height = 600,
+                Closable = !preShift, Minimizable = !preShift, Maximizable = false, Position = new Vector2(300, 30)
             }, out bool created);
             if (!created) return;
             var day = d.S.Day;
@@ -179,25 +179,41 @@ namespace NightShift.UI.Shift
             void Row(string label, string value, float y)
             {
                 UIFactory.Label(c, label, 0, y, 60, 20);
-                UIFactory.ValueBox(c, 62, y, 520, 20, value, false);
+                UIFactory.ValueBox(c, 62, y, 600, 20, value, false);
             }
             Row("差出人:", day.briefingFrom, 0);
-            Row("宛先:", "夜間IT運用担当 各位", 24);
+            Row("宛先:", $"夜間IT運用担当 {d.S.OperatorName} 様", 24);
             Row("日付:", day.dateLabel, 48);
             Row("件名:", $"【業務連絡】DAY {day.dayNumber} 夜間業務について", 72);
 
-            var sr = UIFactory.Scroll(c, out var content, true);
-            ((RectTransform)sr.transform).Stretch(0, 100, 0, preShift ? 44 : 34);
+            // 添付ファイル
+            float top = 100;
+            if (day.attachments.Count > 0)
+            {
+                UIFactory.Label(c, "添付:", 0, top + 2, 60, 22);
+                float x = 62;
+                foreach (var doc in day.attachments)
+                {
+                    if (doc == null) continue;
+                    var dd = doc;
+                    var b = UIFactory.Button(c, doc.fileName, () => DocumentView.Open(d, dd), doc.icon);
+                    b.Label.alignment = TextAnchor.MiddleLeft;
+                    b.Label.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    float bw = Mathf.Min(260, b.Label.preferredWidth + 34);
+                    b.Rect.Place(x, top, bw, 24);
+                    x += bw + 4;
+                    if (x > 560) { x = 62; top += 28; }
+                }
+                top += 30;
+            }
+
             var sb = new StringBuilder();
             sb.AppendLine(day.briefingBody);
             for (int i = 0; i < day.rules.Count; i++) sb.AppendLine($"  <b>{i + 1}.</b> {day.rules[i]}");
             sb.AppendLine();
-            sb.AppendLine(day.briefingFooter);
-            var t = UIFactory.Label(content, sb.ToString(), 12, TextAnchor.UpperLeft);
-            t.rectTransform.Stretch(8, 6, 8, 0);
-            t.verticalOverflow = VerticalWrapMode.Overflow;
-            content.sizeDelta = new Vector2(0, t.preferredHeight + 20);
-            Screens.Delay.Run(w.gameObject, 0.05f, () => { if (t) content.sizeDelta = new Vector2(0, t.preferredHeight + 20); });
+            sb.Append(day.briefingFooter);
+            UIFactory.ScrollText(c, sb.ToString(), out var sr);
+            ((RectTransform)sr.transform).Stretch(0, top, 0, preShift ? 44 : 34);
 
             if (preShift)
             {
@@ -226,6 +242,54 @@ namespace NightShift.UI.Shift
                 close.Rect.anchoredPosition = new Vector2(0, 2);
                 w.Accelerators[KeyCode.C] = w.RequestClose;
             }
+        }
+    }
+
+    // ============================================================
+    /// <summary>添付文書のビューア</summary>
+    public static class DocumentView
+    {
+        public static void Open(ShiftDesktop d, Data.DocumentDefinition doc)
+        {
+            var w = d.OpenWindow(new WindowSpec
+            {
+                Id = "doc:" + doc.documentId, Title = $"{doc.fileName} - 文書ビューア", Icon = doc.icon, Width = 660, Height = 580,
+                Menus = ShiftDesktop.StandardMenus(d), StatusCells = 1
+            }, out bool created);
+            if (!created) return;
+            var c = w.Content;
+            var head = UIFactory.Solid(c, RetroTheme.Navy, "Head");
+            head.rectTransform.StretchH(0, 30);
+            UIFactory.Label(head.transform, "  " + doc.title, 15, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
+            UIFactory.ScrollText(c, Expand(d, doc.body), out var sr);
+            ((RectTransform)sr.transform).Stretch(0, 34, 0, 34);
+            var close = UIFactory.Button(c, "閉じる(C)", 0, 0, 100, 26, w.RequestClose);
+            close.Rect.anchorMin = close.Rect.anchorMax = new Vector2(1, 0);
+            close.Rect.pivot = new Vector2(1, 0);
+            close.Rect.anchoredPosition = new Vector2(0, 2);
+            w.Accelerators[KeyCode.C] = w.RequestClose;
+            w.SetStatus(0, doc.fileName);
+        }
+
+        static string Expand(ShiftDesktop d, string body)
+        {
+            body = (body ?? "").Replace("{OPERATOR}", d.S.OperatorName);
+            if (body.Contains("{SERVER_LIST}"))
+            {
+                var sb = new StringBuilder();
+                foreach (var n in d.S.Network.Nodes)
+                {
+                    if (n == null || n.role != Data.NodeRole.Server) continue;
+                    string zone = n.zone == Data.NodeZone.DMZ ? "公開(DMZ)" : "社内";
+                    string tags = (n.isAdministrative ? " / <color=#B00000><b>管理系</b></color>" : "") + (n.isCritical ? " / <b>重要</b>" : "");
+                    var access = new List<string>();
+                    foreach (var a in n.accessTypes) access.Add(a.accessType);
+                    sb.AppendLine($"・<b>{n.nodeId}</b>  ({n.ipAddress})  {zone}{tags}");
+                    sb.AppendLine($"    接続種別: {string.Join(", ", access)}");
+                }
+                body = body.Replace("{SERVER_LIST}", sb.ToString().TrimEnd());
+            }
+            return body;
         }
     }
 

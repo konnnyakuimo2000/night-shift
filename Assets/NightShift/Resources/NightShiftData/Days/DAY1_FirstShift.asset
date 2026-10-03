@@ -22,16 +22,27 @@ MonoBehaviour:
   graceRealSeconds: 20
   briefingFrom: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u90E8 \u8AB2\u9577 \u68EE\u7530"
   briefingBody: "\u591C\u9593IT\u62C5\u5F53\u3068\u3057\u3066\u3001\u4ECA\u591C\u304B\u3089\u3088\u308D\u3057\u304F\u304A\u9858\u3044\u3057\u307E\u3059\u3002\n\u696D\u52D9\u6642\u9593\u306F
-    00:00\u301C04:00 \u3067\u3059\u3002\u4ECA\u591C\u306F\u55B6\u696D\u90E8\u30FB\u958B\u767A\u90E8\u30FB\u4EBA\u4E8B\u90E8\u30FB\u7D4C\u7406\u90E8\u306E\u4E00\u90E8\u3068\u3001\n\u30AB\u30B9\u30BF\u30DE\u30FC\u30B5\u30DD\u30FC\u30C8\u90E8\uFF08\u591C\u52E4\uFF09\u304C\u52E4\u52D9\u3057\u3066\u3044\u307E\u3059\u3002\n\n\u25A0
-    \u4E3B\u306A\u696D\u52D9\n\u30FB\u793E\u5185\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u3078\u306E\u63A5\u7D9A\u8981\u6C42\u306E\u5BE9\u67FB\n\u30FB\u793E\u54E1\u304B\u3089\u306EIT\u554F\u3044\u5408\u308F\u305B\uFF08\u76F8\u8AC7\u30FB\u30EA\u30E2\u30FC\u30C8\u30B5\u30DD\u30FC\u30C8\uFF09\n\u30FB\u30B7\u30B9\u30C6\u30E0\u30ED\u30B0\u306E\u78BA\u8A8D\n\n\u25A0
+    <b>00:00\u301C04:00</b> \u3067\u3059\u3002<b>\u6642\u9593\u306F\u6B62\u307E\u308A\u307E\u305B\u3093</b>\uFF08Esc
+    \u3067\u4E00\u6642\u505C\u6B62\u3067\u304D\u307E\u3059\uFF09\u3002\n\u4ECA\u591C\u306F\u55B6\u696D\u90E8\u30FB\u958B\u767A\u90E8\u30FB\u4EBA\u4E8B\u90E8\u30FB\u7D4C\u7406\u90E8\u306E\u4E00\u90E8\u3068\u3001\u30AB\u30B9\u30BF\u30DE\u30FC\u30B5\u30DD\u30FC\u30C8\u90E8\uFF08\u591C\u52E4\uFF09\u304C\u52E4\u52D9\u3057\u3066\u3044\u307E\u3059\u3002\n\n\u25A0
+    \u4E3B\u306A\u696D\u52D9\n\u30FB<b>\u63A5\u7D9A\u8981\u6C42\u306E\u5BE9\u67FB</b>\uFF08\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u63A5\u7D9A\u76E3\u8996\uFF09\n\u30FB\u793E\u54E1\u304B\u3089\u306E<b>IT\u554F\u3044\u5408\u308F\u305B</b>\u3078\u306E\u5BFE\u5FDC\uFF08\u76F8\u8AC7\u3078\u306E\u56DE\u7B54\uFF0F\u30EA\u30E2\u30FC\u30C8\u30B5\u30DD\u30FC\u30C8\uFF09\n\u30FB\u30B7\u30B9\u30C6\u30E0\u30ED\u30B0\u306E\u78BA\u8A8D\n\n\u25A0
     \u63A5\u7D9A\u5BE9\u67FB\u306E\u57FA\u672C\u30EB\u30FC\u30EB"
   rules:
-  - "\u767B\u9332\u6E08\u307F\u306E\u793E\u54E1\u7AEF\u672B\u304B\u3089\u3001\u901A\u5E38\u696D\u52D9\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u901A\u4FE1\u306F\u539F\u5247\u8A31\u53EF\u3059\u308B\u3002"
-  - "\u672A\u767B\u9332\u306E\u7AEF\u672B\u304B\u3089\u3001\u793E\u5185\u306E\u91CD\u8981\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u63A5\u7D9A\u306F\u7981\u6B62\u3002"
-  - "\u793E\u5916\u304B\u3089\u7BA1\u7406\u7CFB\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u63A5\u7D9A\u306F\u7981\u6B62\u3002"
-  - "\u7BA1\u7406\u7CFB\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u63A5\u7D9A\u306F\u3001\u5229\u7528\u8005\u306E\u7BA1\u7406\u8005\u6A29\u9650\u3092\u78BA\u8A8D\u3059\u308B\u3053\u3068\u3002"
-  - "\u793E\u5916\u304B\u3089\u306E\u63A5\u7D9A(VPN)\u306F\u3001VPN\u5229\u7528\u3092\u8A31\u53EF\u3055\u308C\u305F\u793E\u54E1\u306E\u767B\u9332\u7AEF\u672B\u306B\u9650\u308B\u3002"
-  briefingFooter: "\u793E\u54E1\u306E\u6240\u5C5E\u30FB\u767B\u9332\u7AEF\u672B\u30FB\u6A29\u9650\u306F\u300C\u793E\u54E1\u60C5\u5831\u306E\u691C\u7D22\u30FB\u53C2\u7167\u300D\u3067\u78BA\u8A8D\u3067\u304D\u307E\u3059\u3002\n\u30B5\u30FC\u30D0\u30FC\u904B\u7528\u7BA1\u7406\u306F\u660E\u65E5\u304B\u3089\u62C5\u5F53\u7BC4\u56F2\u306B\u52A0\u308F\u308A\u307E\u3059\uFF08\u672C\u65E5\u306F\u76E3\u8996\u306E\u307F\uFF09\u3002\n\u8FF7\u3063\u305F\u3089\u3001\u307E\u305A\u8ABF\u3079\u308B\u3053\u3068\u3002"
+  - "<b>\u767B\u9332\u6E08\u307F\u306E\u793E\u54E1\u7AEF\u672B</b>\u304B\u3089\u3001\u901A\u5E38\u696D\u52D9\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u901A\u4FE1\u306F
+    <color=#0030A0><b>\u539F\u5247\u8A31\u53EF</b></color> \u3059\u308B\u3002"
+  - "<b>\u672A\u767B\u9332\u306E\u7AEF\u672B</b>\u304B\u3089\u3001\u793E\u5185\u306E\u91CD\u8981\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u63A5\u7D9A\u306F
+    <color=#B00000><b>\u7981\u6B62</b></color>\u3002"
+  - "<b>\u793E\u5916</b>\u304B\u3089<b>\u7BA1\u7406\u7CFB\u30B7\u30B9\u30C6\u30E0</b>\uFF08ADMIN-SRV01
+    \u7B49\uFF09\u3078\u306E\u63A5\u7D9A\u306F <color=#B00000><b>\u7981\u6B62</b></color>\u3002"
+  - "\u7BA1\u7406\u7CFB\u30B7\u30B9\u30C6\u30E0\u3078\u306E\u63A5\u7D9A\u306F\u3001\u5229\u7528\u8005\u306E
+    <color=#8A4B00><b>\u7BA1\u7406\u8005\u6A29\u9650\u3092\u78BA\u8A8D</b></color>
+    \u3059\u308B\u3053\u3068\u3002"
+  - "\u793E\u5916\u304B\u3089\u306E\u63A5\u7D9A(VPN)\u306F\u3001<color=#8A4B00><b>VPN\u5229\u7528\u3092\u8A31\u53EF\u3055\u308C\u305F\u793E\u54E1\u306E\u767B\u9332\u7AEF\u672B</b></color>
+    \u306B\u9650\u308B\u3002"
+  briefingFooter: "\u5229\u7528\u8005\u306E\u6240\u5C5E\u30FB\u767B\u9332\u7AEF\u672B\u30FB\u6A29\u9650\u306F
+    <color=#8A4B00><b>\u300C\u793E\u54E1\u60C5\u5831\u306E\u691C\u7D22\u30FB\u53C2\u7167\u300D</b></color>
+    \u3067\u78BA\u8A8D\u3067\u304D\u307E\u3059\u3002\n\u30B5\u30FC\u30D0\u30FC\u904B\u7528\u7BA1\u7406\u306F\u660E\u65E5\u304B\u3089\u62C5\u5F53\u7BC4\u56F2\u306B\u52A0\u308F\u308A\u307E\u3059\uFF08\u672C\u65E5\u306F\u76E3\u8996\u306E\u307F\uFF09\u3002\n<b>\u8FF7\u3063\u305F\u3089\u3001\u307E\u305A\u8ABF\u3079\u308B\u3053\u3068\u3002</b>\n\n\u203B
+    \u3053\u306E\u696D\u52D9\u9023\u7D61\u306F\u3001\u30BF\u30B9\u30AF\u30D0\u30FC\u306E
+    [\u696D\u52D9\u9023\u7D61] \u304B\u3089\u3044\u3064\u3067\u3082\u78BA\u8A8D\u3067\u304D\u307E\u3059\u3002"
   fixedEvents:
   - {fileID: 11400000, guid: e30797a0b356fe04781f74d482a75fdb, type: 2}
   - {fileID: 11400000, guid: 766da28e513a6da4b86eef6f1db12df1, type: 2}
@@ -42,50 +53,25 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6cfa6d6031d8d2f4398f4bc269d662c5, type: 2}
   randomSlots:
   - label: routine-1
-    window: {x: 6, y: 8}
-    pool:
-    - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
-  - label: routine-2
-    window: {x: 22, y: 25}
-    pool:
-    - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
-  - label: routine-3
-    window: {x: 52, y: 70}
+    window: {x: 56, y: 66}
     pool:
     - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
     - {fileID: 11400000, guid: 1a5b672491c2bc74ca0ff49619f7e1cb, type: 2}
-  - label: routine-4
-    window: {x: 75, y: 80}
-    pool:
-    - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
-  - label: routine-5
+  - label: routine-2
     window: {x: 105, y: 114}
     pool:
     - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
-    - {fileID: 11400000, guid: 1a5b672491c2bc74ca0ff49619f7e1cb, type: 2}
-  - label: routine-6
-    window: {x: 140, y: 147}
-    pool:
-    - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
-  - label: routine-7
+  - label: routine-3
     window: {x: 166, y: 180}
     pool:
     - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
     - {fileID: 11400000, guid: 1a5b672491c2bc74ca0ff49619f7e1cb, type: 2}
-  - label: routine-8
-    window: {x: 184, y: 194}
-    pool:
-    - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
-  - label: routine-9
+  - label: routine-4
     window: {x: 212, y: 224}
     pool:
     - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
   - label: scan-noise
-    window: {x: 20, y: 40}
-    pool:
-    - {fileID: 11400000, guid: ae65c6e749ba38541a5c13d20e4d0b33, type: 2}
-  - label: scan-noise-2
-    window: {x: 160, y: 190}
+    window: {x: 60, y: 75}
     pool:
     - {fileID: 11400000, guid: ae65c6e749ba38541a5c13d20e4d0b33, type: 2}
   helpDesk:
@@ -99,6 +85,9 @@ MonoBehaviour:
   backgroundTrafficTemplate: {fileID: 0}
   backgroundLogChance: 0.3
   backgroundActivityScale: 1
+  tutorialGateUntilMinute: 90
+  tutorialGateBreathMinutes: 2
+  tutorialGateMaxDelayMinutes: 30
   policy:
     blockExternalToAdministrative: 1
     blockUnregisteredToCritical: 1
