@@ -41,7 +41,7 @@ MonoBehaviour:
   deviceNamePattern: 
   destinationMode: 0
   destination: {fileID: 11400000, guid: ac4d108d5a938e0499b1d0aad2134cc0, type: 2}
-  accessType: FILE WRITE
+  accessType: "\u5171\u6709\u30D5\u30A1\u30A4\u30EB\uFF08\u66F4\u65B0\uFF09"
   isMalicious: 0
   expectedAction: 0
   timeoutMinutes: 30

@@ -185,6 +185,10 @@ namespace NightShift.UI
             UIFactory.Label(_page, "Windows キー・Alt+Tab・Ctrl+Shift+Esc などは手元のPCが処理するため、\nリモートPCの操作には [キー設定] で割り当てたキーを使います。", 0, y, 480, 34, 11).color = RetroTheme.Shadow;
             y += 44;
 
+            var debug = UIFactory.Check(_page, "デバッグモード（タイトルから任意の日を開始・デバッグパネル）", S.debugMode, v => { S.debugMode = v; Saved(); });
+            debug.GetComponent<RectTransform>().Place(0, y, 480, 20);
+            y += 30;
+
             _extraGeneral?.Invoke(UIFactory.Rect("Extra", _page).Place(0, y, 480, 40));
         }
 

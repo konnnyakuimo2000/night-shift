@@ -12,10 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10640ffc8aa183b4a9cd9252e866ccae, type: 3}
   m_Name: GameDatabase
   m_EditorClassIdentifier: 
-  dataVersion: 11
+  dataVersion: 13
   companyName: NEXUS CORPORATION
   systemName: "\u793E\u5185\u60C5\u5831\u30B7\u30B9\u30C6\u30E0"
   systemVersion: Ver.4.21
+  payroll:
+    basePay: 8000
+    payPerScorePoint: 60
+    rankBonusS: 3000
+    rankBonusA: 1500
+    rankBonusB: 500
+    deductionPerMaliciousAllow: 2000
+    deductionPerPolicyViolation: 500
+    minimumPay: 3000
   permissions:
   - {fileID: 11400000, guid: b919be391b48d014f9b2d40ee80a49b0, type: 2}
   - {fileID: 11400000, guid: fe8f316bbe4d4df4db8d066b92ec3ec7, type: 2}

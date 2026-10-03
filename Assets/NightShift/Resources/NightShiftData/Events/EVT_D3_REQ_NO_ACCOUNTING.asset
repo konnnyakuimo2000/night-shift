@@ -40,7 +40,7 @@ MonoBehaviour:
   deviceNamePattern: 
   destinationMode: 0
   destination: {fileID: 11400000, guid: 22e5ca4bb63575145b7f1c051b4c63ab, type: 2}
-  accessType: ACCOUNTING SYSTEM
+  accessType: "\u7D4C\u7406\u30B7\u30B9\u30C6\u30E0"
   isMalicious: 0
   expectedAction: 0
   timeoutMinutes: 30

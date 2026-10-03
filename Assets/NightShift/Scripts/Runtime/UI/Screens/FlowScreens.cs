@@ -38,7 +38,7 @@ namespace NightShift.UI.Screens
     // ============================================================
     public static class TitleScreen
     {
-        public static GameObject Build(RectTransform parent, Action onClockIn, Action onContinue, int reachedDay, Action onQuit)
+        public static GameObject Build(RectTransform parent, Action onClockIn, Action onContinue, int reachedDay, Action onQuit, int dayCount = 0, Action<int> onStartDay = null)
         {
             var root = UIFactory.Solid(parent, new Color(0.02f, 0.03f, 0.08f), "TitleScreen");
             root.rectTransform.Stretch();
@@ -91,6 +91,25 @@ namespace NightShift.UI.Screens
                 if (created) SettingsPanel.Build(w.Content);
             }, "gear", 28);
             Centered("終了(X)", onQuit, "exit", 28);
+
+            // デバッグモード: 任意の日から開始
+            if (onStartDay != null && dayCount > 0)
+            {
+                var row = UIFactory.Rect("DebugDays", root.transform);
+                row.anchorMin = row.anchorMax = new Vector2(0.5f, 0.5f);
+                row.pivot = new Vector2(0.5f, 1f);
+                row.sizeDelta = new Vector2(dayCount * 66 + 120, 26);
+                row.anchoredPosition = new Vector2(0, by - 8);
+                var lbl = UIFactory.Label(row, "DEBUG 開始日:", 0, 0, 110, 24, 12, TextAnchor.MiddleRight);
+                lbl.color = new Color(1f, 0.6f, 0.4f);
+                for (int i = 1; i <= dayCount; i++)
+                {
+                    int day = i;
+                    UIFactory.Button(row, $"DAY{day}", 116 + (i - 1) * 66, 0, 62, 24, () => onStartDay(day));
+                }
+                var toggle = row.gameObject.AddComponent<SettingVisibility>();
+                toggle.Refresh();
+            }
             host.SetAsLastSibling();
 
             var foot = UIFactory.Label(root.transform, $"DAY 1-7 Tutorial  —  マウス＋キーボードでプレイ / {Core.GameSettings.KeyLabel(Core.GameSettings.Pause)}: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
@@ -207,6 +226,18 @@ namespace NightShift.UI.Screens
         }
     }
 
+    /// <summary>デバッグモードの設定に合わせて表示を切り替える</summary>
+    public class SettingVisibility : MonoBehaviour
+    {
+        bool _subscribed;
+        public void Refresh()
+        {
+            if (!_subscribed) { Core.GameSettings.Changed += Refresh; _subscribed = true; }
+            if (this != null) gameObject.SetActive(Core.GameSettings.Current.debugMode);
+        }
+        void OnDestroy() { Core.GameSettings.Changed -= Refresh; }
+    }
+
     public class KeyAction : MonoBehaviour
     {
         public KeyCode Key;
@@ -303,23 +334,8 @@ namespace NightShift.UI.Screens
         /// </summary>
         static GameObject StickyNote(Transform parent, Core.OperatorAccount account)
         {
-            string text;
-            if (!account.Changed)
-                text = $"夜間担当の方へ\n\nID : {account.UserId}\nPW : {Core.OperatorAccount.InitialPassword}\n\n※初日だけ。あとで変えること！\n　　　　　　　— K.";
-            else if (account.WrittenDown)
-                text = $"自分用メモ\n\nID : {account.UserId}\nPW : {account.Password}";
-            else
-                return null;
-
-            var note = UIFactory.Solid(parent, RetroTheme.Note, "StickyNote");
-            note.rectTransform.anchorMin = note.rectTransform.anchorMax = new Vector2(1, 0);
-            note.rectTransform.pivot = new Vector2(1, 0);
-            note.rectTransform.sizeDelta = new Vector2(170, 130);
-            note.rectTransform.anchoredPosition = new Vector2(-60, 60);
-            note.rectTransform.localRotation = Quaternion.Euler(0, 0, account.Changed ? -3 : 4);
-            var nt = UIFactory.Label(note.transform, text, 12, TextAnchor.UpperLeft, new Color(0.15f, 0.15f, 0.3f));
-            nt.rectTransform.Stretch(10, 10, 8, 8);
-            return note.gameObject;
+            var note = NightShift.UI.StickyNote.Create(parent, account, 70, 430, account.Changed ? -3 : 4);
+            return note != null ? note.gameObject : null;
         }
     }
 
@@ -372,7 +388,7 @@ namespace NightShift.UI.Screens
     // ============================================================
     public static class EvaluationScreen
     {
-        public static GameObject Build(RectTransform parent, DayDefinition day, EvaluationResult r, Action onNext, Action onRestart)
+        public static GameObject Build(RectTransform parent, DayDefinition day, EvaluationResult r, Core.PaySlip slip, Core.PaySlip previous, bool updated, int balance, Action onNext, Action onRestart)
         {
             var root = UIFactory.Solid(parent, RetroTheme.Desktop, "Evaluation");
             root.rectTransform.Stretch();
@@ -380,8 +396,8 @@ namespace NightShift.UI.Screens
             var wm = WindowManager.Create(host);
             var w = wm.Open(new WindowSpec
             {
-                Id = "eval", Title = $"業務評価 - DAY {day.dayNumber} {day.title}", Icon = "doc", Width = 760, Height = 560,
-                Closable = false, Minimizable = false, Maximizable = false, Position = new Vector2(260, 110), StatusCells = 1
+                Id = "eval", Title = $"業務評価 - DAY {day.dayNumber} {day.title}", Icon = "doc", Width = 760, Height = 690,
+                Closable = false, Minimizable = false, Maximizable = false, Position = new Vector2(260, 40), StatusCells = 1
             }, out _);
             w.SetStatus(0, "SHIFT COMPLETE  04:00   本日の業務記録を集計しました。");
             var c = w.Content;
@@ -426,8 +442,34 @@ namespace NightShift.UI.Screens
                 if (row >= 6) { row = 0; col++; }
             }
 
-            UIFactory.Button(c, "翌日へ(N)", 520, 476, 110, 26, onNext);
-            UIFactory.Button(c, $"DAY{day.dayNumber}をやり直す(R)", 636, 476, 114, 26, onRestart);
+            // 給与明細（スコアに応じて支給。所持金は後のストアで使う）
+            var pg = UIFactory.Group(c, "給与明細", 0, 472, 750, 118);
+            if (slip != null)
+            {
+                string Y(int v) => Core.OperatorWallet.Yen(v);
+                float px = 0;
+                void Item(string label, string value, float w)
+                {
+                    UIFactory.Label(pg, label, px, 0, w, 18, 12);
+                    UIFactory.ValueBox(pg, px, 20, w - 8, 22, value);
+                    px += w;
+                }
+                Item("基本給（夜勤）", Y(slip.basePay), 150);
+                Item($"評価手当（{slip.score}点）", Y(slip.performancePay), 150);
+                Item($"ランク賞与（{slip.rank}）", Y(slip.rankBonus), 150);
+                Item("減額", slip.deduction > 0 ? "−" + Y(slip.deduction) : Y(0), 150);
+                var total = UIFactory.Label(pg, $"本日の支給額  {Y(slip.total)}", 0, 50, 360, 28, 18);
+                total.fontStyle = FontStyle.Bold;
+                total.color = RetroTheme.Navy;
+                UIFactory.Label(pg, $"所持金  {Y(balance)}", 600, 50, 140, 28, 14, TextAnchor.MiddleRight).fontStyle = FontStyle.Bold;
+                string note = slip.deductionNotes.Count > 0 ? "減額理由: " + string.Join("、", slip.deductionNotes) + "　" : "";
+                if (previous != null)
+                    note += updated ? $"（前回の支給額 {Y(previous.total)} から更新しました）" : $"（このDAYは前回の支給額 {Y(previous.total)} のまま計上されます）";
+                UIFactory.Label(pg, note, 0, 78, 740, 18, 11).color = RetroTheme.Shadow;
+            }
+
+            UIFactory.Button(c, "翌日へ(N)", 520, 598, 110, 26, onNext);
+            UIFactory.Button(c, $"DAY{day.dayNumber}をやり直す(R)", 636, 598, 114, 26, onRestart);
             var k1 = root.gameObject.AddComponent<KeyAction>(); k1.Key = KeyCode.N; k1.Action = onNext;
             var k2 = root.gameObject.AddComponent<KeyAction>(); k2.Key = KeyCode.R; k2.Action = onRestart;
             return root.gameObject;

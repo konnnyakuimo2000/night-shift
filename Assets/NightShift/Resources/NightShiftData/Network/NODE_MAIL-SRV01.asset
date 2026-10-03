@@ -22,7 +22,7 @@ MonoBehaviour:
   mapPosition: {x: 0.6, y: 0.26}
   manageableFromDay: 2
   accessTypes:
-  - accessType: MAIL
+  - accessType: "\u30E1\u30FC\u30EB"
     serviceId: MAIL
     requiredPermission: GENERAL_BUSINESS
     requiresVpnEnabled: 0

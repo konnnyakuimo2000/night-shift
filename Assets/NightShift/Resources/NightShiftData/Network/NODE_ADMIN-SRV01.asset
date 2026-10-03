@@ -22,11 +22,11 @@ MonoBehaviour:
   mapPosition: {x: 0.6, y: 0.9}
   manageableFromDay: 2
   accessTypes:
-  - accessType: ADMIN LOGIN
+  - accessType: "\u7BA1\u7406\u30ED\u30B0\u30A4\u30F3"
     serviceId: ADMIN
     requiredPermission: SERVER_ADMIN
     requiresVpnEnabled: 0
-  - accessType: REMOTE CONSOLE
+  - accessType: "\u30EA\u30E2\u30FC\u30C8\u7BA1\u7406"
     serviceId: ADMIN
     requiredPermission: SERVER_ADMIN
     requiresVpnEnabled: 0

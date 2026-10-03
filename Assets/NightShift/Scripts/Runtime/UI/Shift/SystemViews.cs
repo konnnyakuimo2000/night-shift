@@ -71,7 +71,7 @@ namespace NightShift.UI.Shift
             menus.Insert(3, new KeyValuePair<string, List<MenuItem>>("ツール(T)", new List<MenuItem>
             {
                 new MenuItem("システム設定(S)", () => SettingsView.Open(d)),
-                new MenuItem("デバッグ(D)", () => DebugPanelView.Open(d), "F12"),
+                new MenuItem("デバッグ(D)", () => DebugPanelView.Open(d), "F12", Core.GameSettings.Current.debugMode),
             }));
             return menus;
         }

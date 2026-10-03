@@ -19,6 +19,9 @@ namespace NightShift.Data
         public string systemName = "社内情報システム";
         public string systemVersion = "Ver.4.21";
 
+        [Tooltip("給与の計算式")]
+        public PayrollSettings payroll = new PayrollSettings();
+
         public List<PermissionDefinition> permissions = new List<PermissionDefinition>();
         public List<EmployeeData> employees = new List<EmployeeData>();
         public List<NetworkNodeDefinition> nodes = new List<NetworkNodeDefinition>();

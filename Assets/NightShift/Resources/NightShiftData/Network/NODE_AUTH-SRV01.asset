@@ -22,7 +22,7 @@ MonoBehaviour:
   mapPosition: {x: 0.6, y: 0.74}
   manageableFromDay: 2
   accessTypes:
-  - accessType: VPN LOGIN
+  - accessType: "VPN\u63A5\u7D9A"
     serviceId: VPN
     requiredPermission: GENERAL_BUSINESS
     requiresVpnEnabled: 1

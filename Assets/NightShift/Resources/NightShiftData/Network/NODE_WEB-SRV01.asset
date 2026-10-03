@@ -22,7 +22,7 @@ MonoBehaviour:
   mapPosition: {x: 0.6, y: 0.1}
   manageableFromDay: 2
   accessTypes:
-  - accessType: HTTP
+  - accessType: "\u516C\u958BWeb"
     serviceId: CORP-WEB
     requiredPermission: 
     requiresVpnEnabled: 0

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PERM_GENERAL_BUSINESS
   m_EditorClassIdentifier: 
   permissionId: GENERAL_BUSINESS
-  displayName: "\u4E00\u822C\u696D\u52D9"
+  displayName: "\u30E1\u30FC\u30EB\u30FBWeb"
   category: 0
   sortOrder: 10
   description: "\u30E1\u30FC\u30EB\u30FB\u793E\u5185Web\u30FB\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8"

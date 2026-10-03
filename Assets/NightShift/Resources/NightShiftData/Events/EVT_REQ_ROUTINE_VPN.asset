@@ -38,7 +38,7 @@ MonoBehaviour:
   deviceNamePattern: 
   destinationMode: 0
   destination: {fileID: 11400000, guid: 9dc40c3646e4a5446860183d2d50211f, type: 2}
-  accessType: VPN LOGIN
+  accessType: "VPN\u63A5\u7D9A"
   isMalicious: 0
   expectedAction: 0
   timeoutMinutes: 25

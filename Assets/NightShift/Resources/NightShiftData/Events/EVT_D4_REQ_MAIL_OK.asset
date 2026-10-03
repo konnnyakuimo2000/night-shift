@@ -40,7 +40,7 @@ MonoBehaviour:
   deviceNamePattern: 
   destinationMode: 0
   destination: {fileID: 11400000, guid: ecc50913cfb1d7c48b0982405b1850ee, type: 2}
-  accessType: MAIL
+  accessType: "\u30E1\u30FC\u30EB"
   isMalicious: 0
   expectedAction: 0
   timeoutMinutes: 30

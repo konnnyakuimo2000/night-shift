@@ -55,7 +55,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 751c2aacea4d1ac4585bb0c357ea0fc2, type: 2}
   - {fileID: 11400000, guid: 4fc822519f6353b47a687058704a916d, type: 2}
   - {fileID: 11400000, guid: a1aaa1722ba4f2e49a69079248783225, type: 2}
-  - {fileID: 11400000, guid: 9b286b77bda2e6e4d957e7932fb66d63, type: 2}
+  - {fileID: 11400000, guid: 0f30d013dd514bd4aa8285f3afd6d2bf, type: 2}
   randomSlots:
   - label: routine-1
     window: {x: 45, y: 55}

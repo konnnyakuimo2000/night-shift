@@ -68,6 +68,10 @@ namespace NightShift.Core
         public bool letterAccelerators = true;   // 文字キーだけでボタンを押せる（A=許可 等）
         public float notificationSeconds = 8f;
 
+        // ---- デバッグ ----
+        [Tooltip("任意の日から開始・デバッグパネル（F12）を有効にする")]
+        public bool debugMode = Application.isEditor;
+
         // ---- キー設定 ----
         public List<KeyBinding> bindings = new List<KeyBinding>();
 

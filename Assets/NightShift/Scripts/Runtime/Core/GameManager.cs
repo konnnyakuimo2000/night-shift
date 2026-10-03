@@ -32,6 +32,8 @@ namespace NightShift.Core
         public string OperatorName { get; private set; } = DefaultOperatorName;
         /// <summary>プレイヤーのアカウント（パスワード等）。日をまたいで保持する。</summary>
         public OperatorAccount Account { get; private set; } = new OperatorAccount();
+        /// <summary>給与・所持金（後のストアで使う）</summary>
+        public OperatorWallet Wallet { get; private set; } = OperatorWallet.Load();
 
         public RectTransform ScreenLayer { get; private set; }
         public RectTransform OverlayLayer { get; private set; }
@@ -137,7 +139,7 @@ namespace NightShift.Core
         {
             DisposeShift();
             int reached = ReachedDay;
-            SetScreen(TitleScreen.Build(ScreenLayer, StartNewGame, reached > 1 ? ContinueGame : (System.Action)null, reached, Quit), GameState.Title);
+            SetScreen(TitleScreen.Build(ScreenLayer, StartNewGame, reached > 1 ? ContinueGame : (System.Action)null, reached, Quit, Database.days.Count, StartFromDay), GameState.Title);
         }
 
         public void ShowClockIn() => SetScreen(ClockInScreen.Build(ScreenLayer, Database.GetDay(CurrentDay), OperatorName, name =>
@@ -165,6 +167,7 @@ namespace NightShift.Core
             Session.ShiftCompleted += OnShiftCompleted;
             _desktop = ShiftDesktop.Build(ScreenLayer, this, Session);
             Session.Ui = _desktop;
+            AddPayslipMail(day);
             _screen = _desktop.gameObject;
             State = GameState.Briefing;
             _desktop.ShowBriefing(StartShift);
@@ -197,7 +200,9 @@ namespace NightShift.Core
             if (day.passwordChangeAtMinute >= 0 || Account.Changed)
                 result.Stats.Add(new System.Collections.Generic.KeyValuePair<string, string>("Operator Password",
                     Account.Changed ? $"変更済み（強度: {PasswordPolicy.StrengthLabel(Account.Strength)}{(Account.WrittenDown ? "・付箋あり" : "")}）" : "未変更（初期パスワード）"));
-            SetScreen(EvaluationScreen.Build(ScreenLayer, day, result, GoToNextDay, RestartDay), GameState.Evaluation);
+            var slip = Payroll.Compute(day.dayNumber, result, Session.Evaluation, Database.payroll);
+            var previous = Wallet.Record(slip, out bool updated);
+            SetScreen(EvaluationScreen.Build(ScreenLayer, day, result, slip, previous, updated, Wallet.Balance, GoToNextDay, RestartDay), GameState.Evaluation);
         }
 
         /// <summary>翌日へ。翌日の定義が無ければ COMING SOON。</summary>
@@ -242,11 +247,55 @@ namespace NightShift.Core
             catch { }
         }
 
+        /// <summary>前日の給与明細をメールで届ける</summary>
+        void AddPayslipMail(DayDefinition day)
+        {
+            var slip = Wallet.Find(day.dayNumber - 1);
+            if (slip == null) return;
+            string Y(int v) => OperatorWallet.Yen(v);
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"{OperatorName} 様");
+            sb.AppendLine();
+            sb.AppendLine($"DAY {slip.day} の夜勤手当を支給しました。");
+            sb.AppendLine();
+            sb.AppendLine($"　基本給（夜勤）　　{Y(slip.basePay)}");
+            sb.AppendLine($"　評価手当（{slip.score}点）　{Y(slip.performancePay)}");
+            sb.AppendLine($"　ランク賞与（{slip.rank}）　{Y(slip.rankBonus)}");
+            if (slip.deduction > 0) sb.AppendLine($"　減額　　　　　　−{Y(slip.deduction)}（{string.Join("、", slip.deductionNotes)}）");
+            sb.AppendLine($"　<b>支給額　　　　　{Y(slip.total)}</b>");
+            sb.AppendLine();
+            sb.AppendLine($"現在の所持金: <b>{Y(Wallet.Balance)}</b>");
+            sb.AppendLine();
+            sb.Append("総務部 給与担当");
+            Session.Mail.Add(new MailMessage
+            {
+                MailId = "PAYSLIP-" + slip.day,
+                From = "総務部 給与担当",
+                To = $"夜間IT運用担当 {OperatorName} 様",
+                Subject = $"【給与明細】DAY {slip.day} 夜勤手当",
+                DateLabel = (string.IsNullOrEmpty(day.clockInDateLabel) ? day.dateLabel : day.clockInDateLabel) + " 18:00",
+                Body = sb.ToString(),
+                Day = day.dayNumber
+            }, false);
+        }
+
         void StartNewGame()
         {
             CurrentDay = 1;
+            Wallet.ResetAll();
             Account = OperatorAccount.NewGame(OperatorName);
             Account.Save();
+            ShowClockIn();
+        }
+
+        /// <summary>デバッグモード: 任意の日から開始（アカウント・所持金はそのまま）</summary>
+        void StartFromDay(int day)
+        {
+            if (Database.FindDay(day) == null) return;
+            CurrentDay = day;
+            Account = OperatorAccount.Load();
+            try { OperatorName = PlayerPrefs.GetString(NameKey, OperatorName); } catch { }
+            if (string.IsNullOrEmpty(Account.UserId) || Account.UserId == DefaultOperatorName) Account.UserId = OperatorName;
             ShowClockIn();
         }
 

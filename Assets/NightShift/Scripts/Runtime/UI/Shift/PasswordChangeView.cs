@@ -69,6 +69,7 @@ namespace NightShift.UI.Shift
                 }
                 account.Apply(next.text, note.Value, d.S.Day.dayNumber);
                 d.S.MarkPasswordChanged();
+                d.RefreshStickyNote();
                 d.S.Logs.Add(d.S.Time.CurrentMinute, "NIGHT-OPS", "AUTH-SRV01", account.UserId, "ACCOUNT", "CHANGED", "ログインパスワードを変更");
                 AudioFx.Notify();
                 w.Close();

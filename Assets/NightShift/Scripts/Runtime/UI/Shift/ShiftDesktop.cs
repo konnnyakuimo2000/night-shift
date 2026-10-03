@@ -39,6 +39,10 @@ namespace NightShift.UI.Shift
             logo.rectTransform.Stretch(0, 0, 30, 50);
             logo.fontStyle = FontStyle.Bold;
 
+            // モニターに貼った付箋（ウィンドウの下になる）
+            d._noteLayer = UIFactory.Rect("NoteLayer", root.transform).Stretch(0, 0, 0, Taskbar.Height);
+            d.RefreshStickyNote();
+
             d.Area = UIFactory.Rect("WindowArea", root.transform).Stretch(0, 0, 0, Taskbar.Height);
             d.Windows = WindowManager.Create(d.Area);
             d._taskbar = Taskbar.Build(root.transform, d);
@@ -64,6 +68,16 @@ namespace NightShift.UI.Shift
             }
             if (_overlay != null) Destroy(_overlay.gameObject);
             S.Time.Paused = false;
+        }
+
+        RectTransform _noteLayer;
+
+        /// <summary>付箋を貼り直す（パスワード変更後など）</summary>
+        public void RefreshStickyNote()
+        {
+            if (_noteLayer == null) return;
+            foreach (Transform t in _noteLayer) Destroy(t.gameObject);
+            StickyNote.Create(_noteLayer, Game.Account, 24, 24, Game.Account.Changed ? -4 : 3);
         }
 
         // ---------------- Flow ----------------
@@ -148,9 +162,10 @@ namespace NightShift.UI.Shift
         public void HandleShortcuts(List<Shortcut> keys)
         {
             if (ShortcutInput.Capturing) return; // キー設定の入力待ち中
-            if (keys.Contains(Shortcut.ToggleDebug)) DebugPanelView.Open(this);
+            bool debug = Core.GameSettings.Current.debugMode;
+            if (debug && keys.Contains(Shortcut.ToggleDebug)) DebugPanelView.Open(this);
             if (keys.Contains(Shortcut.OpenMail) && _pause == null) MailboxView.Open(this);
-            if (keys.Contains(Shortcut.ToggleOverlay)) ToggleOverlay();
+            if (debug && keys.Contains(Shortcut.ToggleOverlay)) ToggleOverlay();
 
             if (_pause != null)
             {

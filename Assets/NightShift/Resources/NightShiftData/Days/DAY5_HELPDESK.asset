@@ -32,9 +32,9 @@ MonoBehaviour:
     <color=#B00000><b>\u62D2\u5426</b></color>\u3002\uFF08\u793E\u54E1\u756A\u53F7\u30FB\u6C0F\u540D\u3067\u691C\u7D22\u3057\u3066\u78BA\u8A8D\uFF09"
   - "<b>\u305D\u306E\u793E\u54E1\u306E\u767B\u9332\u7AEF\u672B\u3067\u306F\u306A\u3044\u7AEF\u672B</b>\u304B\u3089\u306E\u63A5\u7D9A\u306F\u3001\u793E\u54E1\u672C\u4EBA\u3067\u3082
     <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
-  - "\u63A5\u7D9A\u306B\u5FC5\u8981\u306A\u6A29\u9650\u3092 <color=#8A4B00><b>\u300C\u793E\u5185\u30B5\u30FC\u30D0\u30FC\u69CB\u6210\u8CC7\u6599\u300D</b></color>
-    \u3067\u8ABF\u3079\u3001\u793E\u54E1\u60C5\u5831\u306E\u6A29\u9650\u6B04\u3067
-    \xD7 \u306A\u3089 <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  - "\u63A5\u7D9A\u8981\u6C42\u306E <color=#8A4B00><b>\u300C\u5FC5\u8981\u306A\u6A29\u9650\u300D</b></color>
+    \u304C\u3001\u793E\u54E1\u60C5\u5831\u306E\u6A29\u9650\u6B04\u3067 \xD7 \u306A\u3089
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
   newRuleStartIndex: -1
   changedRuleIndices: 
   briefingFooter: "\u30EA\u30E2\u30FC\u30C8\u30B5\u30DD\u30FC\u30C8\u306E\u624B\u9806\u306F
@@ -50,7 +50,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e30797a0b356fe04781f74d482a75fdb, type: 2}
   - {fileID: 11400000, guid: 34eb92b0cbd11d845a492939f024766f, type: 2}
   - {fileID: 11400000, guid: dd6003384282f0d4780c009a7d429b4a, type: 2}
-  - {fileID: 11400000, guid: 751e3afb22ab9c74c9c4360469e9af14, type: 2}
+  - {fileID: 11400000, guid: 6f013c87728237049951bf1997fb1f83, type: 2}
   randomSlots:
   - label: routine-1
     window: {x: 25, y: 30}
@@ -88,6 +88,8 @@ MonoBehaviour:
   - DEVICE_CHECK
   - EMPLOYEE_DETAIL
   - EMPLOYEE_PERMISSIONS
+  - PERMISSION_HINT
   - SERVER_GUIDE
+  - ADMIN_PERMISSIONS
   - HELPDESK
   - REMOTE_SUPPORT

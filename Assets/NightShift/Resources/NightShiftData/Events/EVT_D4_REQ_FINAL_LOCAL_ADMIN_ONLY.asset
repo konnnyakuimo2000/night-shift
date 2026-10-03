@@ -41,7 +41,7 @@ MonoBehaviour:
   deviceNamePattern: 
   destinationMode: 0
   destination: {fileID: 11400000, guid: eccb02d823086c94ba187b0ed4bcf88e, type: 2}
-  accessType: REMOTE CONSOLE
+  accessType: "\u30EA\u30E2\u30FC\u30C8\u7BA1\u7406"
   isMalicious: 0
   expectedAction: 0
   timeoutMinutes: 30

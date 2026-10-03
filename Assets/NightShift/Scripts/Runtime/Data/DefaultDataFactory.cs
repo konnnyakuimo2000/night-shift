@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 12;
+        public const int DataVersion = 13;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -462,7 +462,7 @@ namespace NightShift.Data
             Sec(manualSystem, Features.PermissionHint,
                 $"・接続要求の {Col("「必要な権限」", Check)} 欄に、その接続に必要な権限が表示されます。社員情報の権限欄で ○ か × かを確認してください。");
             Sec(manualSystem, Features.ServerGuide,
-                $"・接続に必要な権限は、{Col("「社内サーバー構成資料」", Check)} の早見表で、接続先と利用システムから調べてください。");
+                $"・サーバーごとの利用システムと必要な権限は、{Col("「社内サーバー構成資料」", Check)} に一覧があります（参考資料）。");
             Sec(manualSystem, Features.HelpDesk,
                 B("■ ITサポート受付管理"),
                 $"・{B("相談")} … 社員からの質問です。回答を選んで [回答を送信(S)] します。",
@@ -497,7 +497,7 @@ namespace NightShift.Data
                 "社内のサーバーと、接続に必要な権限の早見表です。サーバーの管理操作（サービス停止・再起動など）は、まだ担当範囲ではありません。");
             Sec(manualServer, "",
                 B("■ 早見表: 接続先 → 利用システム → 必要な権限"),
-                "接続要求の「接続先」と「利用システム」を下の表で探し、右側の権限が社員情報で ○ か × かを確認します。",
+                "接続要求の「必要な権限」欄に表示される内容の一覧です（参考）。",
                 "{ACCESS_TABLE}",
                 $"・{B("「管理者」とつく権限は1種類ではありません。")} 例: {B("ローカル管理者")} は自分のPCの管理権限で、{Col("サーバー管理者", Check)} とは別です。");
             Sec(manualServer, Features.NetworkMap,
@@ -550,7 +550,6 @@ namespace NightShift.Data
             string rOwnDevice = $"{B("社員")}が{B("自分の登録端末")}から接続する場合は {Col("許可", Allow)} する。";
             string rDevice = $"{B("その社員の登録端末ではない端末")}からの接続は、社員本人でも {Col("拒否", Deny)}。";
             string rPermission = $"接続要求の {Col("「必要な権限」", Check)} が、社員情報の権限欄で × なら {Col("拒否", Deny)}。";
-            string rPermissionGuide = $"接続に必要な権限を {Col("「社内サーバー構成資料」", Check)} で調べ、社員情報の権限欄で × なら {Col("拒否", Deny)}。";
             string rExternalAdmin = $"{B("社外")}から{B("管理系システム")}（ADMIN-SRV01 等）への接続は {Col("禁止", Deny)}。";
             string rVpn = $"社外からの接続 (VPN) は、{Col("VPN利用を許可された社員の登録端末", Check)} に限る。";
 
@@ -651,19 +650,16 @@ namespace NightShift.Data
             Slot(day3, "routine-3", 160, 175, routine);
 
             // DAY4: サーバー
-            var day4 = Day(4, "SERVERS", "1998/05/21 (木)", "1998/05/20 (水)", 1.6f, new[] { rOwnDevice, rUnknown, rDevice, rPermissionGuide }, -1,
+            var day4 = Day(4, "SERVERS", "1998/05/21 (木)", "1998/05/20 (水)", 1.6f, new[] { rOwnDevice, rUnknown, rDevice, rPermission }, -1,
                 Features.ServerGuide, Features.AdminPermissions);
-            // 本日から「必要な権限」欄は表示しない（資料で調べる）。以降の日にも引き継がない
-            day4.unlockedFeatures.Remove(Features.PermissionHint);
-            allFeatures.Remove(Features.PermissionHint);
-            day4.changedRuleIndices.Add(3);
             day4.briefingBody =
-                $"本日から {Col("「社内サーバー構成資料」", Allow)} をお渡しします。\n" +
-                $"接続要求の {B("「必要な権限」欄は本日から表示されません")}。資料の早見表で調べてください。\n\n" +
-                Tasks($"・{B("接続要求の審査")} … 接続先と利用システムから、資料で{B("必要な権限")}を調べます。",
-                      $"　調べた権限が、社員情報の {B("権限欄で ○")} なら許可、× なら拒否です。");
+                $"本日から社員情報に {Col("【管理者権限】", Allow)} の欄が表示されます。\n" +
+                $"管理用のサーバー（ADMIN-SRV01）への接続には、{B("「サーバー管理者」")} の権限が必要です。\n\n" +
+                Tasks($"・{B("接続要求の審査")} … 昨日と同じく、要求の {B("「必要な権限」")} と同じ名前の権限を社員情報で探します。",
+                      $"　{B("「サーバー管理者」")} は、社員情報の {B("【管理者権限】")} の欄にあります。");
             day4.briefingFooter =
-                $"{B("「管理者」とつく権限は1種類ではありません。")} 必要な権限の名前をよく見比べてください。\n" + Footer;
+                $"{B("「管理者」とつく権限は1種類ではありません。")} {B("ローカル管理者")} は自分のPCの管理権限で、サーバー管理者とは別です。\n" +
+                $"サーバーの一覧は、添付の {Col("「社内サーバー構成資料」", Check)} で確認できます（参考資料）。\n" + Footer;
             day4.policy = Policy(true, true, false);
             day4.fixedEvents.AddRange(new[] { firstNormal, d4MailOk, d4AccountingOk, d4NoHR, d4DevOk, d4Final });
             Slot(day4, "routine-1", 45, 55, routine);
@@ -671,7 +667,7 @@ namespace NightShift.Data
             Slot(day4, "routine-3", 165, 180, routine);
 
             // DAY5: ITサポート
-            var day5 = Day(5, "HELP DESK", "1998/05/22 (金)", "1998/05/21 (木)", 1.75f, new[] { rOwnDevice, rUnknown, rDevice, rPermissionGuide }, -1,
+            var day5 = Day(5, "HELP DESK", "1998/05/22 (金)", "1998/05/21 (木)", 1.75f, new[] { rOwnDevice, rUnknown, rDevice, rPermission }, -1,
                 Features.HelpDesk, Features.RemoteSupport);
             day5.briefingBody =
                 $"本日から {Col("ITサポート受付管理", Allow)}（社員からの相談・リモートサポート）も担当していただきます。\n\n" +
@@ -688,7 +684,7 @@ namespace NightShift.Data
 
             // DAY6: 社外
             var day6 = Day(6, "OUTSIDE THE WALL", "1998/05/25 (月)", "1998/05/24 (日)", 2f,
-                new[] { rOwnDevice, rUnknown, rDevice, rPermissionGuide, rExternalAdmin, rVpn }, 4,
+                new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternalAdmin, rVpn }, 4,
                 Features.SystemLog, Features.NetworkMap, Features.SecurityInfo);
             day6.briefingBody =
                 $"本日から {Col("システムログ", Allow)}・{Col("ネットワークマップ", Allow)}・{Col("セキュリティ情報", Allow)} も利用できます。\n" +
@@ -707,7 +703,7 @@ namespace NightShift.Data
 
             // DAY7: 総仕上げ
             var day7 = Day(7, "LONG NIGHT", "1998/05/26 (火)", "1998/05/25 (月)", 2f,
-                new[] { rOwnDevice, rUnknown, rDevice, rPermissionGuide, rExternalAdmin, rVpn }, -1);
+                new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternalAdmin, rVpn }, -1);
             day7.briefingBody =
                 "研修期間の最終日です。これまでの業務をすべて担当していただきます。\n" +
                 $"本日はリモートサポート中に {B("別の業務が割り込むことがあります")}。いったん中断して対応し、あとで戻ってきてください。\n\n" +

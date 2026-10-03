@@ -22,15 +22,15 @@ MonoBehaviour:
   mapPosition: {x: 0.6, y: 0.58}
   manageableFromDay: 2
   accessTypes:
-  - accessType: DEV REPOSITORY
+  - accessType: "\u958B\u767A\u74B0\u5883"
     serviceId: DEV
     requiredPermission: DEV_ACCESS
     requiresVpnEnabled: 0
-  - accessType: HR SYSTEM
+  - accessType: "\u4EBA\u4E8B\u30B7\u30B9\u30C6\u30E0"
     serviceId: HR
     requiredPermission: HR_ACCESS
     requiresVpnEnabled: 0
-  - accessType: ACCOUNTING SYSTEM
+  - accessType: "\u7D4C\u7406\u30B7\u30B9\u30C6\u30E0"
     serviceId: ACCOUNTING
     requiredPermission: ACCOUNTING_ACCESS
     requiresVpnEnabled: 0
