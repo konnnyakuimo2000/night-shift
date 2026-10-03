@@ -69,6 +69,15 @@ namespace NightShift.Systems
             TasksChanged?.Invoke();
         }
 
+        /// <summary>このシフト中にパスワードを変更済みか（依頼が出る前に変更した場合も含む）</summary>
+        public bool PasswordChangedThisShift { get; private set; }
+
+        public void MarkPasswordChanged()
+        {
+            PasswordChangedThisShift = true;
+            CompleteTask(OperatorTask.PasswordChange);
+        }
+
         public bool HasOpenTask(string id)
         {
             foreach (var t in _tasks) if (t.TaskId == id && !t.Done) return true;

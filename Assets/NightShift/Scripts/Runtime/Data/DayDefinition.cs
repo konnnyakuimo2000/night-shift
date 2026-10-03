@@ -54,6 +54,8 @@ namespace NightShift.Data
         public List<string> rules = new List<string>();
         [Tooltip("この番号以降のルールを「NEW」として強調（0始まり）。-1 で強調なし")]
         public int newRuleStartIndex = -1;
+        [Tooltip("前日から内容が変わったルールの番号（0始まり）。「変更」として強調")]
+        public List<int> changedRuleIndices = new List<int>();
         [TextArea] public string briefingFooter;
         [Tooltip("業務連絡に添付する文書（マニュアル等）")]
         public List<DocumentDefinition> attachments = new List<DocumentDefinition>();

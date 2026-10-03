@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 7;
+        public const int DataVersion = 8;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -559,7 +559,7 @@ namespace NightShift.Data
             day1.briefingBody =
                 "夜間IT担当として、今夜からよろしくお願いします。\n" +
                 $"業務時間は {B("00:00〜04:00")} です。{B("時間は止まりません")}（Esc で一時停止できます）。\n" +
-                "最初の数日は、業務に慣れてもらうため、仕事を1件ずつ回します。\n\n" +
+                $"研修期間（6日間）は、業務に慣れてもらうため、{B("仕事を1件ずつ")}回します。片付けると次の仕事が届きます。\n\n" +
                 Tasks($"・{B("接続要求の審査")}（ネットワーク接続監視）", "　接続要求の利用者が、社員として登録されているかを確認してください。");
             day1.briefingFooter =
                 $"利用者は {Col("「社員情報の検索・参照」", Check)} で、社員番号や氏名から検索できます。\n" +
@@ -576,14 +576,17 @@ namespace NightShift.Data
                 Features.DeviceCheck, Features.EmployeeDetail);
             day2.briefingBody =
                 "昨夜はお疲れさまでした。\n" +
-                $"本日から {Col("社員情報の詳細表示", Allow)}（顔写真・登録端末など）が使えます。\n" +
-                $"また、{B("ログインパスワードがまだ初期設定のまま")}です。業務中に変更をお願いします。\n\n" +
+                $"本日から {Col("端末の確認", Allow)} と {Col("社員情報の詳細表示", Allow)}（顔写真など）が使えます。\n" +
+                $"接続要求の {B("端末")} と、社員情報の {B("登録端末")} が表示されるようになります。\n" +
+                $"また、{B("ログインパスワードがまだ初期設定のまま")}です。本日中に変更をお願いします。\n\n" +
                 Tasks($"・{B("接続要求の審査")} … 利用者だけでなく、{B("接続してきた端末")}も確認してください。",
                       $"・{B("パスワードの変更")} … [システム設定] → [パスワードの変更]");
             day2.briefingFooter =
-                $"社員の登録端末は、社員情報の {Col("詳細表示", Check)} で確認できます。\n" +
+                $"社員の登録端末は、{Col("「社員情報の検索・参照」", Check)} の検索結果や詳細表示で確認できます。\n" +
+                $"ルール1は、本日から {B("「自分の登録端末から」")} の条件が加わりました。\n" +
                 $"{B("社員本人でも、他人の端末や私物の端末からの接続は認められません。")}\n" + Footer;
             day2.policy = Policy(true, false, false);
+            day2.changedRuleIndices.Add(0); // ルール1に「自分の登録端末から」が加わった
             day2.passwordChangeAtMinute = 6f;
             day2.fixedEvents.AddRange(new[] { firstNormal, d2Unregistered, d2OtherDevice, d2Former, d2Final });
             Slot(day2, "routine-1", 35, 45, routine);
@@ -596,7 +599,8 @@ namespace NightShift.Data
             day3.briefingBody =
                 $"本日から社員情報で {Col("権限情報", Allow)} を閲覧できます。\n" +
                 $"{B("社員本人で、本人の端末でも、権限がなければ拒否")}です。\n\n" +
-                Tasks($"・{B("接続要求の審査")} … 利用者・端末に加えて、{B("接続先に必要な権限")}を確認してください。");
+                Tasks($"・{B("接続要求の審査")} … 利用者・端末に加えて、{B("接続先に必要な権限")}を確認してください。",
+                      $"　要求の「接続種別」に必要な権限を資料で調べ、社員情報の {B("権限欄（○／×）")} と照らし合わせます。");
             day3.briefingFooter =
                 $"接続種別ごとに必要な権限は、添付の {Col("「社内サーバー構成資料」", Check)} で確認できます。\n" +
                 $"{B("怪しく見えても、ルールを満たしていれば許可です。")}\n" + Footer;
@@ -646,11 +650,11 @@ namespace NightShift.Data
                 new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternalAdmin, rVpn }, -1);
             day6.briefingBody =
                 "研修期間の最終日です。これまでの業務をすべて担当していただきます。\n" +
-                $"{B("リモートサポート中にも、他の業務は待ってくれません。")}\n\n" +
+                $"本日はリモートサポート中に {B("別の業務が割り込むことがあります")}。いったん中断して対応し、あとで戻ってきてください。\n\n" +
                 Tasks($"・{B("接続要求の審査")}", $"・{B("IT問い合わせ")}への対応", $"・{B("システムログ・ネットワークの監視")}");
             day6.briefingFooter =
                 $"同じ接続元から何度もアクセスがある場合は、{Col("システムログ", Check)} で前後の記録を確認してください。\n" +
-                "来週からはサーバー運用管理も担当範囲に加わる予定です。\n" + Footer;
+                "明日からはサーバー運用管理も担当範囲に加わる予定です。\n" + Footer;
             day6.policy = Policy(true, true, true);
             day6.fixedEvents.AddRange(new[] { firstNormal, d6Suspicious, d6Unregistered, d6Final });
             day6.helpDesk.Add(hdR2);

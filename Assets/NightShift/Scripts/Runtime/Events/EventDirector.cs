@@ -129,7 +129,7 @@ namespace NightShift.Events
         /// <summary>運用担当者へのパスワード変更依頼</summary>
         public void SpawnPasswordTask()
         {
-            if (_s.HasOpenTask(OperatorTask.PasswordChange)) return;
+            if (_s.HasOpenTask(OperatorTask.PasswordChange) || _s.PasswordChangedThisShift) return;
             _s.AddTask(OperatorTask.PasswordChange, "ログインパスワードの変更");
             _s.Logs.Add(_s.Time.CurrentMinute, "AUTH-SRV01", "-", _s.OperatorName, "ACCOUNT", "NOTICE", "初期パスワードの変更依頼");
             _s.Notifications.Notify(NotificationType.Info, "情報システム部からの依頼",

@@ -226,7 +226,9 @@ namespace NightShift.UI.Shift
             for (int i = 0; i < day.rules.Count; i++)
             {
                 bool isNew = day.newRuleStartIndex >= 0 && i >= day.newRuleStartIndex;
-                sb.AppendLine($"  <b>{i + 1}.</b> {day.rules[i]}{(isNew ? "  <color=#D04000><b>【NEW】</b></color>" : "")}");
+                bool changed = !isNew && day.changedRuleIndices.Contains(i);
+                string mark = isNew ? "  <color=#D04000><b>【NEW】</b></color>" : changed ? "  <color=#D04000><b>【変更】</b></color>" : "";
+                sb.AppendLine($"  <b>{i + 1}.</b> {day.rules[i]}{mark}");
             }
             sb.AppendLine();
             sb.Append(day.briefingFooter);
