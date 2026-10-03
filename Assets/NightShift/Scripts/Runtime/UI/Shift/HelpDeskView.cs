@@ -32,6 +32,7 @@ namespace NightShift.UI.Shift
 
         public static void Open(ShiftDesktop d, Ticket focus)
         {
+            if (!d.Require(Data.Features.HelpDesk)) return;
             var w = d.OpenWindow(new WindowSpec
             {
                 Id = Id, Title = "ITサポート受付管理", Icon = "helpdesk", Width = 820, Height = 560,
@@ -193,7 +194,7 @@ namespace NightShift.UI.Shift
                 var session = _d.S.HelpDesk.ActiveSession;
                 bool connectedHere = session != null && session.Ticket == t && session.Connected;
                 _remoteInfo.text = $"接続先端末: {t.Employee.deviceId}\nIPアドレス: {_d.S.Employees.GetIp(t.Employee)}\n状態: {(connectedHere ? "リモート接続中" : t.IsOpen ? "未接続" : t.StateLabel)}\n報告回数: {t.Reports} / {t.Definition.maxReports}";
-                _connect.Interactable = t.IsOpen;
+                _connect.Interactable = t.IsOpen && _d.Unlocked(Data.Features.RemoteSupport);
                 _connect.SetText(connectedHere ? "リモート画面を表示(R)" : "リモート接続(R)");
                 _report.Interactable = t.IsOpen && t.State == TicketState.InProgress;
             }

@@ -20,7 +20,7 @@ namespace NightShift.UI.Shift
         {
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = "DEBUG", Icon = "debug", Width = 470, Height = 520, Maximizable = false, StatusCells = 1,
+                Id = Id, Title = "DEBUG", Icon = "debug", Width = 470, Height = 560, Maximizable = false, StatusCells = 1,
                 Position = new Vector2(780, 40)
             }, out bool created);
             if (!created) return;
@@ -73,10 +73,18 @@ namespace NightShift.UI.Shift
                 s.Director.Threats.Schedule(s.Director.Scheduler, def, s.Time.CurrentMinute);
             });
             UIFactory.Button(eg, "Shift終了", 0, 60, 140, 24, () => { if (s.Phase == ShiftPhase.Running) s.EndShift(); else s.Complete(); });
-            UIFactory.Button(eg, "DAY1 Restart", 146, 60, 140, 24, () => _d.Game.RestartDay());
+            UIFactory.Button(eg, $"DAY{s.Day.dayNumber} Restart", 146, 60, 140, 24, () => _d.Game.RestartDay());
             UIFactory.Button(eg, "Overlay (F11)", 292, 60, 140, 24, () => _d.ToggleOverlay());
 
-            var ig = UIFactory.Group(c, "保留中の要求（開発用: 期待動作）", 0, 232, 450, 210);
+            var dg = UIFactory.Group(c, "DAY移動（最初から開始）", 0, 232, 450, 54);
+            for (int i = 1; i <= 3; i++)
+            {
+                int day = i;
+                var b = UIFactory.Button(dg, $"DAY{day}", (i - 1) * 100, 0, 94, 22, () => _d.Game.StartDay(day));
+                b.Interactable = _d.Game.Database.FindDay(day) != null;
+            }
+
+            var ig = UIFactory.Group(c, "保留中の要求（開発用: 期待動作）", 0, 290, 450, 190);
             _info = UIFactory.Label(ig, "", 11, TextAnchor.UpperLeft);
             _info.rectTransform.Stretch();
             _info.font = RetroTheme.MonoFont;

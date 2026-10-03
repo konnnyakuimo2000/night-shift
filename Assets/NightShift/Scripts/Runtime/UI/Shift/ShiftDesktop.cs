@@ -224,6 +224,18 @@ namespace NightShift.UI.Shift
             S.Time.Paused = false;
         }
 
+        // ---------------- Features ----------------
+        public bool Unlocked(string feature) => S.Day.IsUnlocked(feature);
+
+        /// <summary>未解放のシステムは開かせない（メニュー・ボタン・通知・キー操作すべての共通ガード）</summary>
+        public bool Require(string feature)
+        {
+            if (Unlocked(feature)) return true;
+            AudioFx.Error();
+            MessageBox.Show(this, Data.Features.Label(feature), "このシステムはまだ利用できません。\n（担当範囲が広がると利用できるようになります）", "lock");
+            return false;
+        }
+
         // ---------------- Helpers ----------------
         public RetroWindow OpenWindow(WindowSpec spec, out bool created) => Windows.Open(spec, out created);
 
@@ -241,7 +253,7 @@ namespace NightShift.UI.Shift
             var v = view ?? new List<MenuItem>();
             if (v.Count > 0) v.Add(MenuItem.Sep());
             v.Add(new MenuItem("メインメニュー(M)", () => MainMenuView.Open(d)));
-            v.Add(new MenuItem("ネットワークマップ(N)", () => NetworkMonitorView.Open(d)));
+            v.Add(new MenuItem("ネットワークマップ(N)", () => NetworkMonitorView.Open(d), null, d.Unlocked(Data.Features.NetworkMap)));
             var help = new List<MenuItem>
             {
                 new MenuItem("業務連絡を表示(B)", () => BriefingView.Open(d, null)),
@@ -342,7 +354,9 @@ namespace NightShift.UI.Shift
         {
             var s = _d.S;
             _clock.text = $"{_d.Game.Database.GetDay(s.Day.dayNumber).dateLabel.Split(' ')[0]}  {s.Time.Now}";
-            _counts.text = $"接続要求 {s.Requests.Pending.Count}   受付 {s.HelpDesk.OpenCount}";
+            _counts.text = _d.Unlocked(Data.Features.HelpDesk)
+                ? $"接続要求 {s.Requests.Pending.Count}   受付 {s.HelpDesk.OpenCount}"
+                : $"接続要求 {s.Requests.Pending.Count}";
             if (_flash > 0)
             {
                 _flash -= Time.unscaledDeltaTime;

@@ -43,6 +43,7 @@ namespace NightShift.Systems
             foreach (var p in c.excludedPermissions) if (p != null && e.HasPermission(p.permissionId)) return false;
             foreach (var t in c.requiredNormalTargets) if (!e.UsesNormally(t)) return false;
             if (c.requireVpnEnabled && !e.vpnEnabled) return false;
+            if (c.requireVpnDisabled && e.vpnEnabled) return false;
             if (c.requireLaptop && string.IsNullOrEmpty(e.laptopDeviceId)) return false;
             return true;
         }

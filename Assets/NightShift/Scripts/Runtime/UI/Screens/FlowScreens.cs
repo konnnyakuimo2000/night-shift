@@ -38,7 +38,7 @@ namespace NightShift.UI.Screens
     // ============================================================
     public static class TitleScreen
     {
-        public static GameObject Build(RectTransform parent, Action onClockIn, Action onQuit)
+        public static GameObject Build(RectTransform parent, Action onClockIn, Action onContinue, int reachedDay, Action onQuit)
         {
             var root = UIFactory.Solid(parent, new Color(0.02f, 0.03f, 0.08f), "TitleScreen");
             root.rectTransform.Stretch();
@@ -63,20 +63,24 @@ namespace NightShift.UI.Screens
             var corp = UIFactory.Label(root.transform, "NEXUS CORPORATION  情報システム部  夜間IT運用担当", 13, TextAnchor.MiddleCenter, new Color(0.45f, 0.5f, 0.6f));
             corp.rectTransform.StretchH(330, 20);
 
-            var clockIn = UIFactory.Button(root.transform, "CLOCK IN", onClockIn, "clock");
-            clockIn.Rect.anchorMin = clockIn.Rect.anchorMax = new Vector2(0.5f, 0.5f);
-            clockIn.Rect.pivot = new Vector2(0.5f, 0.5f);
-            clockIn.Rect.sizeDelta = new Vector2(180, 32);
-            clockIn.Rect.anchoredPosition = new Vector2(0, -90);
+            float by = -90;
+            RetroButton Centered(string label, Action a, string icon, float h)
+            {
+                var b = UIFactory.Button(root.transform, label, a, icon);
+                b.Rect.anchorMin = b.Rect.anchorMax = new Vector2(0.5f, 0.5f);
+                b.Rect.pivot = new Vector2(0.5f, 0.5f);
+                b.Rect.sizeDelta = new Vector2(200, h);
+                b.Rect.anchoredPosition = new Vector2(0, by);
+                by -= h + 8;
+                return b;
+            }
+            var clockIn = Centered(onContinue != null ? "CLOCK IN（DAY 1 から）" : "CLOCK IN", onClockIn, "clock", 32);
             clockIn.Label.fontStyle = FontStyle.Bold;
+            if (onContinue != null)
+                Centered($"続きから（DAY {reachedDay}）", onContinue, "clock", 32).Label.fontStyle = FontStyle.Bold;
+            Centered("終了(X)", onQuit, "exit", 28);
 
-            var quit = UIFactory.Button(root.transform, "終了(X)", onQuit, "exit");
-            quit.Rect.anchorMin = quit.Rect.anchorMax = new Vector2(0.5f, 0.5f);
-            quit.Rect.pivot = new Vector2(0.5f, 0.5f);
-            quit.Rect.sizeDelta = new Vector2(180, 28);
-            quit.Rect.anchoredPosition = new Vector2(0, -130);
-
-            var foot = UIFactory.Label(root.transform, "DAY 1 Vertical Slice  —  マウス＋キーボードでプレイ / Esc: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
+            var foot = UIFactory.Label(root.transform, "DAY 1-3 Tutorial  —  マウス＋キーボードでプレイ / Esc: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
             foot.rectTransform.anchorMin = new Vector2(0, 0); foot.rectTransform.anchorMax = new Vector2(1, 0);
             foot.rectTransform.pivot = new Vector2(0.5f, 0);
             foot.rectTransform.offsetMin = new Vector2(0, 14); foot.rectTransform.offsetMax = new Vector2(0, 32);
@@ -118,7 +122,12 @@ namespace NightShift.UI.Screens
             lcdBg.rectTransform.Place(30, 36, 300, 70);
             var lcd = UIFactory.Label(lcdBg.transform, "23:58", 44, TextAnchor.MiddleCenter, new Color(0.55f, 1f, 0.55f), true);
             lcd.rectTransform.Stretch();
-            UIFactory.Label(machine.transform, day != null ? "1998/05/19 (火)" : "", 30, 110, 300, 18, 12, TextAnchor.MiddleCenter);
+            string clockDate = day != null && !string.IsNullOrEmpty(day.clockInDateLabel) ? day.clockInDateLabel : "1998/05/19 (火)";
+            UIFactory.Label(machine.transform, clockDate, 30, 110, 300, 18, 12, TextAnchor.MiddleCenter);
+            // 打刻印字用の "M/D"
+            string stampDate = "5/19";
+            var parts = clockDate.Split(' ')[0].Split('/');
+            if (parts.Length == 3 && int.TryParse(parts[1], out int mm) && int.TryParse(parts[2], out int dd)) stampDate = $"{mm}/{dd}";
 
             var slot = UIFactory.Solid(machine.transform, Color.black, "Slot");
             slot.rectTransform.Place(80, 138, 200, 6);
@@ -157,7 +166,7 @@ namespace NightShift.UI.Screens
                 btn.Interactable = false;
                 nameField.interactable = false;
                 AudioFx.Stamp();
-                stamp.text = $"5/19  23:58  出 勤\n{name}";
+                stamp.text = $"{stampDate}  23:58  出 勤\n{name}";
                 msg.color = RetroTheme.Shadow;
                 msg.text = $"ログインID: {name}";
                 Delay.Run(root.gameObject, 1.3f, () => onDone(name));
@@ -349,7 +358,7 @@ namespace NightShift.UI.Screens
                 if (row >= 6) { row = 0; col++; }
             }
 
-            UIFactory.Button(c, "次へ(N)", 520, 476, 110, 26, onNext);
+            UIFactory.Button(c, "翌日へ(N)", 520, 476, 110, 26, onNext);
             UIFactory.Button(c, $"DAY{day.dayNumber}をやり直す(R)", 636, 476, 114, 26, onRestart);
             var k1 = root.gameObject.AddComponent<KeyAction>(); k1.Key = KeyCode.N; k1.Action = onNext;
             var k2 = root.gameObject.AddComponent<KeyAction>(); k2.Key = KeyCode.R; k2.Action = onRestart;
@@ -372,7 +381,7 @@ namespace NightShift.UI.Screens
     // ============================================================
     public static class ComingSoonScreen
     {
-        public static GameObject Build(RectTransform parent, int nextDay, Action onRestart, Action onTitle)
+        public static GameObject Build(RectTransform parent, int finishedDay, int nextDay, Action onRestart, Action onTitle)
         {
             var root = UIFactory.Solid(parent, Color.black, "ComingSoon");
             root.rectTransform.Stretch();
@@ -383,7 +392,7 @@ namespace NightShift.UI.Screens
             var t3 = UIFactory.Label(root.transform, "・サーバー運用管理  解禁予定\n・より手口の巧妙な、人間による攻撃", 13, TextAnchor.UpperCenter, new Color(0.5f, 0.55f, 0.6f));
             t3.rectTransform.StretchH(372, 60);
 
-            var b1 = UIFactory.Button(root.transform, "DAY1 をもう一度(R)", onRestart, "clock");
+            var b1 = UIFactory.Button(root.transform, $"DAY{finishedDay} をもう一度(R)", onRestart, "clock");
             b1.Rect.anchorMin = b1.Rect.anchorMax = new Vector2(0.5f, 0.5f);
             b1.Rect.pivot = new Vector2(0.5f, 0.5f);
             b1.Rect.sizeDelta = new Vector2(180, 28);

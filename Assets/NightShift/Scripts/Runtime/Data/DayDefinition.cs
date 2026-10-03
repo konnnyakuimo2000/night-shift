@@ -18,6 +18,8 @@ namespace NightShift.Data
     {
         [Tooltip("外部から管理系システムへの接続は禁止")]
         public bool blockExternalToAdministrative = true;
+        [Tooltip("本人の登録端末ではない端末からの接続は、接続先に関わらず禁止（DAY1の簡易ルール）")]
+        public bool blockUnregisteredDevice;
         [Tooltip("未登録端末から内部重要システムへの接続は禁止")]
         public bool blockUnregisteredToCritical = true;
         [Tooltip("不明な利用者は禁止")]
@@ -34,6 +36,8 @@ namespace NightShift.Data
         public int dayNumber = 1;
         public string title = "FIRST SHIFT";
         public string dateLabel = "1998/05/20 (水)";
+        [Tooltip("タイムカード打刻時（前日夜）の日付")]
+        public string clockInDateLabel = "1998/05/19 (火)";
 
         [Header("時間")]
         public float startMinute = 0f;
@@ -48,6 +52,8 @@ namespace NightShift.Data
         public string briefingFrom = "情報システム部 課長 森田";
         [TextArea(4, 12)] public string briefingBody;
         public List<string> rules = new List<string>();
+        [Tooltip("この番号以降のルールを「NEW」として強調（0始まり）。-1 で強調なし")]
+        public int newRuleStartIndex = -1;
         [TextArea] public string briefingFooter;
         [Tooltip("業務連絡に添付する文書（マニュアル等）")]
         public List<DocumentDefinition> attachments = new List<DocumentDefinition>();
@@ -74,8 +80,8 @@ namespace NightShift.Data
         [Header("ルール")]
         public PolicyRuleSet policy = new PolicyRuleSet();
 
-        [Header("機能解禁 (DAY2以降の拡張点)")]
-        [Tooltip("例: SERVER_MANAGEMENT")]
+        [Header("解放されている業務システム")]
+        [Tooltip("Features の ID。ここに無いシステムはメニューに表示されても利用できない")]
         public List<string> unlockedFeatures = new List<string>();
 
         public bool IsUnlocked(string feature) => unlockedFeatures.Contains(feature);

@@ -35,6 +35,7 @@ namespace NightShift.UI.Shift
 
         public static void Open(ShiftDesktop d)
         {
+            if (!d.Require(Data.Features.NetworkMap)) return;
             var w = d.OpenWindow(new WindowSpec
             {
                 Id = Id, Title = "ネットワークマップ", Icon = "globe", Width = 700, Height = 500, Maximizable = false,

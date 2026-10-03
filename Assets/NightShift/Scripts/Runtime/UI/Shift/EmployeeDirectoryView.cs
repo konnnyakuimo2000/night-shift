@@ -20,6 +20,7 @@ namespace NightShift.UI.Shift
 
         public static EmployeeDirectoryView Open(ShiftDesktop d)
         {
+            if (!d.Require(Data.Features.EmployeeDirectory)) return null;
             var w = d.OpenWindow(new WindowSpec
             {
                 Id = Id, Title = "社員情報の検索・参照", Icon = "people", Width = 740, Height = 470,

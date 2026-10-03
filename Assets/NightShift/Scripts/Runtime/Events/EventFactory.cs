@@ -103,6 +103,28 @@ namespace NightShift.Events
                     e.SourceIp = ExternalIp();
                     e.Zone = SourceZone.External;
                     break;
+                case SourceType.OtherEmployeeDevice:
+                {
+                    if (e.Employee == null) return null;
+                    EmployeeData other = null;
+                    var all = _s.Employees.All;
+                    for (int tries = 0; tries < 20 && other == null; tries++)
+                    {
+                        var cand = all[Rng.Next(all.Count)];
+                        if (cand != e.Employee && !string.IsNullOrEmpty(cand.deviceId)) other = cand;
+                    }
+                    if (other == null) return null;
+                    e.Device = other.deviceId;
+                    e.SourceIp = _s.Employees.GetIp(other);
+                    e.Zone = SourceZone.Internal;
+                    break;
+                }
+                case SourceType.RegisteredDeviceExternal:
+                    if (e.Employee == null) return null;
+                    e.Device = e.Employee.deviceId;
+                    e.SourceIp = HomeIp();
+                    e.Zone = SourceZone.External;
+                    break;
                 case SourceType.AttackerSource:
                 case SourceType.AttackerRelatedSource:
                     e.Device = ExpandPattern(string.IsNullOrEmpty(def.deviceNamePattern) ? "UNKNOWN" : def.deviceNamePattern);

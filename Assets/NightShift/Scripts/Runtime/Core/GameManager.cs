@@ -116,7 +116,8 @@ namespace NightShift.Core
         public void ShowTitle()
         {
             DisposeShift();
-            SetScreen(TitleScreen.Build(ScreenLayer, ShowClockIn, Quit), GameState.Title);
+            int reached = ReachedDay;
+            SetScreen(TitleScreen.Build(ScreenLayer, StartNewGame, reached > 1 ? ContinueGame : (System.Action)null, reached, Quit), GameState.Title);
         }
 
         public void ShowClockIn() => SetScreen(ClockInScreen.Build(ScreenLayer, Database.GetDay(CurrentDay), OperatorName, name =>
@@ -171,10 +172,72 @@ namespace NightShift.Core
             var day = Session.Day;
             ClearScreen();
             DisposeShift(keepSession: true);
-            SetScreen(EvaluationScreen.Build(ScreenLayer, day, result, ShowComingSoon, RestartDay), GameState.Evaluation);
+            SaveProgress(CurrentDay + 1);
+            SetScreen(EvaluationScreen.Build(ScreenLayer, day, result, GoToNextDay, RestartDay), GameState.Evaluation);
         }
 
-        void ShowComingSoon() => SetScreen(ComingSoonScreen.Build(ScreenLayer, CurrentDay + 1, RestartDay, ShowTitle), GameState.ComingSoon);
+        /// <summary>翌日へ。翌日の定義が無ければ COMING SOON。</summary>
+        void GoToNextDay()
+        {
+            int next = CurrentDay + 1;
+            if (Database.FindDay(next) != null)
+            {
+                CurrentDay = next;
+                ShowClockIn();
+            }
+            else ShowComingSoon();
+        }
+
+        void ShowComingSoon() => SetScreen(ComingSoonScreen.Build(ScreenLayer, CurrentDay, CurrentDay + 1, RestartDay, ShowTitle), GameState.ComingSoon);
+
+        // ---------------- Progress ----------------
+        const string ProgressKey = "NightShift.ReachedDay";
+        const string NameKey = "NightShift.OperatorName";
+
+        /// <summary>到達した日（続きから開始できる日）</summary>
+        public int ReachedDay
+        {
+            get
+            {
+                int d = 1;
+                try { d = PlayerPrefs.GetInt(ProgressKey, 1); } catch { }
+                if (Database.FindDay(d) == null) d = Mathf.Max(1, d - 1);
+                return Mathf.Max(1, d);
+            }
+        }
+
+        void SaveProgress(int day)
+        {
+            try
+            {
+                if (Database.FindDay(day) == null) return;
+                if (day > PlayerPrefs.GetInt(ProgressKey, 1)) PlayerPrefs.SetInt(ProgressKey, day);
+                PlayerPrefs.SetString(NameKey, OperatorName);
+                PlayerPrefs.Save();
+            }
+            catch { }
+        }
+
+        void StartNewGame()
+        {
+            CurrentDay = 1;
+            ShowClockIn();
+        }
+
+        void ContinueGame()
+        {
+            CurrentDay = ReachedDay;
+            try { OperatorName = PlayerPrefs.GetString(NameKey, OperatorName); } catch { }
+            ShowClockIn();
+        }
+
+        /// <summary>デバッグ用: 指定日を最初から開始</summary>
+        public void StartDay(int day)
+        {
+            if (Database.FindDay(day) == null) return;
+            CurrentDay = day;
+            RestartDay();
+        }
 
         public void RestartDay()
         {

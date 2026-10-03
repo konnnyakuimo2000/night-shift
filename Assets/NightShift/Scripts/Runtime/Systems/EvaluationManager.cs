@@ -123,7 +123,7 @@ namespace NightShift.Systems
 
             r.Categories.Add(new CategoryScore { Key = "SECURITY", Label = "SECURITY", Score = Clamp(security), Comment = SecurityComment() });
             r.Categories.Add(new CategoryScore { Key = "ACCURACY", Label = "ACCURACY", Score = Clamp(accuracy), Comment = $"{CorrectAllow + CorrectBlock} / {decided} 件の判断が適切" });
-            r.Categories.Add(new CategoryScore { Key = "HELPDESK", Label = "HELP DESK", Score = Clamp(helpdesk), Comment = $"相談 {HelpDeskCorrect}/{HelpDeskCorrect + HelpDeskIncorrect}  リモート解決 {RemoteResolved}" });
+            r.Categories.Add(new CategoryScore { Key = "HELPDESK", Label = "HELP DESK", Score = Clamp(helpdesk), Comment = TicketsTotal == 0 ? "本日は担当外" : $"相談 {HelpDeskCorrect}/{HelpDeskCorrect + HelpDeskIncorrect}  リモート解決 {RemoteResolved}" });
             r.Categories.Add(new CategoryScore { Key = "RESPONSE", Label = "RESPONSE TIME", Score = Clamp(response), Comment = $"平均応答 {avg:0.0} 分" });
             r.Categories.Add(new CategoryScore { Key = "AVAILABILITY", Label = "AVAILABILITY", Score = Clamp(availability), Comment = FalsePositive + ExpiredLegit > 0 ? $"正常業務の停止 {FalsePositive + ExpiredLegit} 件" : "正常業務への影響なし" });
 

@@ -24,6 +24,7 @@ namespace NightShift.UI.Shift
 
         public static void Open(ShiftDesktop d, EventInstance focus)
         {
+            if (!d.Require(Data.Features.ConnectionMonitor)) return;
             var w = d.OpenWindow(new WindowSpec
             {
                 Id = Id, Title = "ネットワーク接続監視 - 接続要求", Icon = "network", Width = 800, Height = 540,
@@ -44,8 +45,10 @@ namespace NightShift.UI.Shift
             // ツールバー
             _tabPending = UIFactory.Button(c, "保留中の要求", 0, 0, 130, 24, () => SetTab(false), "network");
             _tabProcessed = UIFactory.Button(c, "処理済みの要求", 132, 0, 130, 24, () => SetTab(true), "doc");
-            UIFactory.Button(c, "ネットワークマップ(M)", 400, 0, 150, 24, () => NetworkMonitorView.Open(_d), "globe");
-            UIFactory.Button(c, "ログを表示(L)", 556, 0, 120, 24, () => LogViewerView.Open(_d, null), "log");
+            var mapBtn = UIFactory.Button(c, "ネットワークマップ(M)", 400, 0, 150, 24, () => NetworkMonitorView.Open(_d), "globe");
+            var logBtn = UIFactory.Button(c, "ログを表示(L)", 556, 0, 120, 24, () => LogViewerView.Open(_d, null), "log");
+            mapBtn.Interactable = _d.Unlocked(Data.Features.NetworkMap);
+            logBtn.Interactable = _d.Unlocked(Data.Features.SystemLog);
 
             var lg = UIFactory.Group(c, "接続要求一覧", 0, 30, 780, 200);
             _table = TableView.CreateStretch(lg, 0, 0, 0, 0,
@@ -78,8 +81,8 @@ namespace NightShift.UI.Shift
             _w.Accelerators[KeyCode.A] = () => Decide(PlayerAction.Allow);
             _w.Accelerators[KeyCode.B] = () => Decide(PlayerAction.Block);
             _w.Accelerators[KeyCode.R] = LookupEmployee;
-            _w.Accelerators[KeyCode.M] = () => NetworkMonitorView.Open(_d);
-            _w.Accelerators[KeyCode.L] = () => LogViewerView.Open(_d, null);
+            if (_d.Unlocked(Data.Features.NetworkMap)) _w.Accelerators[KeyCode.M] = () => NetworkMonitorView.Open(_d);
+            if (_d.Unlocked(Data.Features.SystemLog)) _w.Accelerators[KeyCode.L] = () => LogViewerView.Open(_d, null);
             _w.Accelerators[KeyCode.C] = _w.RequestClose;
             _w.Accelerators[KeyCode.UpArrow] = () => _table.MoveSelection(-1);
             _w.Accelerators[KeyCode.DownArrow] = () => _table.MoveSelection(1);

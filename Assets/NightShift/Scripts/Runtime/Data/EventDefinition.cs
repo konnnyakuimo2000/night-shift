@@ -22,7 +22,9 @@ namespace NightShift.Data
         UnregisteredDevice,       // 社内ネットワーク上の未登録端末
         ExternalUnknown,          // 外部の不明な端末
         AttackerSource,           // Threat Scenario の攻撃元
-        AttackerRelatedSource     // 攻撃元と関連する（同一レンジの）別IP
+        AttackerRelatedSource,    // 攻撃元と関連する（同一レンジの）別IP
+        OtherEmployeeDevice,      // 別の社員の登録端末（社内）… 本人の端末ではない
+        RegisteredDeviceExternal  // 本人の社内PCを名乗る社外からの接続
     }
 
     public enum DestinationMode { FixedNode, FromEmployeeNormalTargets }
@@ -45,6 +47,8 @@ namespace NightShift.Data
         public List<string> requiredNormalTargets = new List<string>();
         public bool requireOnShift = true;
         public bool requireVpnEnabled;
+        [Tooltip("VPN利用許可のない社員に限る")]
+        public bool requireVpnDisabled;
         public bool requireLaptop;
         [Tooltip("当日まだイベントに登場していない社員を優先")]
         public bool preferUnused = true;

@@ -24,6 +24,13 @@ namespace NightShift.Data
         public List<NetworkNodeDefinition> nodes = new List<NetworkNodeDefinition>();
         public List<DayDefinition> days = new List<DayDefinition>();
 
+        /// <summary>指定日の定義（無ければ null）</summary>
+        public DayDefinition FindDay(int day)
+        {
+            foreach (var d in days) if (d != null && d.dayNumber == day) return d;
+            return null;
+        }
+
         public DayDefinition GetDay(int day)
         {
             foreach (var d in days) if (d != null && d.dayNumber == day) return d;

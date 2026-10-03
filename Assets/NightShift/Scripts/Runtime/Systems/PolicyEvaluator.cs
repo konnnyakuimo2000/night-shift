@@ -33,6 +33,11 @@ namespace NightShift.Systems
             }
 
             bool registered = e.Employee != null && e.Employee.OwnsDevice(e.Device);
+            if (!registered && rules.blockUnregisteredDevice)
+            {
+                reason = "本人の登録端末ではない";
+                return ExpectedAction.Block;
+            }
             if (!registered && dest != null && dest.isCritical && rules.blockUnregisteredToCritical)
             {
                 reason = "未登録端末から重要システム";

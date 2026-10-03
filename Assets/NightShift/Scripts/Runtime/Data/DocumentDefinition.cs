@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace NightShift.Data
@@ -14,6 +16,18 @@ namespace NightShift.Data
         [Tooltip("添付ファイル名として表示")]
         public string fileName;
         public string icon = "doc";
-        [TextArea(10, 40)] public string body;
+        [Tooltip("この文書を添付として表示する条件（Features の ID。空なら常に）")]
+        public string requiredFeature;
+        [Tooltip("前書き（常に表示）")]
+        [TextArea(4, 20)] public string body;
+        [Tooltip("章ごとの本文。requiredFeature が解放されている章だけ表示する")]
+        public List<DocumentSection> sections = new List<DocumentSection>();
+    }
+
+    [Serializable]
+    public class DocumentSection
+    {
+        public string requiredFeature;
+        [TextArea(4, 30)] public string text;
     }
 }

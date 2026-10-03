@@ -23,6 +23,7 @@ namespace NightShift.UI.Shift
 
         public static void Open(ShiftDesktop d, string keyword)
         {
+            if (!d.Require(Data.Features.SystemLog)) return;
             var w = d.OpenWindow(new WindowSpec
             {
                 Id = Id, Title = "システムログの検索・参照", Icon = "log", Width = 820, Height = 520,

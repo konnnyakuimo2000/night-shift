@@ -29,6 +29,7 @@ namespace NightShift.UI.Shift
 
         public static void Open(ShiftDesktop d, RemoteSession session)
         {
+            if (!d.Require(Data.Features.RemoteSupport)) return;
             var w = d.OpenWindow(new WindowSpec
             {
                 Id = Id, Title = "リモートサポート", Icon = "remote", Width = 880, Height = 668, Maximizable = false,
