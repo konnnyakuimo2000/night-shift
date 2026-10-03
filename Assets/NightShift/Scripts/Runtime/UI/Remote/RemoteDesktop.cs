@@ -212,8 +212,9 @@ namespace NightShift.UI.Remote
                 foreach (var kv in active.Accelerators)
                 {
                     if (!Input.GetKeyDown(kv.Key)) continue;
-                    bool isLetter = kv.Key >= KeyCode.A && kv.Key <= KeyCode.Z;
+                    bool isLetter = (kv.Key >= KeyCode.A && kv.Key <= KeyCode.Z) || (kv.Key >= KeyCode.Alpha0 && kv.Key <= KeyCode.Alpha9);
                     if (isLetter && (ShortcutInput.Ctrl || (text && !ShortcutInput.Alt))) continue;
+                    if (isLetter && !ShortcutInput.Alt && !Core.GameSettings.Current.letterAccelerators) continue;
                     if (!isLetter && text && kv.Key != KeyCode.Return && kv.Key != KeyCode.KeypadEnter) continue;
                     kv.Value?.Invoke();
                     break;

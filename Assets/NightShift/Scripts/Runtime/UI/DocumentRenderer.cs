@@ -20,7 +20,7 @@ namespace NightShift.UI
             vl.padding = new RectOffset(14, 14, 10, 16);
             vl.childAlignment = TextAnchor.UpperLeft;
 
-            text = text ?? "";
+            text = ExpandKeys(text ?? "");
             int pos = 0;
             foreach (Match m in FigureToken.Matches(text))
             {
@@ -31,6 +31,12 @@ namespace NightShift.UI
             AddText(content, text.Substring(pos));
             return scroll;
         }
+
+        static readonly Regex KeyToken = new Regex(@"\{KEY:([A-Z_]+)\}");
+
+        /// <summary>{KEY:ACTION} を現在のキー設定の表記に置き換える（キーを変更してもマニュアルが合う）</summary>
+        public static string ExpandKeys(string text) =>
+            KeyToken.Replace(text ?? "", m => "<b>" + Core.GameSettings.KeyLabel(m.Groups[1].Value) + "</b>");
 
         static void AddText(RectTransform content, string text)
         {

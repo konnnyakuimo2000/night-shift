@@ -10,6 +10,7 @@ namespace NightShift.UI
         static readonly Dictionary<string, AudioClip> _clips = new Dictionary<string, AudioClip>();
         public static float Volume = 0.6f;
         public static bool ClickEnabled = true;
+        public static bool NotifyEnabled = true;
 
         public static void Init(GameObject host)
         {
@@ -52,11 +53,11 @@ namespace NightShift.UI
         }
 
         public static void Click() { if (ClickEnabled) Play(Tone("click", new[] { 1800f }, 0.012f, 0, 0.15f), 0.5f); }
-        public static void Notify() => Play(Tone("notify", new[] { 880f, 1175f }, 0.07f, 0.015f, 0.22f, false));
-        public static void Ticket() => Play(Tone("ticket", new[] { 660f, 880f, 660f }, 0.06f, 0.01f, 0.2f, false));
-        public static void Alert() => Play(Tone("alert", new[] { 1046f, 784f, 1046f, 784f }, 0.11f, 0.02f, 0.18f));
+        public static void Notify() { if (NotifyEnabled) Play(Tone("notify", new[] { 880f, 1175f }, 0.07f, 0.015f, 0.22f, false)); }
+        public static void Ticket() { if (NotifyEnabled) Play(Tone("ticket", new[] { 660f, 880f, 660f }, 0.06f, 0.01f, 0.2f, false)); }
+        public static void Alert() { if (NotifyEnabled) Play(Tone("alert", new[] { 1046f, 784f, 1046f, 784f }, 0.11f, 0.02f, 0.18f)); }
         public static void Error() => Play(Tone("error", new[] { 220f, 196f }, 0.12f, 0.0f, 0.22f));
-        public static void Chime() => Play(Tone("chime", new[] { 523f, 659f, 784f, 1046f }, 0.18f, 0.02f, 0.2f, false));
+        public static void Chime() { if (NotifyEnabled) Play(Tone("chime", new[] { 523f, 659f, 784f, 1046f }, 0.18f, 0.02f, 0.2f, false)); }
         public static void Stamp() => Play(Tone("stamp", new[] { 120f, 90f }, 0.05f, 0.0f, 0.5f));
         public static void Startup() => Play(Tone("startup", new[] { 392f, 523f, 659f, 784f, 0f, 1046f }, 0.12f, 0.0f, 0.18f, false));
         public static void Connect() => Play(Tone("connect", new[] { 1200f, 0f, 1200f, 1500f }, 0.05f, 0.01f, 0.12f));

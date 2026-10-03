@@ -72,15 +72,12 @@ namespace NightShift.UI.Shift
             hint.color = RetroTheme.Shadow;
 
             var ag = UIFactory.Group(c, "処理", 566, 236, 214, 196);
-            _allow = UIFactory.Button(ag, "接続を許可(A)", 0, 0, 196, 32, () => Decide(PlayerAction.Allow), "check");
-            _block = UIFactory.Button(ag, "接続を拒否(B)", 0, 38, 196, 32, () => Decide(PlayerAction.Block), "lock");
+            _allow = UIFactory.Button(ag, $"接続を許可 [{Core.GameSettings.KeyLabel(Core.GameSettings.Allow)}]", 0, 0, 196, 32, () => Decide(PlayerAction.Allow), "check");
+            _block = UIFactory.Button(ag, $"接続を拒否 [{Core.GameSettings.KeyLabel(Core.GameSettings.Block)}]", 0, 38, 196, 32, () => Decide(PlayerAction.Block), "lock");
             UIFactory.Separator(ag, 0, 80, 196);
-            UIFactory.Button(ag, "社員情報を参照(R)", 0, 90, 196, 26, LookupEmployee, "people");
+            UIFactory.Button(ag, $"社員情報を参照 [{Core.GameSettings.KeyLabel(Core.GameSettings.Lookup)}]", 0, 90, 196, 26, LookupEmployee, "people");
             UIFactory.Button(ag, "閉じる(C)", 0, 122, 196, 26, _w.RequestClose, "exit");
 
-            _w.Accelerators[KeyCode.A] = () => Decide(PlayerAction.Allow);
-            _w.Accelerators[KeyCode.B] = () => Decide(PlayerAction.Block);
-            _w.Accelerators[KeyCode.R] = LookupEmployee;
             if (_d.Unlocked(Data.Features.NetworkMap)) _w.Accelerators[KeyCode.M] = () => NetworkMonitorView.Open(_d);
             if (_d.Unlocked(Data.Features.SystemLog)) _w.Accelerators[KeyCode.L] = () => LogViewerView.Open(_d, null);
             _w.Accelerators[KeyCode.C] = _w.RequestClose;
@@ -195,6 +192,13 @@ namespace NightShift.UI.Shift
 
         void Update()
         {
+            // キー設定で割り当てた 許可／拒否／社員参照（このWindowがアクティブな時のみ）
+            if (_d.Windows.Active == _w && !Controls.ShortcutInput.Capturing && !Controls.ShortcutInput.TextFieldFocused && !PopupMenu.IsOpen)
+            {
+                if (Core.GameSettings.Pressed(Core.GameSettings.Allow)) Decide(PlayerAction.Allow);
+                else if (Core.GameSettings.Pressed(Core.GameSettings.Block)) Decide(PlayerAction.Block);
+                else if (Core.GameSettings.Pressed(Core.GameSettings.Lookup)) LookupEmployee();
+            }
             if (_dirty && Time.frameCount % 5 == 0) Refresh();
             if (_d.S.Phase == ShiftPhase.Grace)
                 _w.SetStatus(0, $"業務終了 — 保留中の要求を処理してください（残り {Mathf.CeilToInt(_d.S.GraceRemaining)} 秒）");

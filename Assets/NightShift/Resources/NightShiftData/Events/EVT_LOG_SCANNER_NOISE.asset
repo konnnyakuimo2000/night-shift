@@ -15,7 +15,7 @@ MonoBehaviour:
   eventId: LOG_SCANNER_NOISE
   category: 2
   kind: 2
-  minimumDay: 3
+  minimumDay: 5
   maximumDay: 7
   triggerWindow: {x: 0, y: 0}
   weight: 1
@@ -33,6 +33,7 @@ MonoBehaviour:
     requireLaptop: 0
     preferUnused: 1
   accountName: 
+  displayEmployeeId: 
   sourceType: 3
   deviceNamePattern: 
   destinationMode: 0

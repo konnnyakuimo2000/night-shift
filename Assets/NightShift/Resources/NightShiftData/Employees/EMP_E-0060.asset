@@ -18,6 +18,7 @@ MonoBehaviour:
   age: 52
   department: "\u7DCF\u52D9\u90E8"
   position: "\u90E8\u9577"
+  portrait: {fileID: 0}
   deviceId: GA-PC01
   deviceIp: 10.10.6.11
   laptopDeviceId: 

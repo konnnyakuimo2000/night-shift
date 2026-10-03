@@ -78,9 +78,22 @@ namespace NightShift.UI.Screens
             clockIn.Label.fontStyle = FontStyle.Bold;
             if (onContinue != null)
                 Centered($"続きから（DAY {reachedDay}）", onContinue, "clock", 32).Label.fontStyle = FontStyle.Bold;
+            // 設定（タイトル画面上にウィンドウとして開く）
+            var host = UIFactory.Rect("WindowHost", root.transform).Stretch();
+            var wm = WindowManager.Create(host);
+            Centered("設定(O)", () =>
+            {
+                var w = wm.Open(new WindowSpec
+                {
+                    Id = "settings", Title = "設定", Icon = "gear", Width = 560, Height = 440,
+                    Minimizable = false, Maximizable = false, Position = new Vector2(360, 160)
+                }, out bool created);
+                if (created) SettingsPanel.Build(w.Content);
+            }, "gear", 28);
             Centered("終了(X)", onQuit, "exit", 28);
+            host.SetAsLastSibling();
 
-            var foot = UIFactory.Label(root.transform, "DAY 1-6 Tutorial  —  マウス＋キーボードでプレイ / Esc: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
+            var foot = UIFactory.Label(root.transform, $"DAY 1-6 Tutorial  —  マウス＋キーボードでプレイ / {Core.GameSettings.KeyLabel(Core.GameSettings.Pause)}: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
             foot.rectTransform.anchorMin = new Vector2(0, 0); foot.rectTransform.anchorMax = new Vector2(1, 0);
             foot.rectTransform.pivot = new Vector2(0.5f, 0);
             foot.rectTransform.offsetMin = new Vector2(0, 14); foot.rectTransform.offsetMax = new Vector2(0, 32);
@@ -138,13 +151,20 @@ namespace NightShift.UI.Screens
             UIFactory.Label(card.transform, "タイムカード　　夜間IT運用", 6, 4, 208, 18, 11, TextAnchor.MiddleCenter);
             UIFactory.Solid(card.transform, new Color(0.6f, 0.45f, 0.4f), "Rule").rectTransform.Place(6, 23, 208, 1);
             UIFactory.Label(card.transform, "氏名:", 8, 30, 40, 22, 12);
+            // 氏名の記入は初日だけ。2日目以降は記入済みのカードに打刻するだけ
+            bool firstDay = day == null || day.dayNumber <= 1 || string.IsNullOrEmpty(currentName) || currentName == Core.GameManager.DefaultOperatorName;
             string initial = currentName == Core.GameManager.DefaultOperatorName ? "" : currentName;
             var nameField = UIFactory.Input(card.transform, 48, 30, 164, 22, initial);
             nameField.characterLimit = MaxNameLength;
+            if (!firstDay)
+            {
+                nameField.interactable = false;
+                nameField.GetComponent<Image>().color = new Color(0.96f, 0.93f, 0.82f);
+            }
             var stamp = UIFactory.Label(card.transform, "", 6, 60, 208, 62, 13, TextAnchor.MiddleCenter);
             stamp.color = new Color(0.75f, 0.1f, 0.1f);
 
-            var msg = UIFactory.Label(machine.transform, "氏名を記入して打刻してください（ログインIDになります）", 10, 284, 340, 18, 11, TextAnchor.MiddleCenter);
+            var msg = UIFactory.Label(machine.transform, firstDay ? "氏名を記入して打刻してください（ログインIDになります）" : "カードを差し込んで打刻してください", 10, 284, 340, 18, 11, TextAnchor.MiddleCenter);
             msg.color = RetroTheme.Shadow;
 
             RetroButton btn = null;
@@ -172,8 +192,17 @@ namespace NightShift.UI.Screens
                 Delay.Run(root.gameObject, 1.3f, () => onDone(name));
             }
             btn = UIFactory.Button(machine.transform, "出勤を打刻する", 100, 310, 160, 30, Punch, "clock");
-            nameField.onEndEdit.AddListener(_ => { if (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter)) Punch(); });
-            Delay.Run(root.gameObject, 0.05f, () => { if (nameField) nameField.ActivateInputField(); });
+            if (firstDay)
+            {
+                nameField.onEndEdit.AddListener(_ => { if (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter)) Punch(); });
+                Delay.Run(root.gameObject, 0.05f, () => { if (nameField) nameField.ActivateInputField(); });
+            }
+            else
+            {
+                var enter = root.gameObject.AddComponent<KeyAction>();
+                enter.Key = KeyCode.Return;
+                enter.Action = Punch;
+            }
             return root.gameObject;
         }
     }

@@ -147,7 +147,9 @@ namespace NightShift.UI.Shift
 
         public void HandleShortcuts(List<Shortcut> keys)
         {
+            if (ShortcutInput.Capturing) return; // キー設定の入力待ち中
             if (keys.Contains(Shortcut.ToggleDebug)) DebugPanelView.Open(this);
+            if (keys.Contains(Shortcut.OpenMail) && _pause == null) MailboxView.Open(this);
             if (keys.Contains(Shortcut.ToggleOverlay)) ToggleOverlay();
 
             if (_pause != null)
@@ -189,8 +191,9 @@ namespace NightShift.UI.Shift
                 foreach (var kv in active.Accelerators)
                 {
                     if (!Input.GetKeyDown(kv.Key)) continue;
-                    bool isLetter = kv.Key >= KeyCode.A && kv.Key <= KeyCode.Z;
+                    bool isLetter = (kv.Key >= KeyCode.A && kv.Key <= KeyCode.Z) || (kv.Key >= KeyCode.Alpha0 && kv.Key <= KeyCode.Alpha9);
                     if (isLetter && (ctrl || (text && !alt))) continue;
+                    if (isLetter && !alt && !Core.GameSettings.Current.letterAccelerators) continue;
                     if (!isLetter && text && kv.Key != KeyCode.Return && kv.Key != KeyCode.KeypadEnter) continue;
                     kv.Value?.Invoke();
                     break;
@@ -221,7 +224,7 @@ namespace NightShift.UI.Shift
             UIFactory.Button(box.transform, "システム設定(S)", 50, 92, 200, 26, () => { ClosePause(); SettingsView.Open(this); });
             UIFactory.Button(box.transform, $"DAY{S.Day.dayNumber} をやり直す", 50, 124, 200, 26, () => { ClosePause(); Game.RestartDay(); });
             UIFactory.Button(box.transform, "タイトルへ戻る", 50, 156, 200, 26, () => { ClosePause(); Game.ShowTitle(); });
-            UIFactory.Label(box.transform, "Esc で再開", 20, 192, 260, 18, 11, TextAnchor.MiddleCenter).color = RetroTheme.Shadow;
+            UIFactory.Label(box.transform, $"{Core.GameSettings.KeyLabel(Core.GameSettings.Pause)} で再開", 20, 192, 260, 18, 11, TextAnchor.MiddleCenter).color = RetroTheme.Shadow;
         }
 
         public void ClosePause()
@@ -416,7 +419,8 @@ namespace NightShift.UI.Shift
             var body = UIFactory.Label(panel.transform, n.Body, 12, TextAnchor.UpperLeft);
             body.rectTransform.Stretch(46, 23, 6, 4);
             var ch = panel.gameObject.AddComponent<ClickHandler>();
-            var toast = new Toast { Rt = rt, Life = alert ? 14f : 8f };
+            float life = Core.GameSettings.Current.notificationSeconds;
+            var toast = new Toast { Rt = rt, Life = alert ? life + 6f : life };
             ch.OnClick = () =>
             {
                 n.OnClick?.Invoke();

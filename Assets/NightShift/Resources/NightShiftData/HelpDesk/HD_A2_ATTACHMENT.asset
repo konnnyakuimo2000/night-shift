@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   definitionId: A2_ATTACHMENT
   type: 0
-  minimumDay: 3
+  minimumDay: 5
   maximumDay: 7
-  triggerWindow: {x: 15, y: 20}
+  triggerWindow: {x: 12, y: 16}
   requester:
     departments: []
     excludeDepartments: []

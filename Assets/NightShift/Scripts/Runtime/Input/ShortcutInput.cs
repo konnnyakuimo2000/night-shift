@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NightShift.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -20,7 +21,8 @@ namespace NightShift.Controls
         Escape,
         Copy, Paste, Cut, SelectAll, Rename, Delete, // 拡張用
         ToggleDebug,  // F12
-        ToggleOverlay // F11
+        ToggleOverlay, // F11
+        OpenMail
     }
 
     /// <summary>
@@ -63,35 +65,37 @@ namespace NightShift.Controls
 
             bool ctrl = Ctrl, alt = Alt, shift = Shift, win = Win;
             bool text = TextFieldFocused;
+            if (Capturing) return _frame; // キー設定の入力待ち中は何もしない
 
-            // Win 系
-            if (win && Input.GetKeyDown(KeyCode.R)) _frame.Add(Shortcut.Run);
-            if (win && Input.GetKeyDown(KeyCode.E)) _frame.Add(Shortcut.Explorer);
-            if (win && Input.GetKeyDown(KeyCode.I)) _frame.Add(Shortcut.Settings);
-            if (win && Input.GetKeyDown(KeyCode.D)) _frame.Add(Shortcut.ShowDesktop);
-            if (ctrl && alt && Input.GetKeyDown(KeyCode.R)) _frame.Add(Shortcut.Run);
-            if (ctrl && alt && Input.GetKeyDown(KeyCode.E)) _frame.Add(Shortcut.Explorer);
-            if (ctrl && alt && Input.GetKeyDown(KeyCode.I)) _frame.Add(Shortcut.Settings);
-            if (ctrl && alt && Input.GetKeyDown(KeyCode.D)) _frame.Add(Shortcut.ShowDesktop);
-            if (alt && Input.GetKeyDown(KeyCode.Home)) _frame.Add(Shortcut.StartMenu);
-            if (ctrl && Input.GetKeyDown(KeyCode.Escape) && !shift) _frame.Add(Shortcut.StartMenu);
+            void Add(Shortcut sc) { if (!_frame.Contains(sc)) _frame.Add(sc); }
 
-            // タスクマネージャー
-            if (ctrl && shift && Input.GetKeyDown(KeyCode.Escape)) _frame.Add(Shortcut.TaskManager);
-            else if (ctrl && alt && Input.GetKeyDown(KeyCode.End)) _frame.Add(Shortcut.TaskManager);
+            // ---- キー設定（GameSettings）で割り当てたキー ----
+            if (GameSettings.Pressed(GameSettings.RemoteStart)) Add(Shortcut.StartMenu);
+            if (GameSettings.Pressed(GameSettings.RemoteRun)) Add(Shortcut.Run);
+            if (GameSettings.Pressed(GameSettings.RemoteExplorer)) Add(Shortcut.Explorer);
+            if (GameSettings.Pressed(GameSettings.RemoteSettings)) Add(Shortcut.Settings);
+            if (GameSettings.Pressed(GameSettings.RemoteDesktop)) Add(Shortcut.ShowDesktop);
+            if (GameSettings.Pressed(GameSettings.RemoteTaskManager)) Add(Shortcut.TaskManager);
+            if (GameSettings.Pressed(GameSettings.CloseWindow)) Add(Shortcut.CloseWindow);
+            if (GameSettings.Pressed(GameSettings.Refresh)) Add(Shortcut.Refresh);
+            if (GameSettings.Pressed(GameSettings.Pause)) Add(Shortcut.Escape);
+            if (GameSettings.Pressed(GameSettings.DebugPanel)) Add(Shortcut.ToggleDebug);
+            if (GameSettings.Pressed(GameSettings.DebugOverlay)) Add(Shortcut.ToggleOverlay);
+            if (GameSettings.Pressed(GameSettings.OpenMail)) Add(Shortcut.OpenMail);
+            var sw = GameSettings.Current.Get(GameSettings.SwitchWindow);
+            if (sw != null && sw.key != KeyCode.None && Input.GetKeyDown(sw.key) && ctrl == sw.ctrl && alt == sw.alt)
+                Add(shift && !sw.shift ? Shortcut.SwitchPrev : Shortcut.SwitchNext);
 
-            // 切替
-            if (Input.GetKeyDown(KeyCode.Tab) && (alt || ctrl)) _frame.Add(shift ? Shortcut.SwitchPrev : Shortcut.SwitchNext);
-            if (alt && Input.GetKeyDown(KeyCode.PageUp)) _frame.Add(Shortcut.SwitchNext);
-            if (alt && Input.GetKeyDown(KeyCode.PageDown)) _frame.Add(Shortcut.SwitchPrev);
-
-            // 閉じる
-            if (Input.GetKeyDown(KeyCode.F4) && (alt || ctrl)) _frame.Add(Shortcut.CloseWindow);
-
-            if (Input.GetKeyDown(KeyCode.F5)) _frame.Add(Shortcut.Refresh);
-            if (Input.GetKeyDown(KeyCode.Escape) && !ctrl) _frame.Add(Shortcut.Escape);
-            if (Input.GetKeyDown(KeyCode.F12)) _frame.Add(Shortcut.ToggleDebug);
-            if (Input.GetKeyDown(KeyCode.F11)) _frame.Add(Shortcut.ToggleOverlay);
+            // ---- 実機と同じキー（OS が先に処理しなかった場合に届く）----
+            if (win && Input.GetKeyDown(KeyCode.R)) Add(Shortcut.Run);
+            if (win && Input.GetKeyDown(KeyCode.E)) Add(Shortcut.Explorer);
+            if (win && Input.GetKeyDown(KeyCode.I)) Add(Shortcut.Settings);
+            if (win && Input.GetKeyDown(KeyCode.D)) Add(Shortcut.ShowDesktop);
+            if (ctrl && shift && Input.GetKeyDown(KeyCode.Escape)) Add(Shortcut.TaskManager);
+            if (alt && Input.GetKeyDown(KeyCode.Tab)) Add(shift ? Shortcut.SwitchPrev : Shortcut.SwitchNext);
+            if (alt && Input.GetKeyDown(KeyCode.PageUp)) Add(Shortcut.SwitchNext);
+            if (alt && Input.GetKeyDown(KeyCode.PageDown)) Add(Shortcut.SwitchPrev);
+            if (alt && Input.GetKeyDown(KeyCode.F4)) Add(Shortcut.CloseWindow);
 
             if (!text)
             {
@@ -106,5 +110,8 @@ namespace NightShift.Controls
         }
 
         public static bool Has(List<Shortcut> list, Shortcut s) => list.Contains(s);
+
+        /// <summary>キー設定画面でキー入力を待っている間 true（ゲーム側のショートカットを止める）</summary>
+        public static bool Capturing;
     }
 }

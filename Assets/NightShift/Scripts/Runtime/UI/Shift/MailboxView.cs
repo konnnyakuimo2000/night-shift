@@ -28,8 +28,8 @@ namespace NightShift.UI.Shift
             bool preShift = !d.ShiftStarted && onStart != null;
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = "メール - 受信トレイ", Icon = "mail", Width = 840, Height = 680,
-                Closable = !preShift, Minimizable = !preShift, Maximizable = false, Position = new Vector2(260, 6),
+                Id = Id, Title = "メール - 受信トレイ", Icon = "mail", Width = 1180, Height = 740,
+                Closable = !preShift, Minimizable = !preShift, Maximizable = false, Position = new Vector2(50, 4),
                 Menus = ShiftDesktop.StandardMenus(d), StatusCells = 2, StatusWidths = new float[] { 160 }
             }, out bool created);
             var v = created ? w.gameObject.AddComponent<MailboxView>() : w.GetComponent<MailboxView>();
@@ -61,23 +61,24 @@ namespace NightShift.UI.Shift
 
             // フォルダー
             var folders = UIFactory.Image(c, RetroTheme.Field, Color.white, "Folders");
-            folders.rectTransform.Place(0, 32, 130, 560);
+            folders.rectTransform.Place(0, 32, 110, 634);
             _inboxButton = UIFactory.FlatButton(folders.transform, "受信トレイ", Refresh, "mail");
             _inboxButton.Label.alignment = TextAnchor.MiddleLeft;
-            _inboxButton.Rect.Place(2, 2, 126, 22);
+            _inboxButton.Rect.Place(2, 2, 106, 22);
             _inboxButton.SetLatched(true);
             var sent = UIFactory.FlatButton(folders.transform, "送信済み", null, "folder");
-            sent.Label.alignment = TextAnchor.MiddleLeft; sent.Rect.Place(2, 26, 126, 22); sent.Interactable = false;
+            sent.Label.alignment = TextAnchor.MiddleLeft; sent.Rect.Place(2, 26, 106, 22); sent.Interactable = false;
             var trash = UIFactory.FlatButton(folders.transform, "ごみ箱", null, "folder");
-            trash.Label.alignment = TextAnchor.MiddleLeft; trash.Rect.Place(2, 50, 126, 22); trash.Interactable = false;
+            trash.Label.alignment = TextAnchor.MiddleLeft; trash.Rect.Place(2, 50, 106, 22); trash.Interactable = false;
 
             // 一覧
-            _table = TableView.Create(c, 136, 32, 694, 150,
-                new TableColumn("", 22), new TableColumn("差出人", 170), new TableColumn("件名", 330), new TableColumn("受信日時", 150));
+            // 一覧は左の細い列、本文は右側に縦いっぱい
+            _table = TableView.Create(c, 114, 32, 330, 634,
+                new TableColumn("", 18), new TableColumn("件名", 188), new TableColumn("受信日時", 90));
             _table.SelectionChanged += o => Show(o as MailMessage);
 
             // プレビュー
-            _preview = UIFactory.Rect("Preview", c).Place(136, 188, 694, 404);
+            _preview = UIFactory.Rect("Preview", c).Place(450, 32, 720, 634);
 
             _w.Accelerators[KeyCode.UpArrow] = () => _table.MoveSelection(-1);
             _w.Accelerators[KeyCode.DownArrow] = () => _table.MoveSelection(1);
@@ -111,7 +112,7 @@ namespace NightShift.UI.Shift
         {
             var list = new List<MailMessage>(_d.S.Mail.Inbox);
             list.Reverse(); // 新しい順
-            _table.SetRows(list, m => new[] { m.Read ? "" : "●", m.From, m.Subject, m.DateLabel });
+            _table.SetRows(list, m => new[] { m.Read ? "" : "●", m.Subject, ShortDate(m.DateLabel) });
             int unread = _d.S.Mail.UnreadCount;
             _inboxButton.SetText(unread > 0 ? $"受信トレイ ({unread})" : "受信トレイ");
             _w.SetStatus(1, $"{list.Count} 通 / 未読 {unread} 通");
@@ -130,7 +131,7 @@ namespace NightShift.UI.Shift
             void Row(string label, string value)
             {
                 UIFactory.Label(_preview, label, 0, y, 56, 20);
-                UIFactory.ValueBox(_preview, 58, y, 636, 20, value, false);
+                UIFactory.ValueBox(_preview, 58, y, 662, 20, value, false);
                 y += 22;
             }
             Row("差出人:", m.From);
@@ -146,9 +147,9 @@ namespace NightShift.UI.Shift
             if (docs.Count > 0)
             {
                 var box = UIFactory.Image(_preview, RetroTheme.Field, new Color(1f, 0.97f, 0.82f), "Attachments");
-                box.rectTransform.Place(0, y, 694, 88);
+                box.rectTransform.Place(0, y, 720, 88);
                 UIFactory.IconImage(box.transform, "doc", 8, 6);
-                var head = UIFactory.Label(box.transform, $"添付ファイル（{docs.Count}）— まずはこちらのマニュアルに目を通してください", 28, 4, 650, 20, 13);
+                var head = UIFactory.Label(box.transform, $"添付ファイル（{docs.Count}）— まずはこちらのマニュアルに目を通してください", 28, 4, 680, 20, 13);
                 head.fontStyle = FontStyle.Bold;
                 head.color = new Color(0.55f, 0.3f, 0f);
                 float x = 8;
@@ -156,14 +157,14 @@ namespace NightShift.UI.Shift
                 {
                     var dd = doc;
                     var tile = UIFactory.Button(box.transform, doc.fileName, () => DocumentView.Open(_d, dd), doc.icon);
-                    tile.Rect.Place(x, 28, 222, 52);
+                    tile.Rect.Place(x, 28, 230, 52);
                     tile.Icon.sprite = RetroTheme.BigIcon(doc.icon);
                     tile.Icon.rectTransform.sizeDelta = new Vector2(32, 32);
                     tile.Label.rectTransform.Stretch(44, 2, 4, 2);
                     tile.Label.alignment = TextAnchor.MiddleLeft;
                     tile.Label.fontSize = 12;
                     tile.Label.fontStyle = FontStyle.Bold;
-                    x += 228;
+                    x += 236;
                 }
                 y += 94;
             }
@@ -187,6 +188,16 @@ namespace NightShift.UI.Shift
             var sr = DocumentRenderer.Render(_preview, m.Body, (id, holder) => ManualFigures.Build(id, holder, ctx));
             ((RectTransform)sr.transform).Stretch(0, y, 0, 0);
             _w.SetStatus(0, m.IsBriefing ? $"DAY {m.Day} の業務連絡" : "");
+        }
+
+        /// <summary>一覧用の短い日時（"1998/05/19 (火) 21:30" → "05/19 21:30"）</summary>
+        static string ShortDate(string label)
+        {
+            if (string.IsNullOrEmpty(label)) return "";
+            var parts = label.Split(' ');
+            string date = parts[0].Length >= 10 ? parts[0].Substring(5) : parts[0];
+            string time = parts.Length > 0 ? parts[parts.Length - 1] : "";
+            return time.Contains(":") ? date + " " + time : date;
         }
 
         void RunAction(string key)

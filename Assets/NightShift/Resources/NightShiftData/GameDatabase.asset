@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10640ffc8aa183b4a9cd9252e866ccae, type: 3}
   m_Name: GameDatabase
   m_EditorClassIdentifier: 
-  dataVersion: 5
+  dataVersion: 9
   companyName: NEXUS CORPORATION
   systemName: "\u793E\u5185\u60C5\u5831\u30B7\u30B9\u30C6\u30E0"
   systemVersion: Ver.4.21
@@ -52,5 +52,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: eccb02d823086c94ba187b0ed4bcf88e, type: 2}
   days:
   - {fileID: 11400000, guid: 4f5482c152fbcb04eabe0a15e541809e, type: 2}
-  - {fileID: 11400000, guid: f1cfc81c1485e7e49ba2cd2c2dab0865, type: 2}
-  - {fileID: 11400000, guid: 5373c8cc190164c44825dee51f267857, type: 2}
+  - {fileID: 11400000, guid: 2c290b560bc842c45942eaae0a5d14cd, type: 2}
+  - {fileID: 11400000, guid: 2b2b5b9ee0fefc345bae3980d7048faa, type: 2}
+  - {fileID: 11400000, guid: 728d99792af39fe41994e437e1ca5667, type: 2}
+  - {fileID: 11400000, guid: 10d5d5f27d6442a4f882ad0701835831, type: 2}
+  - {fileID: 11400000, guid: 0b93e6099e818e34492f9d7b88abc319, type: 2}

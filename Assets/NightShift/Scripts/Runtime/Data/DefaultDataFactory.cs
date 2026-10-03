@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 9;
+        public const int DataVersion = 10;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -460,13 +460,17 @@ namespace NightShift.Data
                 $"・ログインパスワードは [システム設定] → [パスワードの変更] で変更できます。{B("パスワードは他人に教えないこと。")}",
                 "",
                 B("■ キーボード操作"),
-                "・ウィンドウ切替: Ctrl+Tab / Alt+PageUp　・ウィンドウを閉じる: Ctrl+F4　・一時停止: Esc",
-                "・メインメニューの各システムは 1〜7 のキーでも開けます。");
+                "・ウィンドウ切替: {KEY:SWITCH} / Alt+PageUp　・ウィンドウを閉じる: {KEY:CLOSE}　・一時停止: {KEY:PAUSE}　・メール: {KEY:MAIL}",
+                "・メインメニューの各システムは 1〜7 のキーでも開けます。",
+                "（キーの割り当ては [システム設定] → [キー設定] で変更できます）");
+            Sec(manualSystem, Features.ConnectionMonitor,
+                B("■ 接続監視のキー操作"),
+                "・接続を許可: {KEY:ALLOW}　・接続を拒否: {KEY:BLOCK}　・社員情報を参照: {KEY:LOOKUP}");
             Sec(manualSystem, Features.RemoteSupport,
                 B("■ リモートPCのキーボード操作"),
-                "・スタート Alt+Home / ファイル名を指定して実行 Ctrl+Alt+R / エクスプローラー Ctrl+Alt+E",
-                "・設定 Ctrl+Alt+I / デスクトップ Ctrl+Alt+D / タスク マネージャー Ctrl+Alt+End / 更新 F5",
-                "（Windows キーや Alt+Tab は手元のPCが処理するため、上記の代替キーを使ってください）");
+                "・スタート {KEY:REMOTE_START} / ファイル名を指定して実行 {KEY:REMOTE_RUN} / エクスプローラー {KEY:REMOTE_EXPLORER}",
+                "・設定 {KEY:REMOTE_SETTINGS} / デスクトップ {KEY:REMOTE_DESKTOP} / タスク マネージャー {KEY:REMOTE_TASKMGR} / 更新 {KEY:REFRESH}",
+                "（Windows キーや Alt+Tab は手元のPCが処理するため、上記のキーを使ってください）");
 
             var manualServer = Doc("SERVER_GUIDE", "社内サーバー構成資料", "社内サーバー構成資料.doc", "server", Features.EmployeePermissions,
                 "本資料は社内ネットワークとサーバーの概要です。サーバーの管理操作（サービス停止・再起動など）は、まだ担当範囲ではありません。");
@@ -510,8 +514,8 @@ namespace NightShift.Data
                 "・プリンターのキュー（通知領域のプリンター アイコン / control printers）… ドキュメントの状態と [プリンター] メニュー",
                 "",
                 B("■ その他のツール"),
-                "・タスク マネージャー（Ctrl+Alt+End）… 実行中のアプリケーション・プロセス・ネットワーク状況",
-                "・エクスプローラー（Ctrl+Alt+E）… ファイル・共有フォルダー（\\\\FILE-SRV01）",
+                "・タスク マネージャー（{KEY:REMOTE_TASKMGR}）… 実行中のアプリケーション・プロセス・ネットワーク状況",
+                "・エクスプローラー（{KEY:REMOTE_EXPLORER}）… ファイル・共有フォルダー（\\\\FILE-SRV01）",
                 $"・{Col("システムのプロセスは終了しないでください。", Deny)}");
 
             // ---------------- Rules ----------------
@@ -567,7 +571,7 @@ namespace NightShift.Data
                 Features.ConnectionMonitor, Features.EmployeeDirectory);
             day1.briefingBody =
                 "夜間IT担当として、今夜からよろしくお願いします。\n" +
-                $"業務時間は {B("00:00〜04:00")} です。{B("時間は止まりません")}（Esc で一時停止できます）。\n" +
+                $"業務時間は {B("00:00〜04:00")} です。{B("時間は止まりません")}（{{KEY:PAUSE}} で一時停止できます）。\n" +
                 $"研修期間（6日間）は、業務に慣れてもらうため、{B("仕事を1件ずつ")}回します。片付けると次の仕事が届きます。\n\n" +
                 Tasks($"・{B("接続要求の審査")}（ネットワーク接続監視）", "　接続要求の利用者が、社員として登録されているかを確認してください。");
             day1.briefingFooter =

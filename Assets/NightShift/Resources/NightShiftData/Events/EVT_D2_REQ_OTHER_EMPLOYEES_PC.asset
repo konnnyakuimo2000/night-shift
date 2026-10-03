@@ -17,7 +17,7 @@ MonoBehaviour:
   kind: 1
   minimumDay: 1
   maximumDay: 7
-  triggerWindow: {x: 100, y: 112}
+  triggerWindow: {x: 60, y: 75}
   weight: 1
   severity: 1
   userType: 0
@@ -27,18 +27,19 @@ MonoBehaviour:
     requiredPermissions: []
     excludedPermissions: []
     requiredNormalTargets:
-    - FILE
+    - MAIL
     requireOnShift: 1
     requireVpnEnabled: 0
     requireVpnDisabled: 0
     requireLaptop: 0
     preferUnused: 1
   accountName: 
+  displayEmployeeId: 
   sourceType: 6
   deviceNamePattern: 
   destinationMode: 0
-  destination: {fileID: 11400000, guid: ac4d108d5a938e0499b1d0aad2134cc0, type: 2}
-  accessType: FILE READ
+  destination: {fileID: 11400000, guid: ecc50913cfb1d7c48b0982405b1850ee, type: 2}
+  accessType: MAIL
   isMalicious: 0
   expectedAction: 0
   timeoutMinutes: 30

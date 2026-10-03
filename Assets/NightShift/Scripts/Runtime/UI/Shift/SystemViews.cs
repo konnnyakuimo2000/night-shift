@@ -284,30 +284,15 @@ namespace NightShift.UI.Shift
         {
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = "システム設定", Icon = "gear", Width = 400, Height = 340, Maximizable = false,
-                Menus = ShiftDesktop.StandardMenus(d), StatusCells = 1
+                Id = Id, Title = "システム設定", Icon = "gear", Width = 560, Height = 470, Maximizable = false,
+                Menus = ShiftDesktop.StandardMenus(d), Position = new Vector2(360, 120)
             }, out bool created);
             if (!created) return;
-            var c = w.Content;
-            var g = UIFactory.Group(c, "サウンド", 0, 0, 380, 80);
-            UIFactory.Label(g, "音量:", 0, 0, 50, 20);
-            var vol = UIFactory.ValueBox(g, 52, 0, 60, 20, Mathf.RoundToInt(AudioFx.Volume * 100) + " %");
-            UIFactory.Button(g, "－", 118, 0, 26, 20, () => { AudioFx.Volume = Mathf.Clamp01(AudioFx.Volume - 0.1f); vol.text = Mathf.RoundToInt(AudioFx.Volume * 100) + " %"; AudioFx.Notify(); });
-            UIFactory.Button(g, "＋", 148, 0, 26, 20, () => { AudioFx.Volume = Mathf.Clamp01(AudioFx.Volume + 0.1f); vol.text = Mathf.RoundToInt(AudioFx.Volume * 100) + " %"; AudioFx.Notify(); });
-            var click = UIFactory.Check(g, "クリック音", AudioFx.ClickEnabled, v => AudioFx.ClickEnabled = v);
-            click.GetComponent<RectTransform>().Place(190, 0, 150, 20);
-
-            UIFactory.Button(c, "パスワードの変更(P)...", 0, 222, 180, 26, () => PasswordChangeView.Open(d), "lock");
+            SettingsPanel.Build(w.Content, extra =>
+            {
+                UIFactory.Button(extra, "パスワードの変更(P)...", 0, 0, 200, 26, () => PasswordChangeView.Open(d), "lock");
+            });
             w.Accelerators[KeyCode.P] = () => PasswordChangeView.Open(d);
-            var kg = UIFactory.Group(c, "キーボード", 0, 86, 380, 130);
-            var cap = UIFactory.Check(kg, "OSショートカットの取り込み（未対応）", false, null);
-            cap.GetComponent<RectTransform>().Place(0, 0, 360, 20);
-            if (!KeyboardCapture.Supported) cap.Interactable = false;
-            var info = UIFactory.Label(kg, KeyboardCapture.Supported
-                ? "Win+R / Alt+Tab / Ctrl+Shift+Esc などをゲーム内で受け付けます。"
-                : "エディタ実行中はOSのショートカットを取り込めません。代替キー:\n Alt+Home=スタート  Ctrl+Alt+R/E/I/D=Win+R/E/I/D\n Ctrl+Alt+End=タスクマネージャー  Ctrl+Tab=切替  Ctrl+F4=閉じる", 11, TextAnchor.UpperLeft);
-            info.rectTransform.Place(0, 24, 360, 70);
-            w.SetStatus(0, "設定は即時に反映されます。");
         }
     }
 

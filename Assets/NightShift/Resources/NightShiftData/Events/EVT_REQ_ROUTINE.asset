@@ -33,6 +33,7 @@ MonoBehaviour:
     requireLaptop: 0
     preferUnused: 0
   accountName: 
+  displayEmployeeId: 
   sourceType: 0
   deviceNamePattern: 
   destinationMode: 1

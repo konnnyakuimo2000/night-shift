@@ -33,6 +33,7 @@ MonoBehaviour:
     requireLaptop: 0
     preferUnused: 1
   accountName: admin
+  displayEmployeeId: 
   sourceType: 5
   deviceNamePattern: WIN-{hex}
   destinationMode: 0

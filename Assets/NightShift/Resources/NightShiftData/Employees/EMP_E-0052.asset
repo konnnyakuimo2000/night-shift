@@ -18,6 +18,7 @@ MonoBehaviour:
   age: 45
   department: "\u7D4C\u7406\u90E8"
   position: "\u8AB2\u9577"
+  portrait: {fileID: 0}
   deviceId: ACC-PC02
   deviceIp: 10.10.5.12
   laptopDeviceId: 

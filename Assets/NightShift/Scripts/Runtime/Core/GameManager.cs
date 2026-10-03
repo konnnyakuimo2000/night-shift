@@ -39,6 +39,15 @@ namespace NightShift.Core
         public Canvas Canvas { get; private set; }
 
         ShiftDesktop _desktop;
+        CanvasScaler _scaler;
+
+        /// <summary>UI の拡大率（設定）を CanvasScaler に反映</summary>
+        void ApplyUiScale()
+        {
+            if (_scaler == null) return;
+            float k = Mathf.Max(0.5f, GameSettings.Current.uiScalePercent / 100f);
+            _scaler.referenceResolution = new Vector2(1280f / k, 800f / k);
+        }
         GameObject _screen;
         float _completeTimer = -1;
 
@@ -54,7 +63,8 @@ namespace NightShift.Core
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            Application.targetFrameRate = 60;
+            GameSettings.Current.ApplyAll();
+            GameSettings.Changed += ApplyUiScale;
             Application.runInBackground = true;
             Database = GameDatabase.Load();
             AudioFx.Init(gameObject);
@@ -70,6 +80,7 @@ namespace NightShift.Core
 
         void OnDestroy()
         {
+            GameSettings.Changed -= ApplyUiScale;
             if (Instance == this) KeyboardCapture.Uninstall();
         }
 
@@ -86,6 +97,7 @@ namespace NightShift.Core
             Canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             Canvas.pixelPerfect = false;
             var scaler = go.AddComponent<CanvasScaler>();
+            _scaler = scaler;
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280, 800);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
@@ -98,6 +110,7 @@ namespace NightShift.Core
             OverlayLayer = UIFactory.Rect("Overlay", go.transform).Stretch();
             DebugLayer = UIFactory.Rect("Debug", go.transform).Stretch();
             PopupMenu.OverlayRoot = OverlayLayer;
+            ApplyUiScale();
         }
 
         void ClearScreen()

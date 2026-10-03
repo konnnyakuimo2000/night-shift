@@ -18,6 +18,7 @@ MonoBehaviour:
   age: 38
   department: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u90E8"
   position: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u7BA1\u7406\u8005"
+  portrait: {fileID: 0}
   deviceId: IT-PC02
   deviceIp: 10.10.8.12
   laptopDeviceId: 

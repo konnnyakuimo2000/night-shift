@@ -141,7 +141,7 @@ namespace NightShift.UI.Shift
             if (_kbd == null) return;
             bool active = _d.Windows.Active == _w;
             _kbd.text = HasKeyboard
-                ? (active ? "キーボード: リモートPCへ送信中  (代替キー: Alt+Home=スタート / Ctrl+Alt+End=タスクマネージャー)" : "キーボード: ローカル（この画面をクリックでリモートへ）")
+                ? (active ? $"キーボード: リモートPCへ送信中  ({Core.GameSettings.KeyLabel(Core.GameSettings.RemoteStart)}=スタート / {Core.GameSettings.KeyLabel(Core.GameSettings.RemoteRun)}=実行 / {Core.GameSettings.KeyLabel(Core.GameSettings.RemoteTaskManager)}=タスクマネージャー)" : "キーボード: ローカル（この画面をクリックでリモートへ）")
                 : "";
         }
 
