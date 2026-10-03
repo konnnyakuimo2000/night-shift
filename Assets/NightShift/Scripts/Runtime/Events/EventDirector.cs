@@ -1,0 +1,144 @@
+using System.Collections.Generic;
+using NightShift.Data;
+using NightShift.Systems;
+
+namespace NightShift.Events
+{
+    /// <summary>
+    /// EventDirector
+    /// ├ TimelineScheduler      … 固定骨格＋ランダム枠を時刻で発火
+    /// ├ NormalEventGenerator   … 背景通信（会社が動いている感）
+    /// ├ HelpDeskGenerator      … 問い合わせ
+    /// └ ThreatScenarioManager  … 攻撃チェーン
+    /// </summary>
+    public class EventDirector
+    {
+        readonly ShiftSession _s;
+        public TimelineScheduler Scheduler { get; } = new TimelineScheduler();
+        public NormalEventGenerator Normal { get; }
+        public HelpDeskGenerator HelpDeskGen { get; }
+        public ThreatScenarioManager Threats { get; }
+        public bool Stopped { get; private set; }
+
+        public EventDirector(ShiftSession s)
+        {
+            _s = s;
+            Normal = new NormalEventGenerator(s);
+            HelpDeskGen = new HelpDeskGenerator(s);
+            Threats = new ThreatScenarioManager(s);
+            _s.Requests.Resolved += OnResolved;
+        }
+
+        public void ScheduleDay(DayDefinition day)
+        {
+            foreach (var def in day.fixedEvents)
+            {
+                if (def == null || !def.IsAvailableOn(day.dayNumber)) continue;
+                ScheduleDefinition(def, def.triggerWindow);
+            }
+            foreach (var slot in day.randomSlots)
+            {
+                var def = PickWeighted(slot.pool, day.dayNumber);
+                if (def == null) continue;
+                ScheduleDefinition(def, slot.window, slot.label);
+            }
+            HelpDeskGen.ScheduleDay(Scheduler, day);
+            Threats.ScheduleDay(Scheduler, day);
+        }
+
+        void ScheduleDefinition(EventDefinition def, UnityEngine.Vector2 window, string label = null)
+        {
+            var d = def;
+            if (def.preferWhileRemoteActive)
+                Scheduler.AddPreferRemote(window.x, window.y, label ?? def.eventId, () => Spawn(d));
+            else
+                Scheduler.Add(Rand(window.x, window.y), label ?? def.eventId, () => Spawn(d));
+        }
+
+        EventDefinition PickWeighted(List<EventDefinition> pool, int day)
+        {
+            float total = 0;
+            foreach (var d in pool) if (d != null && d.IsAvailableOn(day)) total += d.weight;
+            if (total <= 0) return null;
+            double r = _s.Rng.NextDouble() * total;
+            foreach (var d in pool)
+            {
+                if (d == null || !d.IsAvailableOn(day)) continue;
+                r -= d.weight;
+                if (r <= 0) return d;
+            }
+            return pool[pool.Count - 1];
+        }
+
+        float Rand(float a, float b) => a + (b - a) * (float)_s.Rng.NextDouble();
+
+        /// <summary>定義から即時に1件発生させる</summary>
+        public EventInstance Spawn(EventDefinition def)
+        {
+            if (Stopped) return null;
+            var e = _s.Factory.Build(def);
+            if (e == null) return null;
+            switch (def.kind)
+            {
+                case EventKind.ConnectionRequest:
+                    _s.Requests.Submit(e);
+                    break;
+                case EventKind.LogEntry:
+                    int n = 2 + _s.Rng.Next(3);
+                    string[] ports = { "TCP 21", "TCP 23", "TCP 135", "TCP 139", "TCP 445", "TCP 1433", "UDP 161" };
+                    for (int i = 0; i < n; i++)
+                    {
+                        float t = i * 0.3f;
+                        string port = ports[_s.Rng.Next(ports.Length)];
+                        string src = e.SourceIp;
+                        Scheduler.Add(_s.Time.CurrentMinute + t, "log", () =>
+                        {
+                            _s.Network.Emit(true, e.Destination, TrafficResult.Denied);
+                            _s.Logs.Add(_s.Time.CurrentMinute, src, e.DestinationLabel, "-", def.logEventType ?? "FW", def.logResult ?? "DENY", port);
+                        });
+                    }
+                    break;
+                case EventKind.BackgroundTraffic:
+                    _s.Network.Emit(e.Zone == SourceZone.External, e.Destination, TrafficResult.Delivered);
+                    break;
+            }
+            if (def.followUp != null)
+            {
+                var f = def.followUp;
+                Scheduler.Add(_s.Time.CurrentMinute + def.followUpDelayMinutes, "followup " + f.eventId, () => Spawn(f));
+            }
+            return e;
+        }
+
+        void OnResolved(EventInstance e)
+        {
+            // Threat シナリオ外の不正接続を許可した場合も痕跡をログに残す（プレイヤーが後から気付ける）
+            if (e.Owner == null && e.State == EventState.Allowed && e.IsMalicious)
+                _s.Logs.Add(_s.Time.CurrentMinute + 0.2f, e.SourceIp, e.DestinationLabel, e.DisplayUser, "AUTH", "SUCCESS", "管理ログオン成功 (外部)");
+        }
+
+        public void Tick(float now, float delta)
+        {
+            if (Stopped) return;
+            bool remoteActive = _s.HelpDesk.ActiveSession != null && _s.HelpDesk.ActiveSession.Connected;
+            Scheduler.Tick(now, remoteActive);
+            Normal.Tick(delta);
+        }
+
+        /// <summary>04:00: 新規イベント生成を停止</summary>
+        public void StopNewEvents()
+        {
+            Stopped = true;
+            Scheduler.AcceptNew = false;
+            Normal.Enabled = false;
+        }
+
+        // ---------------- Debug ----------------
+        public EventDefinition FindDefinition(System.Predicate<EventDefinition> pred)
+        {
+            foreach (var d in _s.Day.fixedEvents) if (d != null && pred(d)) return d;
+            foreach (var slot in _s.Day.randomSlots) foreach (var d in slot.pool) if (d != null && pred(d)) return d;
+            return null;
+        }
+    }
+}
