@@ -16,8 +16,8 @@ MonoBehaviour:
   category: 0
   kind: 1
   minimumDay: 1
-  maximumDay: 7
-  triggerWindow: {x: 70, y: 80}
+  maximumDay: 8
+  triggerWindow: {x: 60, y: 70}
   weight: 1
   severity: 2
   userType: 0

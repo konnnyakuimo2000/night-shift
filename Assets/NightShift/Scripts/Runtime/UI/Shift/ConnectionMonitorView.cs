@@ -53,7 +53,7 @@ namespace NightShift.UI.Shift
             var lg = UIFactory.Group(c, "接続要求一覧", 0, 30, 780, 200);
             _table = TableView.CreateStretch(lg, 0, 0, 0, 0,
                 new TableColumn("受付", 48), new TableColumn("要求番号", 74), new TableColumn("利用者", 110), new TableColumn("端末", 104),
-                new TableColumn("接続元", 160), new TableColumn("接続先", 96), new TableColumn("接続種別", 102), new TableColumn("状態", 56));
+                new TableColumn("接続元", 140), new TableColumn("接続先", 96), new TableColumn("利用システム", 122), new TableColumn("状態", 56));
             _table.SelectionChanged += _ => RefreshDetail();
 
             var dg = UIFactory.Group(c, "要求内容", 0, 236, 560, 210);
@@ -66,7 +66,7 @@ namespace NightShift.UI.Shift
             F("id", "要求番号:", 0, 160); F("time", "受付時刻:", 270, 180); y += 26;
             F("user", "利用者:", 0, 160); F("emp", "社員番号:", 270, 180); y += 26;
             F("device", "端末:", 0, 160); F("src", "接続元:", 270, 180); y += 26;
-            F("dest", "接続先:", 0, 160); F("access", "接続種別:", 270, 180); y += 26;
+            F("dest", "接続先:", 0, 160); F("access", "利用システム:", 270, 180); y += 26;
             F("perm", "必要な権限:", 0, 160); F("state", "状態:", 270, 180); y += 26;
             F("decided", "処理時刻:", 0, 160); y += 30;
             var hint = UIFactory.Label(dg, "※ 利用者・端末・権限は「社員情報の検索・参照」で確認してください。", 0, y, 540, 18, 11);

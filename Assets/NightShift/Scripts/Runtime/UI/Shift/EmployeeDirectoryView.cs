@@ -131,7 +131,7 @@ namespace NightShift.UI.Shift
     }
 
     // ============================================================
-    /// <summary>社員情報の参照（権限・管理者権限・通常利用システムを表示）</summary>
+    /// <summary>社員情報の参照（権限・管理者権限・普段使うシステムを表示）</summary>
     public class EmployeeDetailView : MonoBehaviour
     {
         ShiftDesktop _d;
@@ -245,12 +245,31 @@ namespace NightShift.UI.Shift
             perms.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
             float gy = y;
             float h1 = PermissionBox("【システム利用権限】", PermissionCategory.SystemUse, perms, e, 0, gy);
-            float h2 = PermissionBox("【管理者権限】", PermissionCategory.Administrator, perms, e, 246, gy);
+            // 管理者権限は DAY4 から（それまでは利用システムの権限だけを見せる）
+            float h2 = _d.Unlocked(Features.AdminPermissions) ? PermissionBox("【管理者権限】", PermissionCategory.Administrator, perms, e, 246, gy) : 0;
             y = gy + Mathf.Max(h1, h2) + 6;
 
-            var ng = UIFactory.Group(_body, "【通常利用システム】", 0, y, 490, 48);
-            UIFactory.Label(ng, e.normalAccessTargets.Count == 0 ? "-" : string.Join("    ", e.normalAccessTargets), 12, TextAnchor.MiddleLeft)
+            var ng = UIFactory.Group(_body, "【普段使うシステム】（参考）", 0, y, 490, 48);
+            var names = new List<string>();
+            foreach (var t in e.normalAccessTargets) names.Add(ServiceLabel(t));
+            UIFactory.Label(ng, names.Count == 0 ? "-" : string.Join("　/　", names), 12, TextAnchor.MiddleLeft)
                 .rectTransform.Stretch();
+        }
+
+        static string ServiceLabel(string serviceId)
+        {
+            switch (serviceId)
+            {
+                case "WEB": return "Web閲覧";
+                case "MAIL": return "メール";
+                case "FILE": return "共有ファイル";
+                case "DEV": return "開発環境";
+                case "HR": return "人事システム";
+                case "ACCOUNTING": return "経理システム";
+                case "VPN": return "VPN接続";
+                case "ADMIN": return "サーバー管理";
+                default: return serviceId;
+            }
         }
 
         float PermissionBox(string title, PermissionCategory cat, List<PermissionDefinition> perms, EmployeeData e, float x, float y)

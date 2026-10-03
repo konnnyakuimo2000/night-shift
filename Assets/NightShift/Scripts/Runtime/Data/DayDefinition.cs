@@ -24,7 +24,7 @@ namespace NightShift.Data
         public bool blockUnregisteredToCritical = true;
         [Tooltip("不明な利用者は禁止")]
         public bool blockUnknownUser = true;
-        [Tooltip("接続種別に必要な権限が無ければ禁止")]
+        [Tooltip("利用システムに必要な権限が無ければ禁止")]
         public bool requirePermission = true;
         [Tooltip("VPN利用許可が必要な接続")]
         public bool requireVpnPermission = true;

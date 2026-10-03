@@ -10,24 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62edd6c1e4f726439a7d85a52522454, type: 3}
-  m_Name: EVT_D4_REQ_OTHER_EMPLOYEES_PC
+  m_Name: EVT_D4_REQ_ACCOUNTING_OK
   m_EditorClassIdentifier: 
-  eventId: D4_REQ_OTHER_EMPLOYEES_PC
+  eventId: D4_REQ_ACCOUNTING_OK
   category: 0
   kind: 1
   minimumDay: 1
-  maximumDay: 7
-  triggerWindow: {x: 130, y: 140}
+  maximumDay: 8
+  triggerWindow: {x: 30, y: 36}
   weight: 1
-  severity: 1
+  severity: 0
   userType: 0
   employeeConditions:
     departments: []
     excludeDepartments: []
-    requiredPermissions: []
+    requiredPermissions:
+    - {fileID: 11400000, guid: ffb1c8021d4af3b4582adec576894c2b, type: 2}
     excludedPermissions: []
-    requiredNormalTargets:
-    - FILE
+    requiredNormalTargets: []
     requireOnShift: 1
     requireVpnEnabled: 0
     requireVpnDisabled: 0
@@ -35,11 +35,11 @@ MonoBehaviour:
     preferUnused: 1
   accountName: 
   displayEmployeeId: 
-  sourceType: 6
+  sourceType: 0
   deviceNamePattern: 
   destinationMode: 0
-  destination: {fileID: 11400000, guid: ac4d108d5a938e0499b1d0aad2134cc0, type: 2}
-  accessType: FILE READ
+  destination: {fileID: 11400000, guid: 22e5ca4bb63575145b7f1c051b4c63ab, type: 2}
+  accessType: ACCOUNTING SYSTEM
   isMalicious: 0
   expectedAction: 0
   timeoutMinutes: 30

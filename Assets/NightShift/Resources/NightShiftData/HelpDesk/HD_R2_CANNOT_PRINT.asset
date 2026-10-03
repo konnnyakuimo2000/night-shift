@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   definitionId: R2_CANNOT_PRINT
   type: 1
-  minimumDay: 6
+  minimumDay: 7
   maximumDay: 7
   triggerWindow: {x: 25, y: 31}
   requester:

@@ -15,8 +15,8 @@ MonoBehaviour:
   eventId: REQ_ROUTINE_VPN
   category: 0
   kind: 1
-  minimumDay: 5
-  maximumDay: 7
+  minimumDay: 6
+  maximumDay: 8
   triggerWindow: {x: 0, y: 0}
   weight: 0.5
   severity: 0

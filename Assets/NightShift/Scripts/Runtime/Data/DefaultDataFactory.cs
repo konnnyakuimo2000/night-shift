@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 11;
+        public const int DataVersion = 12;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -49,7 +49,7 @@ namespace NightShift.Data
                 perms[id] = p; db.permissions.Add(p);
                 return p;
             }
-            P("GENERAL_BUSINESS", "一般業務", PermissionCategory.SystemUse, 10, "メール・社内Web・インターネット");
+            P("GENERAL_BUSINESS", "メール・Web", PermissionCategory.SystemUse, 10, "メール・社内Web・インターネット");
             P("FILE_ACCESS", "共有ファイル", PermissionCategory.SystemUse, 20, "FILE-SRV01 の共有フォルダ");
             P("DEV_ACCESS", "開発環境", PermissionCategory.SystemUse, 30, "開発リポジトリ");
             P("HR_ACCESS", "人事システム", PermissionCategory.SystemUse, 40, "人事・勤怠システム");
@@ -74,26 +74,26 @@ namespace NightShift.Data
                 new AccessTypeEntry { accessType = type, serviceId = service, requiredPermission = perm, requiresVpnEnabled = vpn };
 
             var internet = N("INTERNET", NodeRole.Internet, NodeZone.External, "-", new Vector2(0.07f, 0.5f), false, false);
-            internet.accessTypes.Add(A("WEB", "WEB", "GENERAL_BUSINESS"));
+            internet.accessTypes.Add(A("Web閲覧", "WEB", "GENERAL_BUSINESS"));
             N("FIREWALL", NodeRole.Firewall, NodeZone.Perimeter, "10.10.0.254", new Vector2(0.29f, 0.5f), false, false);
             var pcs = N("EMPLOYEE PCs", NodeRole.ClientGroup, NodeZone.Client, "10.10.x.x", new Vector2(0.92f, 0.5f), false, false);
             pcs.manageableFromDay = 99;
             var web = N("WEB-SRV01", NodeRole.Server, NodeZone.DMZ, "172.16.0.10", new Vector2(0.6f, 0.1f), false, false);
-            web.accessTypes.Add(A("HTTP", "CORP-WEB", ""));
+            web.accessTypes.Add(A("公開Web", "CORP-WEB", ""));
             var mail = N("MAIL-SRV01", NodeRole.Server, NodeZone.Internal, "10.10.0.20", new Vector2(0.6f, 0.26f), true, false);
-            mail.accessTypes.Add(A("MAIL", "MAIL", "GENERAL_BUSINESS"));
+            mail.accessTypes.Add(A("メール", "MAIL", "GENERAL_BUSINESS"));
             var file = N("FILE-SRV01", NodeRole.Server, NodeZone.Internal, "10.10.0.30", new Vector2(0.6f, 0.42f), true, false);
-            file.accessTypes.Add(A("FILE READ", "FILE", "FILE_ACCESS"));
-            file.accessTypes.Add(A("FILE WRITE", "FILE", "FILE_ACCESS"));
+            file.accessTypes.Add(A("共有ファイル（閲覧）", "FILE", "FILE_ACCESS"));
+            file.accessTypes.Add(A("共有ファイル（更新）", "FILE", "FILE_ACCESS"));
             var app = N("APP-SRV01", NodeRole.Server, NodeZone.Internal, "10.10.0.40", new Vector2(0.6f, 0.58f), true, false);
-            app.accessTypes.Add(A("DEV REPOSITORY", "DEV", "DEV_ACCESS"));
-            app.accessTypes.Add(A("HR SYSTEM", "HR", "HR_ACCESS"));
-            app.accessTypes.Add(A("ACCOUNTING SYSTEM", "ACCOUNTING", "ACCOUNTING_ACCESS"));
+            app.accessTypes.Add(A("開発環境", "DEV", "DEV_ACCESS"));
+            app.accessTypes.Add(A("人事システム", "HR", "HR_ACCESS"));
+            app.accessTypes.Add(A("経理システム", "ACCOUNTING", "ACCOUNTING_ACCESS"));
             var auth = N("AUTH-SRV01", NodeRole.Server, NodeZone.Internal, "10.10.0.5", new Vector2(0.6f, 0.74f), true, false);
-            auth.accessTypes.Add(A("VPN LOGIN", "VPN", "GENERAL_BUSINESS", true));
+            auth.accessTypes.Add(A("VPN接続", "VPN", "GENERAL_BUSINESS", true));
             var admin = N("ADMIN-SRV01", NodeRole.Server, NodeZone.Internal, "10.10.0.2", new Vector2(0.6f, 0.9f), true, true);
-            admin.accessTypes.Add(A("ADMIN LOGIN", "ADMIN", "SERVER_ADMIN"));
-            admin.accessTypes.Add(A("REMOTE CONSOLE", "ADMIN", "SERVER_ADMIN"));
+            admin.accessTypes.Add(A("管理ログイン", "ADMIN", "SERVER_ADMIN"));
+            admin.accessTypes.Add(A("リモート管理", "ADMIN", "SERVER_ADMIN"));
 
             // ---------------- Employees ----------------
             EmployeeData E(string id, string name, string kana, int age, string dept, string pos, string device, string ip,
@@ -185,14 +185,14 @@ namespace NightShift.Data
             routineVpn.employeeConditions.requireVpnEnabled = true;
             routineVpn.employeeConditions.requireLaptop = true;
             routineVpn.employeeConditions.preferUnused = false;
-            routineVpn.destination = auth; routineVpn.accessType = "VPN LOGIN";
+            routineVpn.destination = auth; routineVpn.accessType = "VPN接続";
             routineVpn.weight = 0.5f;
             routineVpn.timeoutMinutes = 25;
 
             var firstNormal = Ev("REQ_FIRST_NORMAL", new Vector2(2, 4));
             firstNormal.employeeConditions.requiredNormalTargets.Add("MAIL");
             firstNormal.employeeConditions.requiredPermissions.Add(perms["GENERAL_BUSINESS"]);
-            firstNormal.destination = mail; firstNormal.accessType = "MAIL";
+            firstNormal.destination = mail; firstNormal.accessType = "メール";
 
             var scanLog = Ev("LOG_SCANNER_NOISE", Vector2.zero);
             scanLog.minimumDay = 6;
@@ -213,7 +213,7 @@ namespace NightShift.Data
                 e.deviceNamePattern = "NB-PRIV{n}";
                 e.employeeConditions.requiredPermissions.Add(perms["FILE_ACCESS"]);
                 e.employeeConditions.requiredNormalTargets.Add("FILE");
-                e.destination = file; e.accessType = "FILE READ";
+                e.destination = file; e.accessType = "共有ファイル（閲覧）";
                 return e;
             }
             EventDefinition OtherDevice(string id, Vector2 w, NetworkNodeDefinition dest, string access, string service)
@@ -256,86 +256,85 @@ namespace NightShift.Data
                 e.userType = UserType.Unknown;
                 e.sourceType = SourceType.ExternalUnknown;
                 e.deviceNamePattern = "UNKNOWN-{n}";
-                e.destination = admin; e.accessType = "ADMIN LOGIN";
+                e.destination = admin; e.accessType = "管理ログイン";
                 e.isMalicious = true;
                 e.timeoutMinutes = 40;
                 return e;
             }
 
             // --- DAY1: 社員かどうか ---
-            var d1Former = NotAnEmployee("D1_REQ_FORMER_EMPLOYEE", new Vector2(20, 26), "木村 進", "E-0009", SourceType.UnregisteredDevice, "SALES-PC1{n}", mail, "MAIL");
+            var d1Former = NotAnEmployee("D1_REQ_FORMER_EMPLOYEE", new Vector2(20, 26), "木村 進", "E-0009", SourceType.UnregisteredDevice, "SALES-PC1{n}", mail, "メール");
             var d1Unknown = ExternalUnknownAdmin("D1_REQ_UNKNOWN_USER", new Vector2(90, 105));
             d1Unknown.deviceNamePattern = "UNKNOWN-14";
-            var d1Final = NotAnEmployee("D1_REQ_FINAL_GUEST", new Vector2(190, 205), "guest", "-", SourceType.UnregisteredDevice, "PC-GUEST{n}", file, "FILE READ");
+            var d1Final = NotAnEmployee("D1_REQ_FINAL_GUEST", new Vector2(190, 205), "guest", "-", SourceType.UnregisteredDevice, "PC-GUEST{n}", file, "共有ファイル（閲覧）");
 
             // --- DAY2: 端末 ---
             var d2Unregistered = Unregistered("D2_REQ_UNREGISTERED_DEVICE", new Vector2(20, 28));
-            var d2OtherDevice = OtherDevice("D2_REQ_OTHER_EMPLOYEES_PC", new Vector2(60, 75), mail, "MAIL", "MAIL");
-            var d2Former = NotAnEmployee("D2_REQ_FORMER_EMPLOYEE", new Vector2(130, 140), "田村 洋子", "E-0099", SourceType.UnregisteredDevice, "HR-PC0{n}", app, "HR SYSTEM");
-            var d2Final = OtherDevice("D2_REQ_FINAL_OTHER_DEVICE", new Vector2(195, 205), file, "FILE READ", "FILE");
+            var d2OtherDevice = OtherDevice("D2_REQ_OTHER_EMPLOYEES_PC", new Vector2(60, 75), mail, "メール", "MAIL");
+            var d2Former = NotAnEmployee("D2_REQ_FORMER_EMPLOYEE", new Vector2(130, 140), "田村 洋子", "E-0099", SourceType.UnregisteredDevice, "HR-PC0{n}", app, "人事システム");
+            var d2Final = OtherDevice("D2_REQ_FINAL_OTHER_DEVICE", new Vector2(195, 205), file, "共有ファイル（閲覧）", "FILE");
             d2Final.employeeConditions.requiredPermissions.Add(perms["FILE_ACCESS"]);
 
             // --- DAY3: 権限 ---
             var d3HR = Ev("D3_REQ_HR_SYSTEM", new Vector2(10, 14));
             d3HR.employeeConditions.requiredPermissions.Add(perms["HR_ACCESS"]);
             d3HR.employeeConditions.requiredNormalTargets.Add("HR");
-            d3HR.destination = app; d3HR.accessType = "HR SYSTEM";
-            var d3NoAccounting = NoPermission("D3_REQ_NO_ACCOUNTING", new Vector2(30, 36), "営業部", "ACCOUNTING_ACCESS", app, "ACCOUNTING SYSTEM");
+            d3HR.destination = app; d3HR.accessType = "人事システム";
+            var d3NoAccounting = NoPermission("D3_REQ_NO_ACCOUNTING", new Vector2(30, 36), "営業部", "ACCOUNTING_ACCESS", app, "経理システム");
             var d3LooksOdd = Ev("D3_REQ_DEV_FILE_LOOKS_ODD", new Vector2(70, 80));
             d3LooksOdd.employeeConditions.departments.Add("開発部");
             d3LooksOdd.employeeConditions.requiredPermissions.Add(perms["FILE_ACCESS"]);
             d3LooksOdd.employeeConditions.requiredNormalTargets.Add("FILE");
-            d3LooksOdd.destination = file; d3LooksOdd.accessType = "FILE WRITE";
+            d3LooksOdd.destination = file; d3LooksOdd.accessType = "共有ファイル（更新）";
             var d3Unregistered = Unregistered("D3_REQ_UNREGISTERED_DEVICE", new Vector2(130, 140));
-            var d3Final = NoPermission("D3_REQ_FINAL_NO_ADMIN", new Vector2(195, 204), "営業部", "SERVER_ADMIN", admin, "ADMIN LOGIN");
-            d3Final.employeeConditions.excludedPermissions.Add(perms["LOCAL_ADMIN"]);
+            var d3Final = NoPermission("D3_REQ_FINAL_NO_DEV", new Vector2(195, 204), "カスタマーサポート部", "DEV_ACCESS", app, "開発環境");
 
             // --- DAY4: サーバー（構成資料で必要な権限を調べる） ---
             var d4MailOk = Ev("D4_REQ_MAIL_OK", new Vector2(10, 14));
             d4MailOk.employeeConditions.requiredPermissions.Add(perms["GENERAL_BUSINESS"]);
             d4MailOk.employeeConditions.requiredNormalTargets.Add("MAIL");
-            d4MailOk.destination = mail; d4MailOk.accessType = "MAIL";
+            d4MailOk.destination = mail; d4MailOk.accessType = "メール";
             var d4AccountingOk = Ev("D4_REQ_ACCOUNTING_OK", new Vector2(30, 36));
             d4AccountingOk.employeeConditions.requiredPermissions.Add(perms["ACCOUNTING_ACCESS"]);
-            d4AccountingOk.destination = app; d4AccountingOk.accessType = "ACCOUNTING SYSTEM";
-            var d4NoDev = NoPermission("D4_REQ_NO_DEV", new Vector2(60, 70), "カスタマーサポート部", "DEV_ACCESS", app, "DEV REPOSITORY");
+            d4AccountingOk.destination = app; d4AccountingOk.accessType = "経理システム";
+            var d4NoHR = NoPermission("D4_REQ_NO_HR", new Vector2(60, 70), "営業部", "HR_ACCESS", app, "人事システム");
             var d4DevOk = Ev("D4_REQ_DEV_OK", new Vector2(95, 105));
             d4DevOk.employeeConditions.requiredPermissions.Add(perms["DEV_ACCESS"]);
             d4DevOk.employeeConditions.requiredNormalTargets.Add("DEV");
-            d4DevOk.destination = app; d4DevOk.accessType = "DEV REPOSITORY";
+            d4DevOk.destination = app; d4DevOk.accessType = "開発環境";
             // ローカル管理者はあるが、サーバー管理者ではない（管理者権限の種類に注意）
-            var d4Final = NoPermission("D4_REQ_FINAL_LOCAL_ADMIN_ONLY", new Vector2(195, 204), "開発部", "SERVER_ADMIN", admin, "REMOTE CONSOLE");
+            var d4Final = NoPermission("D4_REQ_FINAL_LOCAL_ADMIN_ONLY", new Vector2(195, 204), "開発部", "SERVER_ADMIN", admin, "リモート管理");
             d4Final.employeeConditions.requiredPermissions.Add(perms["LOCAL_ADMIN"]);
 
             // --- DAY5: ITサポート ---
-            var d5NoDev = NoPermission("D5_REQ_NO_DEV", new Vector2(70, 80), "カスタマーサポート部", "DEV_ACCESS", app, "DEV REPOSITORY");
-            var d5OtherDevice = OtherDevice("D5_REQ_OTHER_EMPLOYEES_PC", new Vector2(130, 140), file, "FILE READ", "FILE");
-            var d5Final = NoPermission("D5_REQ_FINAL_NO_HR", new Vector2(195, 204), "営業部", "HR_ACCESS", app, "HR SYSTEM");
+            var d5NoDev = NoPermission("D5_REQ_NO_DEV", new Vector2(70, 80), "カスタマーサポート部", "DEV_ACCESS", app, "開発環境");
+            var d5OtherDevice = OtherDevice("D5_REQ_OTHER_EMPLOYEES_PC", new Vector2(130, 140), file, "共有ファイル（閲覧）", "FILE");
+            var d5Final = NoPermission("D5_REQ_FINAL_NO_ACCOUNTING", new Vector2(195, 204), "営業部", "ACCOUNTING_ACCESS", app, "経理システム");
 
             // --- DAY6: 社外 ---
             var d6VpnLegit = Ev("D6_REQ_VPN_LEGIT", new Vector2(25, 32));
             d6VpnLegit.sourceType = SourceType.RegisteredLaptopExternal;
             d6VpnLegit.employeeConditions.requireVpnEnabled = true;
             d6VpnLegit.employeeConditions.requireLaptop = true;
-            d6VpnLegit.destination = auth; d6VpnLegit.accessType = "VPN LOGIN";
+            d6VpnLegit.destination = auth; d6VpnLegit.accessType = "VPN接続";
             var d6ExternalAdmin = ExternalUnknownAdmin("D6_REQ_EXTERNAL_ADMIN", new Vector2(55, 65));
             var d6NoVpn = Ev("D6_REQ_NO_VPN", new Vector2(100, 110));
             d6NoVpn.severity = Severity.Medium;
             d6NoVpn.sourceType = SourceType.RegisteredDeviceExternal;
             d6NoVpn.employeeConditions.requireVpnDisabled = true;
-            d6NoVpn.destination = auth; d6NoVpn.accessType = "VPN LOGIN";
+            d6NoVpn.destination = auth; d6NoVpn.accessType = "VPN接続";
             var d6Final = Ev("D6_REQ_FINAL_VPN_TO_ADMIN", new Vector2(195, 204));
             d6Final.severity = Severity.Medium;
             d6Final.sourceType = SourceType.RegisteredLaptopExternal;
             d6Final.employeeConditions.requireVpnEnabled = true;
             d6Final.employeeConditions.requireLaptop = true;
-            d6Final.destination = admin; d6Final.accessType = "ADMIN LOGIN";
+            d6Final.destination = admin; d6Final.accessType = "管理ログイン";
 
             // --- DAY7: 総仕上げ ---
             var d7Suspicious = ExternalUnknownAdmin("D7_REQ_SUSPICIOUS_DURING_REMOTE", new Vector2(30, 55));
             d7Suspicious.preferWhileRemoteActive = true; // 唯一の意図的な同時発生
             var d7Unregistered = Unregistered("D7_REQ_UNREGISTERED_DEVICE", new Vector2(150, 160));
-            var d7Final = NotAnEmployee("D7_REQ_FINAL_FORMER_VPN", new Vector2(200, 206), "木村 進", "E-0009", SourceType.ExternalUnknown, "NB-KIMURA", auth, "VPN LOGIN");
+            var d7Final = NotAnEmployee("D7_REQ_FINAL_FORMER_VPN", new Vector2(200, 206), "木村 進", "E-0009", SourceType.ExternalUnknown, "NB-KIMURA", auth, "VPN接続");
 
             // ---------------- Threat scenario ----------------
             var threatReq = Ev("REQ_THREAT_ADMIN", Vector2.zero, "Threats");
@@ -344,7 +343,7 @@ namespace NightShift.Data
             threatReq.accountName = "admin";
             threatReq.sourceType = SourceType.AttackerRelatedSource;
             threatReq.deviceNamePattern = "WIN-{hex}";
-            threatReq.destination = admin; threatReq.accessType = "ADMIN LOGIN";
+            threatReq.destination = admin; threatReq.accessType = "管理ログイン";
             threatReq.isMalicious = true;
             threatReq.notifyAsSecurityAlert = true;
             threatReq.severity = Severity.High;
@@ -434,7 +433,7 @@ namespace NightShift.Data
                 $"・{Col("接続を許可(A)", Allow)} / {Col("接続を拒否(B)", Deny)} … 選択中の要求を処理します。{B("処理後の取り消しはできません。")}",
                 "・社員情報を参照(R) … 利用者の社員番号で社員情報を検索します。",
                 $"・要求には {B("受付からの期限")} があります。期限を過ぎた要求は自動的に破棄されます。",
-                "・確認する項目: 利用者 / 社員番号 / 接続先 / 接続種別",
+                "・確認する項目: 利用者 / 社員番号 / 接続先 / 利用システム",
                 "",
                 B("■ 審査の流れ"),
                 "本日のルールでの判断の流れです（担当範囲が広がると段階が増えます）。",
@@ -456,12 +455,14 @@ namespace NightShift.Data
             Sec(manualSystem, Features.EmployeePermissions,
                 B("■ 権限情報"),
                 "{FIG:PERMISSION_MATCH}",
-                $"・{B("システム利用権限 / 管理者権限")} … ○ は権限あり、× は権限なし。",
-                $"・{B("通常利用システム")} … その社員が普段使うシステム。{Col("権限とは別の情報", Check)} です。");
+                $"・{B("権限欄")} … ○ は権限あり、× は権限なし。{B("要求の『必要な権限』と同じ名前の行")} を見ます。",
+                $"・{B("普段使うシステム")} … その社員が普段使うシステム。{Col("権限とは別の情報", Check)} です。");
+            Sec(manualSystem, Features.AdminPermissions,
+                $"・{B("【管理者権限】")} … パソコンやサーバーを管理する権限です。{B("「管理者」とつく権限は1種類ではありません")}（ローカル管理者・サーバー管理者 など）。");
             Sec(manualSystem, Features.PermissionHint,
                 $"・接続要求の {Col("「必要な権限」", Check)} 欄に、その接続に必要な権限が表示されます。社員情報の権限欄で ○ か × かを確認してください。");
             Sec(manualSystem, Features.ServerGuide,
-                $"・接続に必要な権限は、{Col("「社内サーバー構成資料」", Check)} の早見表で、接続先と接続種別から調べてください。");
+                $"・接続に必要な権限は、{Col("「社内サーバー構成資料」", Check)} の早見表で、接続先と利用システムから調べてください。");
             Sec(manualSystem, Features.HelpDesk,
                 B("■ ITサポート受付管理"),
                 $"・{B("相談")} … 社員からの質問です。回答を選んで [回答を送信(S)] します。",
@@ -495,8 +496,8 @@ namespace NightShift.Data
             var manualServer = Doc("SERVER_GUIDE", "社内サーバー構成資料", "社内サーバー構成資料.doc", "server", Features.ServerGuide,
                 "社内のサーバーと、接続に必要な権限の早見表です。サーバーの管理操作（サービス停止・再起動など）は、まだ担当範囲ではありません。");
             Sec(manualServer, "",
-                B("■ 早見表: 接続先 → 接続種別 → 必要な権限"),
-                "接続要求の「接続先」と「接続種別」を下の表で探し、右側の権限が社員情報で ○ か × かを確認します。",
+                B("■ 早見表: 接続先 → 利用システム → 必要な権限"),
+                "接続要求の「接続先」と「利用システム」を下の表で探し、右側の権限が社員情報で ○ か × かを確認します。",
                 "{ACCESS_TABLE}",
                 $"・{B("「管理者」とつく権限は1種類ではありません。")} 例: {B("ローカル管理者")} は自分のPCの管理権限で、{Col("サーバー管理者", Check)} とは別です。");
             Sec(manualServer, Features.NetworkMap,
@@ -507,7 +508,7 @@ namespace NightShift.Data
                 $"・{B("社内")} … 業務システム。社外から利用する場合は {Col("VPN 経由", Check)} が必要です。",
                 $"・{B("社員端末 (EMPLOYEE PCs)")} … 各社員の登録PC。",
                 "",
-                B("■ サーバー一覧（区分・接続種別と必要な権限）"),
+                B("■ サーバー一覧（区分・利用システムと必要な権限）"),
                 "{SERVER_LIST}",
                 "",
                 B("■ 補足"),
@@ -651,7 +652,7 @@ namespace NightShift.Data
 
             // DAY4: サーバー
             var day4 = Day(4, "SERVERS", "1998/05/21 (木)", "1998/05/20 (水)", 1.6f, new[] { rOwnDevice, rUnknown, rDevice, rPermissionGuide }, -1,
-                Features.ServerGuide);
+                Features.ServerGuide, Features.AdminPermissions);
             // 本日から「必要な権限」欄は表示しない（資料で調べる）。以降の日にも引き継がない
             day4.unlockedFeatures.Remove(Features.PermissionHint);
             allFeatures.Remove(Features.PermissionHint);
@@ -659,12 +660,12 @@ namespace NightShift.Data
             day4.briefingBody =
                 $"本日から {Col("「社内サーバー構成資料」", Allow)} をお渡しします。\n" +
                 $"接続要求の {B("「必要な権限」欄は本日から表示されません")}。資料の早見表で調べてください。\n\n" +
-                Tasks($"・{B("接続要求の審査")} … 接続先と接続種別から、資料で{B("必要な権限")}を調べます。",
+                Tasks($"・{B("接続要求の審査")} … 接続先と利用システムから、資料で{B("必要な権限")}を調べます。",
                       $"　調べた権限が、社員情報の {B("権限欄で ○")} なら許可、× なら拒否です。");
             day4.briefingFooter =
                 $"{B("「管理者」とつく権限は1種類ではありません。")} 必要な権限の名前をよく見比べてください。\n" + Footer;
             day4.policy = Policy(true, true, false);
-            day4.fixedEvents.AddRange(new[] { firstNormal, d4MailOk, d4AccountingOk, d4NoDev, d4DevOk, d4Final });
+            day4.fixedEvents.AddRange(new[] { firstNormal, d4MailOk, d4AccountingOk, d4NoHR, d4DevOk, d4Final });
             Slot(day4, "routine-1", 45, 55, routine);
             Slot(day4, "routine-2", 130, 145, routine);
             Slot(day4, "routine-3", 165, 180, routine);

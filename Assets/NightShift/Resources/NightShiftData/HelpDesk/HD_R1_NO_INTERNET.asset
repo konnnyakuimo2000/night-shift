@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   definitionId: R1_NO_INTERNET
   type: 1
-  minimumDay: 4
+  minimumDay: 5
   maximumDay: 7
   triggerWindow: {x: 40, y: 46}
   requester:

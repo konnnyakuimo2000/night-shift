@@ -181,7 +181,7 @@ namespace NightShift.UI
             var asks = new List<(string q, string no)>();
             asks.Add(("社員として登録されている？", "いいえ"));
             if (device) asks.Add(("端末は本人の登録端末？", "いいえ"));
-            if (permission) asks.Add(("接続種別に必要な権限が ○？", "いいえ"));
+            if (permission) asks.Add(("必要な権限が、社員情報で ○？", "いいえ"));
             if (external) asks.Add(("社外から管理系システムへの接続ではない？", "いいえ"));
             if (vpn) asks.Add(("社外からなら、VPN許可のある社員の登録端末？", "いいえ"));
 
@@ -275,15 +275,15 @@ namespace NightShift.UI
             if (ctx.Unlocked(Features.PermissionHint))
             {
                 // DAY3: 要求に表示された「必要な権限」と社員の権限欄を見比べるだけ
-                Box(f, 40, 16, 230, 74, "接続要求\n接続種別: FILE READ\n必要な権限: 共有ファイル", AskFill, CheckInk, 12);
+                Box(f, 40, 16, 230, 74, "接続要求\n利用システム: 共有ファイル（閲覧）\n必要な権限: 共有ファイル", AskFill, CheckInk, 12);
                 Arrow(f, new Vector2(270, 53), new Vector2(328, 53), Ink, "見比べる");
                 Box(f, 330, 16, 230, 74, "社員情報（権限欄）\n共有ファイル: ○", StepFill, Ink, 12);
             }
             else
             {
-                Box(f, 12, 16, 170, 74, "接続要求\n接続先: FILE-SRV01\n接続種別: FILE READ", StepFill, Ink, 11);
+                Box(f, 12, 16, 170, 74, "接続要求\n接続先: FILE-SRV01\n利用システム: 共有ファイル（閲覧）", StepFill, Ink, 11);
                 Arrow(f, new Vector2(182, 53), new Vector2(214, 53), Ink);
-                Box(f, 216, 16, 170, 74, "社内サーバー構成資料\n（早見表）\nFILE READ → 共有ファイル", AskFill, CheckInk, 11);
+                Box(f, 216, 16, 170, 74, "社内サーバー構成資料\n（早見表）\n共有ファイル（閲覧）→ 共有ファイル", AskFill, CheckInk, 11);
                 Arrow(f, new Vector2(386, 53), new Vector2(418, 53), Ink);
                 Box(f, 420, 16, 168, 74, "社員情報（権限欄）\n共有ファイル: ○", StepFill, Ink, 11);
             }

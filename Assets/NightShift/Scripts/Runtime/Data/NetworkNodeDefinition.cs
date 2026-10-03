@@ -11,7 +11,7 @@ namespace NightShift.Data
     [Serializable]
     public class AccessTypeEntry
     {
-        [Tooltip("表示名。例: FILE READ / ADMIN LOGIN / VPN LOGIN")]
+        [Tooltip("表示名（利用システム）。例: 共有ファイル（閲覧） / 人事システム / VPN接続")]
         public string accessType;
         [Tooltip("この接続が対応する業務サービス (WEB/MAIL/FILE...)。通常行動との照合用")]
         public string serviceId;

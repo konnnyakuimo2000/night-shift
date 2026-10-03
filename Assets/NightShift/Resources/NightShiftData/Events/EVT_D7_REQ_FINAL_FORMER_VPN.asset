@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62edd6c1e4f726439a7d85a52522454, type: 3}
-  m_Name: EVT_D5_REQ_VPN_LEGIT
+  m_Name: EVT_D7_REQ_FINAL_FORMER_VPN
   m_EditorClassIdentifier: 
-  eventId: D5_REQ_VPN_LEGIT
+  eventId: D7_REQ_FINAL_FORMER_VPN
   category: 0
   kind: 1
   minimumDay: 1
-  maximumDay: 7
-  triggerWindow: {x: 25, y: 32}
+  maximumDay: 8
+  triggerWindow: {x: 200, y: 206}
   weight: 1
-  severity: 0
-  userType: 0
+  severity: 2
+  userType: 2
   employeeConditions:
     departments: []
     excludeDepartments: []
@@ -28,14 +28,14 @@ MonoBehaviour:
     excludedPermissions: []
     requiredNormalTargets: []
     requireOnShift: 1
-    requireVpnEnabled: 1
+    requireVpnEnabled: 0
     requireVpnDisabled: 0
-    requireLaptop: 1
+    requireLaptop: 0
     preferUnused: 1
-  accountName: 
-  displayEmployeeId: 
-  sourceType: 1
-  deviceNamePattern: 
+  accountName: "\u6728\u6751 \u9032"
+  displayEmployeeId: E-0009
+  sourceType: 3
+  deviceNamePattern: NB-KIMURA
   destinationMode: 0
   destination: {fileID: 11400000, guid: 9dc40c3646e4a5446860183d2d50211f, type: 2}
   accessType: VPN LOGIN

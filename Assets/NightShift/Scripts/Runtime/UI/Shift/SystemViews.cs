@@ -212,7 +212,7 @@ namespace NightShift.UI.Shift
             body = (body ?? "").Replace("{OPERATOR}", d.S.OperatorName);
             if (body.Contains("{ACCESS_TABLE}"))
             {
-                // 早見表: 接続先 → 接続種別 → 必要な権限（1行1項目）
+                // 早見表: 接続先 → 利用システム → 必要な権限（1行1項目）
                 var sb = new StringBuilder();
                 foreach (var n in d.S.Network.Nodes)
                 {

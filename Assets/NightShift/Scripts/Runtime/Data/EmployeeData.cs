@@ -58,7 +58,7 @@ namespace NightShift.Data
         [Range(1, 5)] public int itLiteracy = 3;
         [Range(1, 5)] public int securityAwareness = 3;
 
-        [Header("通常利用システム（行動）")]
+        [Header("普段使うシステム（行動）")]
         public List<string> normalAccessTargets = new List<string>();
         public NormalBehaviorProfile normalBehavior = new NormalBehaviorProfile();
 

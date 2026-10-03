@@ -15,8 +15,8 @@ MonoBehaviour:
   eventId: LOG_SCANNER_NOISE
   category: 2
   kind: 2
-  minimumDay: 5
-  maximumDay: 7
+  minimumDay: 6
+  maximumDay: 8
   triggerWindow: {x: 0, y: 0}
   weight: 1
   severity: 0
