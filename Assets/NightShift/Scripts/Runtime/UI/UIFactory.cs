@@ -110,6 +110,13 @@ namespace NightShift.UI
             return t;
         }
 
+        public static Text Label(Transform parent, string text, float x, float y, float w, float h, int size, TextAnchor anchor, Color? color, bool mono = false)
+        {
+            var t = Label(parent, text, size, anchor, color, mono);
+            t.rectTransform.Place(x, y, w, h);
+            return t;
+        }
+
         // ---------------- Button ----------------
         public static RetroButton Button(Transform parent, string label, Action onClick, string icon = null)
         {

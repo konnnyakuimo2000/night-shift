@@ -61,5 +61,13 @@ namespace NightShift.UI
         public static void Stamp() => Play(Tone("stamp", new[] { 120f, 90f }, 0.05f, 0.0f, 0.5f));
         public static void Startup() => Play(Tone("startup", new[] { 392f, 523f, 659f, 784f, 0f, 1046f }, 0.12f, 0.0f, 0.18f, false));
         public static void Connect() => Play(Tone("connect", new[] { 1200f, 0f, 1200f, 1500f }, 0.05f, 0.01f, 0.12f));
+
+        // ---- リザルト画面用 ----
+        public static void Type() => Play(Tone("type", new[] { 2400f }, 0.008f, 0f, 0.08f), 0.4f);
+        public static void Tick() => Play(Tone("tick", new[] { 1500f }, 0.015f, 0f, 0.1f), 0.5f);
+        public static void Coin() => Play(Tone("coin", new[] { 1319f, 1976f }, 0.05f, 0.0f, 0.12f), 0.6f);
+        public static void BigStamp() => Play(Tone("bigstamp", new[] { 90f, 70f, 55f }, 0.07f, 0.0f, 0.6f));
+        public static void Fanfare() => Play(Tone("fanfare", new[] { 523f, 659f, 784f, 0f, 784f, 1046f }, 0.12f, 0.01f, 0.2f, false));
+        public static void Reveal() => Play(Tone("reveal", new[] { 392f, 523f }, 0.08f, 0.0f, 0.16f, false));
     }
 }
