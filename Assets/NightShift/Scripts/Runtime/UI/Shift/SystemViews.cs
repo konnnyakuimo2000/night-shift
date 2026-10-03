@@ -189,7 +189,16 @@ namespace NightShift.UI.Shift
             close.Rect.pivot = new Vector2(1, 0);
             close.Rect.anchoredPosition = new Vector2(0, 2);
             w.Accelerators[KeyCode.C] = w.RequestClose;
-            w.SetStatus(0, doc.fileName);
+            if (d.IsRequiredReading(doc.documentId) && !d.IsRead(doc.documentId))
+            {
+                w.SetStatus(0, $"{doc.fileName} — 最後までスクロールすると「既読」になります。");
+                ReadTracker.Attach(sr, () =>
+                {
+                    d.MarkRead(doc.documentId);
+                    if (w != null) w.SetStatus(0, $"{doc.fileName} — 既読");
+                });
+            }
+            else w.SetStatus(0, doc.fileName);
         }
 
         static string PermissionLabel(ShiftDesktop d, string id)

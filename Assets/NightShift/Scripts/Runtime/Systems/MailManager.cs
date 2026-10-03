@@ -86,7 +86,7 @@ namespace NightShift.Systems
                 string mark = isNew ? "  <color=#D04000><b>【NEW】</b></color>" : changed ? "  <color=#D04000><b>【変更】</b></color>" : "";
                 sb.AppendLine($"  <b>{i + 1}.</b> {day.rules[i]}{mark}");
             }
-            sb.AppendLine("{FIG:REVIEW_FLOW}");
+            sb.AppendLine();
             sb.Append(day.briefingFooter);
             return sb.ToString();
         }

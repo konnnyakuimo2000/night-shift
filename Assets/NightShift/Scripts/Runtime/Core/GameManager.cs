@@ -39,6 +39,11 @@ namespace NightShift.Core
         public Canvas Canvas { get; private set; }
 
         ShiftDesktop _desktop;
+        readonly System.Collections.Generic.HashSet<string> _readMarks = new System.Collections.Generic.HashSet<string>();
+
+        /// <summary>業務開始前に読んだもの（日ごと）。同じ日をやり直しても引き継ぐ。</summary>
+        public bool IsRead(int day, string id) => _readMarks.Contains(day + ":" + id);
+        public void MarkRead(int day, string id) => _readMarks.Add(day + ":" + id);
         CanvasScaler _scaler;
 
         /// <summary>UI の拡大率（設定）を CanvasScaler に反映</summary>

@@ -235,6 +235,65 @@ namespace NightShift.UI.Shift
             S.Time.Paused = false;
         }
 
+        // ---------------- 業務開始前に読むもの ----------------
+        public const string BriefingReadId = "MAIL";
+        public event Action ReadingChanged;
+
+        public class ReadingItem
+        {
+            public string Id;
+            public string Label;
+            public bool Read;
+        }
+
+        static bool Available(Data.DocumentDefinition doc, Data.DayDefinition day) =>
+            doc != null && day != null && (string.IsNullOrEmpty(doc.requiredFeature) || day.IsUnlocked(doc.requiredFeature));
+
+        /// <summary>
+        /// 業務開始前に読む必要があるもの: 今日の業務連絡メール本文 ＋ 今日新しく届いた／章が追加されたマニュアル。
+        /// </summary>
+        public List<ReadingItem> RequiredReading()
+        {
+            var day = S.Day;
+            var list = new List<ReadingItem>
+            {
+                new ReadingItem { Id = BriefingReadId, Label = "業務連絡メール（本文）", Read = Game.IsRead(day.dayNumber, BriefingReadId) }
+            };
+            var yesterday = Game.Database.FindDay(day.dayNumber - 1);
+            foreach (var doc in day.attachments)
+            {
+                if (!Available(doc, day)) continue;
+                bool updated = yesterday == null || !Available(doc, yesterday) || !yesterday.attachments.Contains(doc);
+                if (!updated)
+                    foreach (var sec in doc.sections)
+                        if (sec != null && !string.IsNullOrEmpty(sec.requiredFeature) && day.IsUnlocked(sec.requiredFeature) && !yesterday.IsUnlocked(sec.requiredFeature))
+                        { updated = true; break; }
+                if (!updated) continue;
+                list.Add(new ReadingItem { Id = doc.documentId, Label = doc.fileName, Read = Game.IsRead(day.dayNumber, doc.documentId) });
+            }
+            return list;
+        }
+
+        public bool IsRequiredReading(string id)
+        {
+            foreach (var r in RequiredReading()) if (r.Id == id) return true;
+            return false;
+        }
+
+        public bool ReadingComplete
+        {
+            get { foreach (var r in RequiredReading()) if (!r.Read) return false; return true; }
+        }
+
+        public bool IsRead(string id) => Game.IsRead(S.Day.dayNumber, id);
+
+        public void MarkRead(string id)
+        {
+            if (Game.IsRead(S.Day.dayNumber, id)) return;
+            Game.MarkRead(S.Day.dayNumber, id);
+            ReadingChanged?.Invoke();
+        }
+
         // ---------------- Features ----------------
         public bool Unlocked(string feature) => S.Day.IsUnlocked(feature);
 

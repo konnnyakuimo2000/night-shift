@@ -19,6 +19,7 @@ namespace NightShift.UI.Shift
         RectTransform _preview;
         RetroButton _inboxButton;
         RetroButton _start;
+        Text _checklist;
         Action _onStart;
         bool _dirty;
         MailMessage _shown;
@@ -57,6 +58,14 @@ namespace NightShift.UI.Shift
                 _start.Rect.AnchorTopRight(0, 0, 190, 28);
                 _start.Label.fontStyle = FontStyle.Bold;
                 _w.Accelerators[KeyCode.S] = StartShift;
+                // 業務開始前に読むもののチェックリスト
+                _checklist = UIFactory.Label(c, "", 11, TextAnchor.MiddleRight);
+                _checklist.rectTransform.AnchorTopRight(196, 0, 560, 30);
+                _checklist.horizontalOverflow = HorizontalWrapMode.Wrap;
+                _d.ReadingChanged += OnReadingChanged;
+                UpdateStartState();
+                _docsRead = 0;
+                foreach (var r in _d.RequiredReading()) if (r.Read && r.Id != ShiftDesktop.BriefingReadId) _docsRead++;
             }
 
             // フォルダー
@@ -91,16 +100,57 @@ namespace NightShift.UI.Shift
         void OnDestroy()
         {
             if (_d != null && _d.S != null) _d.S.Mail.Changed -= OnMailChanged;
+            if (_d != null) _d.ReadingChanged -= OnReadingChanged;
         }
 
         void OnMailChanged() => _dirty = true;
 
+        int _docsRead = -1;
+
+        void OnReadingChanged()
+        {
+            UpdateStartState();
+            // マニュアルの既読が変わった時だけ添付ファイルの表示を更新（本文の読了ではスクロール位置を保つ）
+            int docsRead = 0;
+            foreach (var r in _d.RequiredReading()) if (r.Read && r.Id != ShiftDesktop.BriefingReadId) docsRead++;
+            if (docsRead == _docsRead) return;
+            _docsRead = docsRead;
+            var keep = _shown;
+            _shown = null;
+            Show(keep);
+        }
+
+        /// <summary>メール本文と必要なマニュアルを最後まで読むまで START SHIFT を押せない</summary>
+        void UpdateStartState()
+        {
+            if (_start == null || _onStart == null) return;
+            var items = _d.RequiredReading();
+            var sb = new System.Text.StringBuilder("開始前に最後まで読む: ");
+            bool all = true;
+            for (int i = 0; i < items.Count; i++)
+            {
+                var it = items[i];
+                if (!it.Read) all = false;
+                if (i > 0) sb.Append("  ");
+                sb.Append(it.Read ? "<color=#0030A0>■</color> " : "<color=#B00000>□</color> ").Append(it.Label);
+            }
+            _checklist.text = sb.ToString();
+            _start.Interactable = all;
+        }
+
         void StartShift()
         {
             if (_onStart == null) return;
+            if (!_d.ReadingComplete)
+            {
+                AudioFx.Error();
+                _w.SetStatus(0, "業務連絡メールと添付のマニュアルを最後まで読んでから開始してください。");
+                return;
+            }
             var start = _onStart;
             _onStart = null;
             if (_start != null) _start.gameObject.SetActive(false);
+            if (_checklist != null) _checklist.gameObject.SetActive(false);
             _w.Closable = true;
             _w.Accelerators.Remove(KeyCode.S);
             _w.Accelerators[KeyCode.C] = _w.RequestClose;
@@ -156,7 +206,10 @@ namespace NightShift.UI.Shift
                 foreach (var doc in docs)
                 {
                     var dd = doc;
-                    var tile = UIFactory.Button(box.transform, doc.fileName, () => DocumentView.Open(_d, dd), doc.icon);
+                    string mark = "";
+                    if (m.IsBriefing && m.Day == _d.S.Day.dayNumber && _d.IsRequiredReading(doc.documentId))
+                        mark = _d.IsRead(doc.documentId) ? "\n<color=#0030A0>既読</color>" : "\n<color=#B00000>未読（要確認）</color>";
+                    var tile = UIFactory.Button(box.transform, doc.fileName + mark, () => DocumentView.Open(_d, dd), doc.icon);
                     tile.Rect.Place(x, 28, 230, 52);
                     tile.Icon.sprite = RetroTheme.BigIcon(doc.icon);
                     tile.Icon.rectTransform.sizeDelta = new Vector2(32, 32);
@@ -177,16 +230,12 @@ namespace NightShift.UI.Shift
                 y += 34;
             }
 
-            // 図はそのメールの日のルールで描く（過去の業務連絡は当時の内容のまま）
-            var ctx = _d.FigureContext;
-            var mailDay = m.IsBriefing ? _d.Game.Database.FindDay(m.Day) : null;
-            if (mailDay != null)
-            {
-                ctx.Day = mailDay;
-                ctx.Unlocked = f => mailDay.IsUnlocked(f);
-            }
-            var sr = DocumentRenderer.Render(_preview, m.Body, (id, holder) => ManualFigures.Build(id, holder, ctx));
+            // メール本文は文章のみ（図はマニュアル側）
+            var sr = DocumentRenderer.Render(_preview, m.Body, null);
             ((RectTransform)sr.transform).Stretch(0, y, 0, 0);
+            // 今日の業務連絡は、最後までスクロールしたら既読
+            if (m.IsBriefing && m.Day == _d.S.Day.dayNumber && !_d.IsRead(ShiftDesktop.BriefingReadId))
+                ReadTracker.Attach(sr, () => _d.MarkRead(ShiftDesktop.BriefingReadId));
             _w.SetStatus(0, m.IsBriefing ? $"DAY {m.Day} の業務連絡" : "");
         }
 
