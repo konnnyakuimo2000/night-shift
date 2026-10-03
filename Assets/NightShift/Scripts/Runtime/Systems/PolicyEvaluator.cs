@@ -57,6 +57,11 @@ namespace NightShift.Systems
                     reason = "VPN利用許可なし";
                     return ExpectedAction.Block;
                 }
+                if (rules.requireVpnPermission && access.requiresVpnEnabled && external && e.Device != e.Employee.laptopDeviceId)
+                {
+                    reason = "VPN端末ではない";
+                    return ExpectedAction.Block;
+                }
             }
 
             if (external && dest != null && dest.zone == NodeZone.Internal && (access == null || !access.requiresVpnEnabled) && rules.requireVpnPermission)

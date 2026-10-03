@@ -51,7 +51,7 @@ namespace NightShift.Events
         public object Owner;              // ThreatScenarioRun など
         public bool NotifyAsSecurityAlert;
 
-        public string SourceLabel => (Zone == SourceZone.External ? "EXTERNAL" : "INTERNAL") + " (" + SourceIp + ")";
+        public string SourceLabel => (Zone == SourceZone.External ? "社外" : "社内") + " (" + SourceIp + ")";
         public string DestinationLabel => Destination != null ? Destination.nodeId : "-";
     }
 }

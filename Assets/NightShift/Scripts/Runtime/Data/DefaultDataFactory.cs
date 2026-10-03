@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 13;
+        public const int DataVersion = 14;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -134,7 +134,7 @@ namespace NightShift.Data
             E("E-0067", "中村 彩", "ナカムラ アヤ", 24, "カスタマーサポート部", "オペレーター", "CS-PC04", "10.10.7.14", "22:00-06:00 (夜勤)", true, 2, 3,
                 new[] { "WEB", "MAIL", "FILE" }, GB_FILE);
             E("E-0071", "小林 誠", "コバヤシ マコト", 38, "情報システム部", "ネットワーク管理者", "IT-PC02", "10.10.8.12", "09:00-18:00", false, 5, 5,
-                new[] { "WEB", "MAIL", "FILE", "ADMIN" }, new[] { "GENERAL_BUSINESS", "FILE_ACCESS", "LOCAL_ADMIN", "NETWORK_ADMIN", "SERVER_ADMIN" });
+                new[] { "WEB", "MAIL", "FILE", "ADMIN" }, new[] { "GENERAL_BUSINESS", "FILE_ACCESS", "LOCAL_ADMIN", "NETWORK_ADMIN", "SERVER_ADMIN" }, "NB-IT02");
             E("E-0078", "加藤 由美", "カトウ ユミ", 41, "情報システム部", "サーバー管理者", "IT-PC03", "10.10.8.13", "09:00-18:00", false, 5, 5,
                 new[] { "WEB", "MAIL", "FILE", "ADMIN" }, new[] { "GENERAL_BUSINESS", "FILE_ACCESS", "LOCAL_ADMIN", "SERVER_ADMIN", "USER_ADMIN" });
 
@@ -317,18 +317,40 @@ namespace NightShift.Data
             d6VpnLegit.employeeConditions.requireVpnEnabled = true;
             d6VpnLegit.employeeConditions.requireLaptop = true;
             d6VpnLegit.destination = auth; d6VpnLegit.accessType = "VPN接続";
-            var d6ExternalAdmin = ExternalUnknownAdmin("D6_REQ_EXTERNAL_ADMIN", new Vector2(55, 65));
-            var d6NoVpn = Ev("D6_REQ_NO_VPN", new Vector2(100, 110));
+            // VPN を使わずに社外から社内のシステムへ（VPN許可のある社員でも拒否）
+            var d6DirectFile = Ev("D6_REQ_DIRECT_FILE_FROM_OUTSIDE", new Vector2(75, 85));
+            d6DirectFile.severity = Severity.Medium;
+            d6DirectFile.sourceType = SourceType.RegisteredLaptopExternal;
+            d6DirectFile.employeeConditions.requireVpnEnabled = true;
+            d6DirectFile.employeeConditions.requireLaptop = true;
+            d6DirectFile.employeeConditions.requiredPermissions.Add(perms["FILE_ACCESS"]);
+            d6DirectFile.destination = file; d6DirectFile.accessType = "共有ファイル（閲覧）";
+            // VPN利用が「不可」の社員
+            var d6NoVpn = Ev("D6_REQ_NO_VPN", new Vector2(110, 120));
             d6NoVpn.severity = Severity.Medium;
             d6NoVpn.sourceType = SourceType.RegisteredDeviceExternal;
             d6NoVpn.employeeConditions.requireVpnDisabled = true;
             d6NoVpn.destination = auth; d6NoVpn.accessType = "VPN接続";
-            var d6Final = Ev("D6_REQ_FINAL_VPN_TO_ADMIN", new Vector2(195, 204));
+            // 最後の問題: サーバー管理者の社員が自宅から直接「管理ログイン」→ 管理者でも VPN接続 以外は拒否
+            var d6Final = Ev("D6_REQ_FINAL_ADMIN_FROM_HOME", new Vector2(195, 204));
             d6Final.severity = Severity.Medium;
             d6Final.sourceType = SourceType.RegisteredLaptopExternal;
+            d6Final.employeeConditions.requireOnShift = false; // 退勤後に自宅から
             d6Final.employeeConditions.requireVpnEnabled = true;
             d6Final.employeeConditions.requireLaptop = true;
+            d6Final.employeeConditions.requiredPermissions.Add(perms["SERVER_ADMIN"]);
             d6Final.destination = admin; d6Final.accessType = "管理ログイン";
+            // スキャンしてきた外部IPが、そのまま管理サーバーへログインを試みる（ログで同じIPと分かる）
+            var d6ScanAdminReq = Ev("D6_REQ_SCANNER_ADMIN", Vector2.zero, "Threats");
+            d6ScanAdminReq.category = EventCategory.Threat;
+            d6ScanAdminReq.notifyAsSecurityAlert = true;
+            d6ScanAdminReq.severity = Severity.High;
+            d6ScanAdminReq.userType = UserType.Unknown;
+            d6ScanAdminReq.sourceType = SourceType.AttackerSource;
+            d6ScanAdminReq.deviceNamePattern = "UNKNOWN-{n}";
+            d6ScanAdminReq.destination = admin; d6ScanAdminReq.accessType = "管理ログイン";
+            d6ScanAdminReq.isMalicious = true;
+            d6ScanAdminReq.timeoutMinutes = 40;
 
             // --- DAY7: 総仕上げ ---
             var d7Suspicious = ExternalUnknownAdmin("D7_REQ_SUSPICIOUS_DURING_REMOTE", new Vector2(30, 55));
@@ -368,6 +390,16 @@ namespace NightShift.Data
             noise.startWindow = new Vector2(40, 50);
             noise.sourceIpPrefix = "203.0.113.";
             noise.steps.Add(new ThreatStep { label = "ポートスキャン", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = web, eventType = "FW", result = "DENY", detail = "TCP 21|TCP 23|TCP 445|TCP 1433|TCP 3306", repeat = 5, repeatIntervalMinutes = 0.3f });
+
+            // DAY6: スキャンしたIPが、そのまま管理サーバーへのログインを試みる（ログで同じIPと気付ける）
+            var scanThenAdmin = b.Add(ScriptableObject.CreateInstance<ThreatScenarioDefinition>(), "Threats", "THREAT_ScanThenAdmin");
+            scanThenAdmin.scenarioId = "THREAT_SCAN_THEN_ADMIN";
+            scanThenAdmin.minimumDay = 6;
+            scanThenAdmin.designNote = "外部からポートスキャン（ログに記録）→ 同じIPから ADMIN-SRV01 への管理ログイン要求。セキュリティ警告からログを開くと同じIPが見つかる。";
+            scanThenAdmin.startWindow = new Vector2(45, 52);
+            scanThenAdmin.sourceIpPrefix = "203.0.113.";
+            scanThenAdmin.steps.Add(new ThreatStep { label = "ポートスキャン", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = admin, eventType = "FW", result = "DENY", detail = "TCP 22|TCP 23|TCP 3389|TCP 445", repeat = 4, repeatIntervalMinutes = 0.4f });
+            scanThenAdmin.steps.Add(new ThreatStep { label = "管理サーバーへの接続要求", offsetMinutes = 6, kind = ThreatStepKind.ConnectionRequest, destination = admin, request = d6ScanAdminReq });
 
             // ---------------- Help Desk ----------------
             HelpDeskDefinition H(string id, HelpDeskType type, Vector2 window, int day)
@@ -469,8 +501,17 @@ namespace NightShift.Data
                 $"・{B("障害")} … 社員PCの不具合です。[リモート接続(R)] で社員PCを操作し、直ったことを確認してから [対応完了を報告(P)] してください。",
                 $"・{Col("リモート接続中も業務時間は進みます。", Deny)} 他の業務が入ったら、いったん中断して戻ってきても構いません。");
             Sec(manualSystem, Features.SystemLog,
+                B("■ 社外からの接続"),
+                $"接続要求の {B("接続元")} が {Col("「社外」", Check)} のときは、次の3つだけを確認します。",
+                "{FIG:EXTERNAL_FLOW}",
+                $"・{B("①")} 利用システムが {B("「VPN接続」")} か（社外から社内のシステムを直接使うことはできません）",
+                $"・{B("②")} 社員情報の {B("「VPN利用」")} が {Col("許可", Allow)} か",
+                $"・{B("③")} 接続要求の端末が、社員情報の {B("「VPN端末」")} と同じか",
+                $"・{Col("管理者でも、社外からは「VPN接続」以外は拒否です。", Deny)}",
+                "",
                 B("■ システムログの検索・参照"),
                 "社内システムの主な通信・処理の記録です。キーワード（IPアドレス、サーバー名、利用者など）と種別で絞り込めます。",
+                $"・{B("セキュリティ警告")} が出たら、要求の接続元（IPアドレス）をキーワードに入れて検索し、{B("前に同じIPが何をしていたか")} を確認します。",
                 "・行をダブルクリックすると、その接続元で絞り込みます。",
                 $"・ログは自動では分析されません。{B("同じ接続元・同じ時間帯の記録")} に注目してください。");
             Sec(manualSystem, Features.NetworkMap,
@@ -550,8 +591,8 @@ namespace NightShift.Data
             string rOwnDevice = $"{B("社員")}が{B("自分の登録端末")}から接続する場合は {Col("許可", Allow)} する。";
             string rDevice = $"{B("その社員の登録端末ではない端末")}からの接続は、社員本人でも {Col("拒否", Deny)}。";
             string rPermission = $"接続要求の {Col("「必要な権限」", Check)} が、社員情報の権限欄で × なら {Col("拒否", Deny)}。";
-            string rExternalAdmin = $"{B("社外")}から{B("管理系システム")}（ADMIN-SRV01 等）への接続は {Col("禁止", Deny)}。";
-            string rVpn = $"社外からの接続 (VPN) は、{Col("VPN利用を許可された社員の登録端末", Check)} に限る。";
+            // 社外のルールは1つにまとめる（「VPN接続」以外は、管理者でも全部拒否）
+            string rExternal = $"接続元が {B("社外")} の場合は {Col("「VPN接続」だけ", Check)}。社員の {B("VPN利用が「許可」")} で、{B("VPN端末")} からなら {Col("許可", Allow)}。それ以外は {Col("拒否", Deny)}。";
 
             // ---------------- Days ----------------
             var allFeatures = new List<string>();
@@ -684,26 +725,29 @@ namespace NightShift.Data
 
             // DAY6: 社外
             var day6 = Day(6, "OUTSIDE THE WALL", "1998/05/25 (月)", "1998/05/24 (日)", 2f,
-                new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternalAdmin, rVpn }, 4,
+                new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternal }, 4,
                 Features.SystemLog, Features.NetworkMap, Features.SecurityInfo);
             day6.briefingBody =
-                $"本日から {Col("システムログ", Allow)}・{Col("ネットワークマップ", Allow)}・{Col("セキュリティ情報", Allow)} も利用できます。\n" +
-                $"{B("社外からの接続")}にも注意してください。社外から社内のシステムを使うには VPN が必要です。\n\n" +
-                Tasks($"・{B("接続要求の審査")}", $"・{B("IT問い合わせ")}への対応", $"・{B("システムログ・ネットワークの監視")}");
+                $"本日から {B("社外からの接続")} も審査します。接続要求の {Col("接続元", Check)} が {B("「社外」")} なら、ルール5で判断してください。\n" +
+                $"見るところは3つだけです: {B("① 利用システムが「VPN接続」か")}　{B("② 社員の「VPN利用」が許可か")}　{B("③ 端末がその社員の「VPN端末」か")}\n" +
+                $"また、{Col("システムログ", Allow)}・{Col("ネットワークマップ", Allow)}・{Col("セキュリティ情報", Allow)} が使えるようになります。\n\n" +
+                Tasks($"・{B("接続要求の審査")}（社外からの接続を含む）",
+                      $"・{B("IT問い合わせ")}への対応",
+                      $"・{B("セキュリティ警告")}が出たら、{Col("システムログ", Check)} でその接続元（IPアドレス）を検索し、前に何をしていたか確認する");
             day6.briefingFooter =
-                $"不審な要求があったら、{Col("システムログ", Check)} で同じ接続元の記録がないか確認してください。\n" +
-                $"{B("迷ったら、まず調べること。")}\n" + Footer;
+                $"{B("管理者でも、社外からは「VPN接続」以外は拒否です。")}\n" +
+                $"判断の流れは、操作マニュアルの {Col("「社外からの接続」", Check)} の図を見てください。\n" + Footer;
             day6.policy = Policy(true, true, true);
-            day6.fixedEvents.AddRange(new[] { firstNormal, d6VpnLegit, d6ExternalAdmin, d6NoVpn, d6Final });
+            day6.fixedEvents.AddRange(new[] { firstNormal, d6VpnLegit, d6DirectFile, d6NoVpn, d6Final });
             day6.helpDesk.Add(hdA2);
-            day6.threats.Add(noise);
-            Slot(day6, "routine-1", 75, 90, routine, routineVpn);
-            Slot(day6, "routine-2", 130, 145, routine);
-            Slot(day6, "routine-3", 160, 175, routine, routineVpn);
+            day6.threats.Add(scanThenAdmin);
+            Slot(day6, "routine-1", 95, 105, routine);
+            Slot(day6, "routine-2", 135, 150, routine, routineVpn);
+            Slot(day6, "routine-3", 165, 180, routine, routineVpn);
 
             // DAY7: 総仕上げ
             var day7 = Day(7, "LONG NIGHT", "1998/05/26 (火)", "1998/05/25 (月)", 2f,
-                new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternalAdmin, rVpn }, -1);
+                new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternal }, -1);
             day7.briefingBody =
                 "研修期間の最終日です。これまでの業務をすべて担当していただきます。\n" +
                 $"本日はリモートサポート中に {B("別の業務が割り込むことがあります")}。いったん中断して対応し、あとで戻ってきてください。\n\n" +

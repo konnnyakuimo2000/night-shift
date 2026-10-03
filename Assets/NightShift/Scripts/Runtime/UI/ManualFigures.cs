@@ -44,6 +44,7 @@ namespace NightShift.UI
                 case "PERMISSION_MATCH": return PermissionMatch(holder, ctx);
                 case "NETWORK_ZONES": return NetworkZones(holder, ctx);
                 case "REMOTE_FLOW": return RemoteFlow(holder);
+                case "EXTERNAL_FLOW": return ExternalFlow(holder);
                 default: return 0;
             }
         }
@@ -182,8 +183,7 @@ namespace NightShift.UI
             asks.Add(("社員として登録されている？", "いいえ"));
             if (device) asks.Add(("端末は本人の登録端末？", "いいえ"));
             if (permission) asks.Add(("必要な権限が、社員情報で ○？", "いいえ"));
-            if (external) asks.Add(("社外から管理系システムへの接続ではない？", "いいえ"));
-            if (vpn) asks.Add(("社外からなら、VPN許可のある社員の登録端末？", "いいえ"));
+            if (external || vpn) asks.Add(("社外からなら「VPN接続」で、VPN許可・VPN端末がそろっている？", "いいえ"));
 
             const float stepH = 30, gap = 18, cx = 60, cw = 330, denyX = 450, denyW = 110;
             float h = 20 + (2 + asks.Count + 1) * (stepH + gap);
@@ -338,6 +338,35 @@ namespace NightShift.UI
 
             Box(f, 470, top + 24, 100, 46, "社員PC\n(登録端末)", StepFill, Ink, 11, true);
             Arrow(f, new Vector2(470, top + 47), new Vector2(452, top + 47), Ink);
+            return h + 20;
+        }
+
+        /// <summary>社外からの接続の判断（3つの確認だけ）</summary>
+        static float ExternalFlow(RectTransform holder)
+        {
+            const float stepH = 30, gap = 18, cx = 60, cw = 330, denyX = 450, denyW = 110;
+            string[] asks =
+            {
+                "① 利用システムは「VPN接続」？",
+                "② 社員情報の「VPN利用」は許可？",
+                "③ 端末は社員の「VPN端末」？",
+            };
+            float h = 20 + (asks.Length + 2) * (stepH + gap);
+            var f = Frame(holder, h, "社外からの接続の判断");
+            float y = 12;
+            Box(f, cx, y, cw, stepH, "接続元が「社外」の要求", StepFill, Ink, 12, true);
+            Arrow(f, new Vector2(cx + cw / 2, y + stepH), new Vector2(cx + cw / 2, y + stepH + gap), Ink);
+            y += stepH + gap;
+            foreach (var q in asks)
+            {
+                Box(f, cx, y, cw, stepH, q, AskFill, CheckInk, 12, true);
+                Arrow(f, new Vector2(cx + cw, y + stepH / 2), new Vector2(denyX, y + stepH / 2), DenyInk, "いいえ");
+                Box(f, denyX, y, denyW, stepH, "拒否", DenyFill, DenyInk, 13, true);
+                Arrow(f, new Vector2(cx + cw / 2, y + stepH), new Vector2(cx + cw / 2, y + stepH + gap), Ink);
+                Text(f, "はい", cx + cw / 2 + 6, y + stepH + 1, 40, 16, 11, TextAnchor.MiddleLeft, AllowInk).fontStyle = FontStyle.Bold;
+                y += stepH + gap;
+            }
+            Box(f, cx, y, cw, stepH, "許可（その後は社内と同じ確認）", AllowFill, AllowInk, 12, true);
             return h + 20;
         }
 
