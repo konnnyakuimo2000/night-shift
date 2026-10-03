@@ -38,6 +38,8 @@ namespace NightShift.Systems
         public EventDirector Director { get; }
 
         public IShiftUi Ui { get; set; }
+        /// <summary>プレイヤーのユーザー名（ログインID）</summary>
+        public string OperatorName { get; }
         public ShiftPhase Phase { get; private set; } = ShiftPhase.NotStarted;
         public bool EndWarningIssued { get; private set; }
         public float GraceRemaining { get; private set; }
@@ -46,8 +48,9 @@ namespace NightShift.Systems
         public event Action ShiftEnded;      // 04:00
         public event Action ShiftCompleted;  // 猶予終了 → 評価へ
 
-        public ShiftSession(GameDatabase db, DayDefinition day, int seed)
+        public ShiftSession(GameDatabase db, DayDefinition day, int seed, string operatorName = "night01")
         {
+            OperatorName = string.IsNullOrEmpty(operatorName) ? "night01" : operatorName;
             Database = db;
             Day = day;
             Seed = seed;
@@ -68,7 +71,7 @@ namespace NightShift.Systems
         {
             if (Phase != ShiftPhase.NotStarted) return;
             Director.ScheduleDay(Day);
-            Logs.Add(Time.CurrentMinute, "NIGHT-OPS", "AUTH-SRV01", "night01", "LOGON", "OK", "夜間運用担当 ログオン");
+            Logs.Add(Time.CurrentMinute, "NIGHT-OPS", "AUTH-SRV01", OperatorName, "LOGON", "OK", "夜間運用担当 ログオン");
             Time.Start();
             Phase = ShiftPhase.Running;
         }
@@ -114,7 +117,7 @@ namespace NightShift.Systems
             Time.JumpTo(Math.Max(Time.CurrentMinute, Day.endMinute));
             Time.Stop();
             Director.StopNewEvents();
-            Logs.Add(Day.endMinute, "NIGHT-OPS", "-", "night01", "SHIFT", "END", "新規受付を停止");
+            Logs.Add(Day.endMinute, "NIGHT-OPS", "-", OperatorName, "SHIFT", "END", "新規受付を停止");
             Phase = ShiftPhase.Grace;
             GraceRemaining = Day.graceRealSeconds;
             ShiftEnded?.Invoke();

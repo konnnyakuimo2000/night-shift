@@ -87,49 +87,84 @@ namespace NightShift.UI.Screens
     // ============================================================
     public static class ClockInScreen
     {
-        public static GameObject Build(RectTransform parent, DayDefinition day, Action onDone)
+        public const int MaxNameLength = 16;
+
+        /// <summary>入力されたユーザー名を検証する。null = OK、それ以外はエラーメッセージ。</summary>
+        public static string Validate(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "ユーザー名を入力してください。";
+            if (name.Length > MaxNameLength) return $"ユーザー名は {MaxNameLength} 文字以内で入力してください。";
+            foreach (char ch in name)
+                if (char.IsWhiteSpace(ch) || char.IsControl(ch) || ch == '\\' || ch == '/') return "空白や記号（\\ /）は使用できません。";
+            return null;
+        }
+
+        public static GameObject Build(RectTransform parent, DayDefinition day, string currentName, Action<string> onDone)
         {
             var root = UIFactory.Solid(parent, new Color(0.08f, 0.08f, 0.09f), "ClockIn");
             root.rectTransform.Stretch();
 
             var hint = UIFactory.Label(root.transform, "通用口  —  夜間入館", 14, TextAnchor.MiddleCenter, new Color(0.6f, 0.6f, 0.6f));
-            hint.rectTransform.StretchH(110, 24);
+            hint.rectTransform.StretchH(90, 24);
 
             var machine = UIFactory.Panel(root.transform, RetroTheme.Raised, "TimeRecorder");
             machine.rectTransform.anchorMin = machine.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             machine.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            machine.rectTransform.sizeDelta = new Vector2(360, 300);
-            machine.rectTransform.anchoredPosition = new Vector2(0, 10);
+            machine.rectTransform.sizeDelta = new Vector2(360, 380);
+            machine.rectTransform.anchoredPosition = new Vector2(0, 0);
 
             UIFactory.Label(machine.transform, "TIME RECORDER  TR-500", 10, 10, 340, 18, 12, TextAnchor.MiddleLeft);
             var lcdBg = UIFactory.Image(machine.transform, RetroTheme.Field, new Color(0.15f, 0.22f, 0.15f), "LCD");
             lcdBg.rectTransform.Place(30, 36, 300, 70);
             var lcd = UIFactory.Label(lcdBg.transform, "23:58", 44, TextAnchor.MiddleCenter, new Color(0.55f, 1f, 0.55f), true);
             lcd.rectTransform.Stretch();
-            var date = UIFactory.Label(machine.transform, day != null ? "1998/05/19 (火)" : "", 30, 110, 300, 18, 12, TextAnchor.MiddleCenter);
+            UIFactory.Label(machine.transform, day != null ? "1998/05/19 (火)" : "", 30, 110, 300, 18, 12, TextAnchor.MiddleCenter);
 
             var slot = UIFactory.Solid(machine.transform, Color.black, "Slot");
-            slot.rectTransform.Place(110, 140, 140, 6);
+            slot.rectTransform.Place(80, 138, 200, 6);
 
+            // タイムカード（氏名欄に記入する）
             var card = UIFactory.Image(machine.transform, RetroTheme.Field, new Color(0.96f, 0.93f, 0.82f), "Card");
-            card.rectTransform.Place(120, 150, 120, 90);
-            UIFactory.Label(card.transform, "タイムカード\n夜間IT運用 night01", 4, 4, 112, 34, 11, TextAnchor.UpperCenter);
-            var stamp = UIFactory.Label(card.transform, "", 4, 44, 112, 40, 12, TextAnchor.MiddleCenter);
+            card.rectTransform.Place(70, 148, 220, 130);
+            UIFactory.Label(card.transform, "タイムカード　　夜間IT運用", 6, 4, 208, 18, 11, TextAnchor.MiddleCenter);
+            UIFactory.Solid(card.transform, new Color(0.6f, 0.45f, 0.4f), "Rule").rectTransform.Place(6, 23, 208, 1);
+            UIFactory.Label(card.transform, "氏名:", 8, 30, 40, 22, 12);
+            string initial = currentName == Core.GameManager.DefaultOperatorName ? "" : currentName;
+            var nameField = UIFactory.Input(card.transform, 48, 30, 164, 22, initial);
+            nameField.characterLimit = MaxNameLength;
+            var stamp = UIFactory.Label(card.transform, "", 6, 60, 208, 62, 13, TextAnchor.MiddleCenter);
             stamp.color = new Color(0.75f, 0.1f, 0.1f);
 
+            var msg = UIFactory.Label(machine.transform, "氏名を記入して打刻してください（ログインIDになります）", 10, 284, 340, 18, 11, TextAnchor.MiddleCenter);
+            msg.color = RetroTheme.Shadow;
+
             RetroButton btn = null;
-            btn = UIFactory.Button(machine.transform, "出勤を打刻する(I)", 100, 254, 160, 28, () =>
+            bool done = false;
+            void Punch()
             {
+                if (done) return;
+                string name = nameField.text.Trim();
+                string error = Validate(name);
+                if (error != null)
+                {
+                    AudioFx.Error();
+                    msg.text = error;
+                    msg.color = new Color(0.7f, 0, 0);
+                    nameField.ActivateInputField();
+                    return;
+                }
+                done = true;
                 btn.Interactable = false;
+                nameField.interactable = false;
                 AudioFx.Stamp();
-                stamp.text = "5/19  23:58\n出 勤";
-                lcd.text = "23:58";
-                Delay.Run(root.gameObject, 1.3f, onDone);
-            }, "clock");
-            var cw = root.gameObject.AddComponent<KeyAction>();
-            cw.Key = KeyCode.Return; cw.Action = () => { if (btn.Interactable) btn.Click(); };
-            var cw2 = root.gameObject.AddComponent<KeyAction>();
-            cw2.Key = KeyCode.I; cw2.Action = () => { if (btn.Interactable) btn.Click(); };
+                stamp.text = $"5/19  23:58  出 勤\n{name}";
+                msg.color = RetroTheme.Shadow;
+                msg.text = $"ログインID: {name}";
+                Delay.Run(root.gameObject, 1.3f, () => onDone(name));
+            }
+            btn = UIFactory.Button(machine.transform, "出勤を打刻する", 100, 310, 160, 30, Punch, "clock");
+            nameField.onEndEdit.AddListener(_ => { if (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter)) Punch(); });
+            Delay.Run(root.gameObject, 0.05f, () => { if (nameField) nameField.ActivateInputField(); });
             return root.gameObject;
         }
     }
@@ -144,10 +179,9 @@ namespace NightShift.UI.Screens
     // ============================================================
     public static class LoginScreen
     {
-        public const string ExpectedId = "night01";
         public const string ExpectedPassword = "nexus98";
 
-        public static GameObject Build(RectTransform parent, GameDatabase db, Action onSuccess, Action onCancel)
+        public static GameObject Build(RectTransform parent, GameDatabase db, string operatorId, Action onSuccess, Action onCancel)
         {
             var root = UIFactory.Solid(parent, RetroTheme.Desktop, "Login");
             root.rectTransform.Stretch();
@@ -170,7 +204,7 @@ namespace NightShift.UI.Screens
             bic.rectTransform.Place(10, 6, 32, 32);
 
             UIFactory.Label(c, "ユーザーID(U):", 20, 60, 100, 20);
-            var id = UIFactory.Input(c, 120, 60, 200, 20, ExpectedId);
+            var id = UIFactory.Input(c, 120, 60, 200, 20, operatorId);
             UIFactory.Label(c, "パスワード(P):", 20, 88, 100, 20);
             var pw = UIFactory.Input(c, "", true);
             ((RectTransform)pw.transform).Place(120, 88, 200, 20);
@@ -179,7 +213,7 @@ namespace NightShift.UI.Screens
 
             void Submit()
             {
-                if (id.text.Trim() == ExpectedId && pw.text == ExpectedPassword)
+                if (string.Equals(id.text.Trim(), operatorId, StringComparison.OrdinalIgnoreCase) && pw.text == ExpectedPassword)
                 {
                     err.color = RetroTheme.TextBlue;
                     err.text = "ログオンしています...";
@@ -206,7 +240,7 @@ namespace NightShift.UI.Screens
             note.rectTransform.sizeDelta = new Vector2(170, 130);
             note.rectTransform.anchoredPosition = new Vector2(-60, 60);
             note.rectTransform.localRotation = Quaternion.Euler(0, 0, 4);
-            var nt = UIFactory.Label(note.transform, "夜間担当の方へ\n\nID : night01\nPW : nexus98\n\n※初日だけ。あとで変えること！\n　　　　　　　— K.", 12, TextAnchor.UpperLeft, new Color(0.15f, 0.15f, 0.3f));
+            var nt = UIFactory.Label(note.transform, $"夜間担当の方へ\n\nID : {operatorId}\nPW : {ExpectedPassword}\n\n※初日だけ。あとで変えること！\n　　　　　　　— K.", 12, TextAnchor.UpperLeft, new Color(0.15f, 0.15f, 0.3f));
             nt.rectTransform.Stretch(10, 10, 8, 8);
             return root.gameObject;
         }

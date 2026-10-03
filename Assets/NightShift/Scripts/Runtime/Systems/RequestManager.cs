@@ -65,7 +65,7 @@ namespace NightShift.Systems
             _s.Evaluation.RecordDecision(e);
 
             bool allowed = action == PlayerAction.Allow;
-            _s.Logs.Add(now, e.SourceIp, e.DestinationLabel, UserLabel(e), "CONN-REQ", allowed ? "ALLOWED" : "DENIED", $"{e.RequestId} {e.AccessType} (operator: night01)");
+            _s.Logs.Add(now, e.SourceIp, e.DestinationLabel, UserLabel(e), "CONN-REQ", allowed ? "ALLOWED" : "DENIED", $"{e.RequestId} {e.AccessType} (operator: {_s.OperatorName})");
             _s.Network.Emit(e.Zone == SourceZone.External, e.Destination, allowed ? TrafficResult.Delivered : TrafficResult.Denied, e.RequestId);
             Resolved?.Invoke(e);
         }

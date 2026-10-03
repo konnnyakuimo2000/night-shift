@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a06c837db436894a9cb966e9bbfebc4, type: 3}
+  m_Name: NODE_ADMIN-SRV01
+  m_EditorClassIdentifier: 
+  nodeId: ADMIN-SRV01
+  displayName: ADMIN-SRV01
+  role: 3
+  zone: 3
+  ipAddress: 10.10.0.2
+  isCritical: 1
+  isAdministrative: 1
+  mapPosition: {x: 0.6, y: 0.9}
+  manageableFromDay: 2
+  accessTypes:
+  - accessType: ADMIN LOGIN
+    serviceId: ADMIN
+    requiredPermission: SERVER_ADMIN
+    requiresVpnEnabled: 0
+  - accessType: REMOTE CONSOLE
+    serviceId: ADMIN
+    requiredPermission: SERVER_ADMIN
+    requiresVpnEnabled: 0

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3989493d4e343b2449f430f803612d42, type: 3}
+  m_Name: EMP_E-0067
+  m_EditorClassIdentifier: 
+  employeeId: E-0067
+  fullName: "\u4E2D\u6751 \u5F69"
+  kana: "\u30CA\u30AB\u30E0\u30E9 \u30A2\u30E4"
+  age: 24
+  department: "\u30AB\u30B9\u30BF\u30DE\u30FC\u30B5\u30DD\u30FC\u30C8\u90E8"
+  position: "\u30AA\u30DA\u30EC\u30FC\u30BF\u30FC"
+  deviceId: CS-PC04
+  deviceIp: 10.10.7.14
+  laptopDeviceId: 
+  workHours: "22:00-06:00 (\u591C\u52E4)"
+  onShift: 1
+  vpnEnabled: 0
+  itLiteracy: 2
+  securityAwareness: 3
+  normalAccessTargets:
+  - WEB
+  - MAIL
+  - FILE
+  normalBehavior:
+    activityPerHour: 6
+    serviceWeights:
+    - serviceId: WEB
+      weight: 3
+    - serviceId: MAIL
+      weight: 3
+    - serviceId: FILE
+      weight: 1.5
+    usesVpn: 0
+  permissions:
+  - {fileID: 11400000, guid: b919be391b48d014f9b2d40ee80a49b0, type: 2}
+  - {fileID: 11400000, guid: fe8f316bbe4d4df4db8d066b92ec3ec7, type: 2}

@@ -150,7 +150,7 @@ namespace NightShift.Systems
             if (ActiveSession != null && ActiveSession.Ticket == t && ActiveSession.Connected) return ActiveSession;
             if (ActiveSession != null && ActiveSession.Ticket != t) Disconnect();
             ActiveSession = new RemoteSession(t);
-            _s.Logs.Add(_s.Time.CurrentMinute, "HELPDESK", t.Employee.deviceId, "night01", "REMOTE", "CONNECTED", $"{t.TicketId} リモート接続");
+            _s.Logs.Add(_s.Time.CurrentMinute, "HELPDESK", t.Employee.deviceId, _s.OperatorName, "REMOTE", "CONNECTED", $"{t.TicketId} リモート接続");
             Changed?.Invoke(t);
             SessionChanged?.Invoke(ActiveSession);
             return ActiveSession;
@@ -161,7 +161,7 @@ namespace NightShift.Systems
             if (ActiveSession == null) return;
             var t = ActiveSession.Ticket;
             ActiveSession.Connected = false;
-            _s.Logs.Add(_s.Time.CurrentMinute, "HELPDESK", t.Employee.deviceId, "night01", "REMOTE", "DISCONNECTED", t.TicketId);
+            _s.Logs.Add(_s.Time.CurrentMinute, "HELPDESK", t.Employee.deviceId, _s.OperatorName, "REMOTE", "DISCONNECTED", t.TicketId);
             ActiveSession = null;
             SessionChanged?.Invoke(null);
             Changed?.Invoke(t);

@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a06c837db436894a9cb966e9bbfebc4, type: 3}
+  m_Name: NODE_APP-SRV01
+  m_EditorClassIdentifier: 
+  nodeId: APP-SRV01
+  displayName: APP-SRV01
+  role: 3
+  zone: 3
+  ipAddress: 10.10.0.40
+  isCritical: 1
+  isAdministrative: 0
+  mapPosition: {x: 0.6, y: 0.58}
+  manageableFromDay: 2
+  accessTypes:
+  - accessType: DEV REPOSITORY
+    serviceId: DEV
+    requiredPermission: DEV_ACCESS
+    requiresVpnEnabled: 0
+  - accessType: HR SYSTEM
+    serviceId: HR
+    requiredPermission: HR_ACCESS
+    requiresVpnEnabled: 0
+  - accessType: ACCOUNTING SYSTEM
+    serviceId: ACCOUNTING
+    requiredPermission: ACCOUNTING_ACCESS
+    requiresVpnEnabled: 0

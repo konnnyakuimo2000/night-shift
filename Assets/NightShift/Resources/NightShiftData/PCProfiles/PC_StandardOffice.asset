@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2750568ad21b80498766bdb740dbc61, type: 3}
+  m_Name: PC_StandardOffice
+  m_EditorClassIdentifier: 
+  osName: NEXUS Workstation 2000
+  wifiAdapterName: NX Wireless LAN Adapter 802.11g
+  ethernetAdapterName: NX Fast Ethernet Adapter
+  ssid: NEXUS-CORP
+  gateway: 10.10.0.1
+  dns: 10.10.0.10
+  subnetMask: 255.255.0.0
+  domain: nexus.local
+  dhcpEnabled: 1
+  diskUsagePercent: 62
+  printerName: NX-LaserPrinter 3F
+  processes:
+  - name: System
+    memoryKb: 220
+    system: 1
+    critical: 1
+  - name: smss.exe
+    memoryKb: 360
+    system: 1
+    critical: 1
+  - name: csrss.exe
+    memoryKb: 2840
+    system: 1
+    critical: 1
+  - name: winlogon.exe
+    memoryKb: 3120
+    system: 1
+    critical: 1
+  - name: services.exe
+    memoryKb: 4510
+    system: 1
+    critical: 1
+  - name: lsass.exe
+    memoryKb: 6020
+    system: 1
+    critical: 1
+  - name: svchost.exe
+    memoryKb: 4380
+    system: 1
+    critical: 1
+  - name: svchost.exe
+    memoryKb: 12850
+    system: 1
+    critical: 1
+  - name: spoolsv.exe
+    memoryKb: 4920
+    system: 1
+    critical: 1
+  - name: nxagent.exe
+    memoryKb: 3310
+    system: 1
+    critical: 1
+  - name: explorer.exe
+    memoryKb: 18440
+    system: 0
+    critical: 0
+  - name: nxmail.exe
+    memoryKb: 15200
+    system: 0
+    critical: 0
+  - name: taskmgr.exe
+    memoryKb: 2900
+    system: 0
+    critical: 0
+  - name: imejp.exe
+    memoryKb: 1980
+    system: 0
+    critical: 0
+  files:
+  - folder: "\u30DE\u30A4 \u30C9\u30AD\u30E5\u30E1\u30F3\u30C8"
+    name: "\u898B\u7A4D\u66F8_0520.doc"
+    sizeKb: 48
+  - folder: "\u30DE\u30A4 \u30C9\u30AD\u30E5\u30E1\u30F3\u30C8"
+    name: "\u55B6\u696D\u65E5\u5831_5\u6708.xls"
+    sizeKb: 112
+  - folder: "\u30DE\u30A4 \u30C9\u30AD\u30E5\u30E1\u30F3\u30C8"
+    name: "\u4F1A\u8B70\u30E1\u30E2.txt"
+    sizeKb: 3
+  - folder: "\u30C7\u30B9\u30AF\u30C8\u30C3\u30D7"
+    name: "\u793E\u5185\u96FB\u8A71\u5E33.xls"
+    sizeKb: 64
+  - folder: "\u30C7\u30B9\u30AF\u30C8\u30C3\u30D7"
+    name: "\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8 - \u5171\u6709\u30D5\u30A9\u30EB\u30C0.lnk"
+    sizeKb: 1
+  printJobs:
+  - document: "\u898B\u7A4D\u66F8_0520.doc"
+    pages: 2
+  - document: "\u8ACB\u6C42\u66F8\u63A7\u3048.xls"
+    pages: 1

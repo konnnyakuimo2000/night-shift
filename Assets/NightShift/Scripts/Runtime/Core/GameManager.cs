@@ -27,7 +27,9 @@ namespace NightShift.Core
         public ShiftSession Session { get; private set; }
         public GameState State { get; private set; }
         public int CurrentDay { get; private set; } = 1;
-        public string OperatorName = "night01";
+        public const string DefaultOperatorName = "night01";
+        /// <summary>タイムカードで入力したユーザー名。ログインIDとして使う。</summary>
+        public string OperatorName { get; private set; } = DefaultOperatorName;
 
         public RectTransform ScreenLayer { get; private set; }
         public RectTransform OverlayLayer { get; private set; }
@@ -117,9 +119,13 @@ namespace NightShift.Core
             SetScreen(TitleScreen.Build(ScreenLayer, ShowClockIn, Quit), GameState.Title);
         }
 
-        public void ShowClockIn() => SetScreen(ClockInScreen.Build(ScreenLayer, Database.GetDay(CurrentDay), ShowLogin), GameState.ClockIn);
+        public void ShowClockIn() => SetScreen(ClockInScreen.Build(ScreenLayer, Database.GetDay(CurrentDay), OperatorName, name =>
+        {
+            OperatorName = name;
+            ShowLogin();
+        }), GameState.ClockIn);
 
-        public void ShowLogin() => SetScreen(LoginScreen.Build(ScreenLayer, Database, ShowDayIntro, ShowTitle), GameState.Login);
+        public void ShowLogin() => SetScreen(LoginScreen.Build(ScreenLayer, Database, OperatorName, ShowDayIntro, ShowTitle), GameState.Login);
 
         public void ShowDayIntro()
         {
@@ -133,7 +139,7 @@ namespace NightShift.Core
             ClearScreen();
             DisposeShift();
             var day = Database.GetDay(CurrentDay);
-            Session = new ShiftSession(Database, day, System.Environment.TickCount);
+            Session = new ShiftSession(Database, day, System.Environment.TickCount, OperatorName);
             Session.ShiftCompleted += OnShiftCompleted;
             _desktop = ShiftDesktop.Build(ScreenLayer, this, Session);
             Session.Ui = _desktop;
