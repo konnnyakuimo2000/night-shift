@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 6;
+        public const int DataVersion = 7;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -414,13 +414,17 @@ namespace NightShift.Data
                 B("■ ネットワーク接続監視（接続要求の審査）"),
                 "社内ネットワークへの接続要求が届くと、画面右下に通知が表示されます。一覧から要求を選び、内容を確認してから処理してください。",
                 $"・{Col("接続を許可(A)", Allow)} / {Col("接続を拒否(B)", Deny)} … 選択中の要求を処理します。{B("処理後の取り消しはできません。")}",
-                "・社員情報を参照(R) … 利用者の社員番号（または端末番号）で社員情報を検索します。",
+                "・社員情報を参照(R) … 利用者の社員番号で社員情報を検索します。",
                 $"・要求には {B("受付からの期限")} があります。期限を過ぎた要求は自動的に破棄されます。",
-                "・確認する項目: 利用者 / 社員番号 / 端末 / 接続元（社内・社外） / 接続先 / 接続種別");
+                "・確認する項目: 利用者 / 社員番号 / 接続先 / 接続種別");
             Sec(manualSystem, Features.EmployeeDirectory,
                 B("■ 社員情報の検索"),
-                "社員番号・氏名・部署・端末番号で検索できます（部分一致）。検索結果には社員番号・氏名・所属・役職・登録端末が表示されます。",
+                "社員番号・氏名・部署で検索できます（部分一致）。検索結果には社員番号・氏名・所属・役職が表示されます。",
                 $"・{Col("該当する社員が見つからない", Deny)} 場合、その利用者は社員として登録されていません。");
+            Sec(manualSystem, Features.DeviceCheck,
+                B("■ 端末の確認"),
+                $"・接続要求の {B("端末")} と、社員情報の {B("登録端末")} を照らし合わせてください。",
+                "・社員情報は端末番号でも検索できます。接続元が社内か社外かも確認してください。");
             Sec(manualSystem, Features.EmployeeDetail,
                 B("■ 社員情報の詳細表示"),
                 "検索結果をダブルクリックするか [詳細表示] で、顔写真・端末・勤務状態などの詳細を表示します。",
@@ -569,7 +573,7 @@ namespace NightShift.Data
 
             // DAY2: 端末 + パスワード変更
             var day2 = Day(2, "DEVICES", "1998/05/19 (火)", "1998/05/18 (月)", 1.4f, new[] { rOwnDevice, rUnknown, rDevice }, 2,
-                Features.EmployeeDetail);
+                Features.DeviceCheck, Features.EmployeeDetail);
             day2.briefingBody =
                 "昨夜はお疲れさまでした。\n" +
                 $"本日から {Col("社員情報の詳細表示", Allow)}（顔写真・登録端末など）が使えます。\n" +

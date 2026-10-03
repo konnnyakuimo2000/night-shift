@@ -7,6 +7,7 @@ namespace NightShift.Data
     {
         public const string ConnectionMonitor = "CONNECTION_MONITOR";
         public const string EmployeeDirectory = "EMPLOYEE_DIRECTORY";
+        public const string DeviceCheck = "DEVICE_CHECK";               // 端末の確認（登録端末の表示・端末番号検索）
         public const string EmployeeDetail = "EMPLOYEE_DETAIL";         // 社員詳細（写真・端末など）
         public const string EmployeePermissions = "EMPLOYEE_PERMISSIONS"; // 社員詳細の権限欄
         public const string HelpDesk = "HELPDESK";
@@ -22,6 +23,7 @@ namespace NightShift.Data
             {
                 case ConnectionMonitor: return "ネットワーク接続監視";
                 case EmployeeDirectory: return "社員情報の検索・参照";
+                case DeviceCheck: return "端末の確認";
                 case EmployeeDetail: return "社員情報の詳細表示";
                 case EmployeePermissions: return "社員の権限情報";
                 case HelpDesk: return "ITサポート受付管理";

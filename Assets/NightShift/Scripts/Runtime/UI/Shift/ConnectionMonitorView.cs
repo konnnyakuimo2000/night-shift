@@ -139,7 +139,7 @@ namespace NightShift.UI.Shift
             if (_showProcessed) list.Reverse();
             _table.SetRows(list, e => new[]
             {
-                TimeManager.Format(e.GeneratedTime), e.RequestId, e.DisplayUser, e.Device, e.SourceLabel, e.DestinationLabel, e.AccessType, StateLabel(e)
+                TimeManager.Format(e.GeneratedTime), e.RequestId, e.DisplayUser, DeviceText(e), e.SourceLabel, e.DestinationLabel, e.AccessType, StateLabel(e)
             });
             if (_table.Selected == null && list.Count > 0 && !_showProcessed) _table.Select(0);
             _tabPending.SetText($"保留中の要求 ({s.Pending.Count})");
@@ -163,7 +163,7 @@ namespace NightShift.UI.Shift
             Set("time", TimeManager.Format(e.GeneratedTime));
             Set("user", e.DisplayUser);
             Set("emp", string.IsNullOrEmpty(e.DisplayEmployeeId) ? "-" : e.DisplayEmployeeId);
-            Set("device", e.Device);
+            Set("device", DeviceText(e));
             Set("src", e.SourceLabel);
             Set("dest", e.Destination != null ? $"{e.Destination.nodeId} ({e.Destination.ipAddress})" : "-");
             Set("access", e.AccessType);
@@ -172,6 +172,9 @@ namespace NightShift.UI.Shift
             bool pending = e.State == EventState.Pending;
             _allow.Interactable = _block.Interactable = pending;
         }
+
+        /// <summary>端末の確認は DAY2 から。それまでは端末名を表示しない（端末で判断させない）。</summary>
+        string DeviceText(EventInstance e) => _d.Unlocked(Data.Features.DeviceCheck) ? e.Device : "—";
 
         void Decide(PlayerAction action)
         {
@@ -187,7 +190,7 @@ namespace NightShift.UI.Shift
         {
             var e = _table.Selected as EventInstance;
             if (e == null) { EmployeeDirectoryView.Open(_d); return; }
-            EmployeeDirectoryView.OpenWith(_d, e.DisplayEmployeeId, e.Device);
+            EmployeeDirectoryView.OpenWith(_d, e.DisplayEmployeeId, _d.Unlocked(Data.Features.DeviceCheck) ? e.Device : null);
         }
 
         void Update()

@@ -40,7 +40,7 @@ namespace NightShift.UI.Shift
             if (v == null) return;
             v.Clear(false);
             if (!string.IsNullOrEmpty(employeeId) && employeeId != "-") v._id.text = employeeId;
-            else if (!string.IsNullOrEmpty(device)) v._device.text = device;
+            else if (!string.IsNullOrEmpty(device) && d.Unlocked(Features.DeviceCheck)) v._device.text = device;
             v.Search();
         }
 
@@ -56,16 +56,24 @@ namespace NightShift.UI.Shift
             var depts = new List<string> { "(すべて)" };
             depts.AddRange(_d.S.Employees.Departments);
             _dept = RetroDropdown.Create(g, 86, 26, 130, depts);
-            UIFactory.Label(g, "端末番号(T):", 230, 26, 70, 20);
+            bool deviceCheck = _d.Unlocked(Features.DeviceCheck);
+            var deviceLabel = UIFactory.Label(g, "端末番号(T):", 230, 26, 70, 20);
             _device = UIFactory.Input(g, 292, 26, 180);
+            // 端末の確認は DAY2 から（それまでは端末で判断させない）
+            deviceLabel.gameObject.SetActive(deviceCheck);
+            _device.gameObject.SetActive(deviceCheck);
 
             UIFactory.Button(g, "検索開始(F)", 520, -2, 178, 24, Search, "search");
             UIFactory.Button(g, "条件クリア(R)", 520, 26, 178, 24, () => Clear(true), "doc");
 
             var rg = UIFactory.Group(c, "検索結果", 0, 102, 720, 280);
-            _table = TableView.CreateStretch(rg, 0, 0, 0, 0,
-                new TableColumn("社員番号", 76), new TableColumn("氏名", 110), new TableColumn("所属", 150),
-                new TableColumn("役職", 130), new TableColumn("登録端末", 110), new TableColumn("勤務状態", 70));
+            _table = deviceCheck
+                ? TableView.CreateStretch(rg, 0, 0, 0, 0,
+                    new TableColumn("社員番号", 76), new TableColumn("氏名", 110), new TableColumn("所属", 150),
+                    new TableColumn("役職", 130), new TableColumn("登録端末", 110), new TableColumn("勤務状態", 70))
+                : TableView.CreateStretch(rg, 0, 0, 0, 0,
+                    new TableColumn("社員番号", 86), new TableColumn("氏名", 140), new TableColumn("所属", 170),
+                    new TableColumn("役職", 160), new TableColumn("勤務状態", 80));
             _table.DoubleClicked += o => { if (_d.Unlocked(Features.EmployeeDetail)) EmployeeDetailView.Open(_d, (EmployeeData)o, _results); };
 
             _count = UIFactory.Label(c, "", 0, 390, 160, 24);
@@ -105,7 +113,10 @@ namespace NightShift.UI.Shift
                 (dept == null || e.department == dept) &&
                 (string.IsNullOrEmpty(_device.text) || Contains(e.deviceId, _device.text) || (!string.IsNullOrEmpty(e.laptopDeviceId) && Contains(e.laptopDeviceId, _device.text)))
             ).ToList();
-            _table.SetRows(_results, e => new[] { e.employeeId, e.fullName, e.department, e.position, e.deviceId, e.onShift ? "勤務中" : "退勤" });
+            if (_d.Unlocked(Features.DeviceCheck))
+                _table.SetRows(_results, e => new[] { e.employeeId, e.fullName, e.department, e.position, e.deviceId, e.onShift ? "勤務中" : "退勤" });
+            else
+                _table.SetRows(_results, e => new[] { e.employeeId, e.fullName, e.department, e.position, e.onShift ? "勤務中" : "退勤" });
             _count.text = $"件数:  {_results.Count} 件";
             _w.SetStatus(0, _results.Count == 0 ? "該当する社員は見つかりませんでした。"
                 : _d.Unlocked(Features.EmployeeDetail) ? "ダブルクリックまたは [詳細表示] で社員情報を表示します。" : "検索結果の一覧を表示しています。");
