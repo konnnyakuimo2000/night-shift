@@ -2,7 +2,7 @@
 
 Corporate IT Operations / Cyber Security Task Management Game（Unity）
 
-現在の内容: **DAY 1 — FIRST SHIFT** の Vertical Slice（00:00〜04:00、実時間 約8分）
+**ベータ版 v0.1.0-beta** — DAY1〜7 のチュートリアル（研修期間）を通しでプレイ可能。変更点は [CHANGELOG](CHANGELOG.md) を参照。
 
 ## 動作環境
 
