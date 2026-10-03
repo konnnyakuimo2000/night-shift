@@ -72,6 +72,7 @@ namespace NightShift.Systems
 
         public void Tick(float now)
         {
+            if (!_s.Day.requestsExpire) return; // チュートリアル中は期限切れなし
             for (int i = _pending.Count - 1; i >= 0; i--)
             {
                 var e = _pending[i];

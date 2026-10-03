@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 14;
+        public const int DataVersion = 15;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -464,7 +464,7 @@ namespace NightShift.Data
                 "社内ネットワークへの接続要求が届くと、画面右下に通知が表示されます。一覧から要求を選び、内容を確認してから処理してください。",
                 $"・{Col("接続を許可(A)", Allow)} / {Col("接続を拒否(B)", Deny)} … 選択中の要求を処理します。{B("処理後の取り消しはできません。")}",
                 "・社員情報を参照(R) … 利用者の社員番号で社員情報を検索します。",
-                $"・要求には {B("受付からの期限")} があります。期限を過ぎた要求は自動的に破棄されます。",
+                $"・本番の業務では、要求に {B("受付からの期限")} があります（{B("研修期間中は期限切れになりません")}）。",
                 "・確認する項目: 利用者 / 社員番号 / 接続先 / 利用システム",
                 "",
                 B("■ 審査の流れ"),
@@ -608,6 +608,7 @@ namespace NightShift.Data
                 d.tutorialGateUntilMinute = d.endMinute;
                 d.tutorialGateBreathMinutes = 1.5f;
                 d.tutorialGateMaxDelayMinutes = 9999f;
+                d.requestsExpire = false; // チュートリアル中は期限切れなし
                 d.backgroundLogChance = 0.3f;
                 allFeatures.AddRange(newFeatures);
                 d.unlockedFeatures.AddRange(allFeatures);

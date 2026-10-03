@@ -220,7 +220,9 @@ namespace NightShift.UI.Shift
             }
             if (_dirty && Time.frameCount % 5 == 0) Refresh();
             if (_d.S.Phase == ShiftPhase.Grace)
-                _w.SetStatus(0, $"業務終了 — 保留中の要求を処理してください（残り {Mathf.CeilToInt(_d.S.GraceRemaining)} 秒）");
+                _w.SetStatus(0, _d.S.Day.requestsExpire
+                    ? $"業務終了 — 保留中の要求を処理してください（残り {Mathf.CeilToInt(_d.S.GraceRemaining)} 秒）"
+                    : "業務終了 — 保留中の要求をすべて処理すると、本日の業務が終わります。");
         }
     }
 }

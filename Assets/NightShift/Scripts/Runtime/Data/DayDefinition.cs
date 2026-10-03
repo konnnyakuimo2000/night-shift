@@ -47,6 +47,8 @@ namespace NightShift.Data
         public float endWarningMinute = 230f;
         [Tooltip("終了後、未処理要求を処理できる猶予（実秒）")]
         public float graceRealSeconds = 20f;
+        [Tooltip("接続要求の期限切れを有効にする（チュートリアル中は無効。04:00 後も未処理の要求をすべて処理するまで待つ）")]
+        public bool requestsExpire = true;
 
         [Header("業務連絡")]
         public string briefingFrom = "情報システム部 課長 森田";

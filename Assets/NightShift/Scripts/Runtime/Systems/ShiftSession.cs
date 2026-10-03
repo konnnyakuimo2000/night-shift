@@ -150,10 +150,11 @@ namespace NightShift.Systems
                 }
                 case ShiftPhase.Grace:
                 {
-                    if (!Time.Paused) GraceRemaining -= unscaledDelta;
+                    // 期限切れなしの日は、未処理の要求がなくなるまで待つ
+                    if (!Time.Paused && Day.requestsExpire) GraceRemaining -= unscaledDelta;
                     float delta = unscaledDelta / Time.RealSecondsPerGameMinute * Time.DebugTimeScale;
                     if (!Time.Paused) HelpDesk.Tick(Time.CurrentMinute, delta);
-                    if (GraceRemaining <= 0 || Requests.Pending.Count == 0) Complete();
+                    if ((Day.requestsExpire && GraceRemaining <= 0) || Requests.Pending.Count == 0) Complete();
                     break;
                 }
             }
