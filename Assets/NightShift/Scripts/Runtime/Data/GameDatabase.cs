@@ -40,12 +40,28 @@ namespace NightShift.Data
             return null;
         }
 
+        /// <summary>参照切れがないか（壊れたアセットでの起動を防ぐ）</summary>
+        public bool IsValid()
+        {
+            if (days.Count == 0 || employees.Count == 0 || nodes.Count == 0 || permissions.Count == 0) return false;
+            foreach (var d in days) if (d == null) return false;
+            foreach (var e in employees) if (e == null) return false;
+            foreach (var n in nodes) if (n == null) return false;
+            foreach (var p in permissions) if (p == null) return false;
+            return true;
+        }
+
         static GameDatabase _cached;
 
         public static GameDatabase Load()
         {
             if (_cached != null) return _cached;
             _cached = Resources.Load<GameDatabase>(ResourcePath);
+            if (_cached != null && !_cached.IsValid())
+            {
+                Debug.LogWarning("[NightShift] GameDatabase asset has missing references. Using built-in default data (NightShift > Create DAY1 Data Assets で再生成してください)");
+                _cached = null;
+            }
             if (_cached == null)
             {
                 Debug.Log("[NightShift] GameDatabase asset not found. Using built-in default data (menu: NightShift > Create DAY1 Data Assets で編集用アセットを生成できます)");

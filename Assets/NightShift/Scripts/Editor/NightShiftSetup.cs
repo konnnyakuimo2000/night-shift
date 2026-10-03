@@ -23,8 +23,6 @@ namespace NightShift.EditorTools
 
         static NightShiftSetup()
         {
-            if (SessionState.GetBool(SessionKey, false)) return;
-            SessionState.SetBool(SessionKey, true);
             EditorApplication.delayCall += AutoSetup;
         }
 
@@ -32,7 +30,22 @@ namespace NightShift.EditorTools
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             if (!File.Exists(DataRoot + "/GameDatabase.asset")) CreateDataAssets(false);
-            if (!File.Exists(ScenePath)) CreateScene(false);
+            else if (!IsDatabaseValid())
+            {
+                Debug.LogWarning("[NightShift] GameDatabase の参照が壊れているため、DAY1 データアセットを再生成します。");
+                CreateDataAssets(false, true);
+            }
+            if (!SessionState.GetBool(SessionKey, false))
+            {
+                SessionState.SetBool(SessionKey, true);
+                if (!File.Exists(ScenePath)) CreateScene(false);
+            }
+        }
+
+        static bool IsDatabaseValid()
+        {
+            var db = AssetDatabase.LoadAssetAtPath<GameDatabase>(DataRoot + "/GameDatabase.asset");
+            return db != null && db.IsValid();
         }
 
         /// <summary>コマンドライン用: Unity -batchmode -executeMethod NightShift.EditorTools.NightShiftSetup.CommandLineSetup -quit</summary>
@@ -56,14 +69,15 @@ namespace NightShift.EditorTools
             AssetDatabase.CreateFolder(parent, Path.GetFileName(path));
         }
 
-        public static void CreateDataAssets(bool interactive)
+        public static void CreateDataAssets(bool interactive, bool force = false)
         {
             if (File.Exists(DataRoot + "/GameDatabase.asset"))
             {
-                if (!interactive) return;
-                if (!EditorUtility.DisplayDialog("NIGHT//SHIFT", "DAY1 データアセットは既に存在します。初期データで上書きしますか？\n（編集内容は失われます）", "上書き", "キャンセル"))
+                if (force) AssetDatabase.DeleteAsset(DataRoot);
+                else if (!interactive) return;
+                else if (!EditorUtility.DisplayDialog("NIGHT//SHIFT", "DAY1 データアセットは既に存在します。初期データで上書きしますか？\n（編集内容は失われます）", "上書き", "キャンセル"))
                     return;
-                AssetDatabase.DeleteAsset(DataRoot);
+                else AssetDatabase.DeleteAsset(DataRoot);
             }
 
             var bundle = DefaultDataFactory.Build();
@@ -80,6 +94,8 @@ namespace NightShift.EditorTools
                 used.Add(path);
                 AssetDatabase.CreateAsset(obj, path);
             }
+            // 参照先がすべてアセット化された後に再シリアライズして、相互参照を確定させる
+            foreach (var kv in bundle.objects) EditorUtility.SetDirty(kv.Key);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[NightShift] DAY1 data assets created under {DataRoot} ({bundle.objects.Count} assets).");
