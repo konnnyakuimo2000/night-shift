@@ -71,7 +71,7 @@ namespace NightShift.Systems
         {
             if (Phase != ShiftPhase.NotStarted) return;
             Director.ScheduleDay(Day);
-            Logs.Add(Time.CurrentMinute, "NIGHT-OPS", "AUTH-SRV01", OperatorName, "LOGON", "OK", "夜間運用担当 ログオン");
+            Logs.Add(Time.CurrentMinute, "NIGHT-OPS", "AUTH-SRV01", OperatorName, "LOGIN", "OK", "夜間運用担当 ログイン");
             Time.Start();
             Phase = ShiftPhase.Running;
         }

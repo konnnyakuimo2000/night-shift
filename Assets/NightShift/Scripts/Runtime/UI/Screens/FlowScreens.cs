@@ -190,7 +190,7 @@ namespace NightShift.UI.Screens
             var wm = WindowManager.Create(host);
             var w = wm.Open(new WindowSpec
             {
-                Id = "login", Title = $"{db.systemName} - ログオン", Icon = "lock", Width = 400, Height = 230,
+                Id = "login", Title = $"{db.systemName} - ログイン", Icon = "lock", Width = 400, Height = 230,
                 Closable = true, Minimizable = false, Maximizable = false, Position = new Vector2(440, 260)
             }, out _);
             w.CanClose = () => { onCancel(); return false; };
@@ -216,7 +216,7 @@ namespace NightShift.UI.Screens
                 if (string.Equals(id.text.Trim(), operatorId, StringComparison.OrdinalIgnoreCase) && pw.text == ExpectedPassword)
                 {
                     err.color = RetroTheme.TextBlue;
-                    err.text = "ログオンしています...";
+                    err.text = "ログインしています...";
                     AudioFx.Click();
                     Delay.Run(root.gameObject, 0.8f, onSuccess);
                 }

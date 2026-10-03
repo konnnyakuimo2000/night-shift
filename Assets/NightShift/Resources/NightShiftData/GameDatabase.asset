@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10640ffc8aa183b4a9cd9252e866ccae, type: 3}
   m_Name: GameDatabase
   m_EditorClassIdentifier: 
-  dataVersion: 2
+  dataVersion: 3
   companyName: NEXUS CORPORATION
   systemName: "\u793E\u5185\u60C5\u5831\u30B7\u30B9\u30C6\u30E0"
   systemVersion: Ver.4.21

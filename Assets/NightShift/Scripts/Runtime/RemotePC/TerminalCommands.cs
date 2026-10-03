@@ -65,7 +65,7 @@ namespace NightShift.RemotePC
             sb.AppendLine("  IPCONFIG   ネットワーク設定を表示します。(/all で詳細)");
             sb.AppendLine("  PING       指定したホストへの到達性を確認します。");
             sb.AppendLine("  HOSTNAME   コンピューター名を表示します。");
-            sb.AppendLine("  WHOAMI     ログオン中のユーザーを表示します。");
+            sb.AppendLine("  WHOAMI     ログイン中のユーザーを表示します。");
             sb.AppendLine("  VER        バージョンを表示します。");
             sb.AppendLine("  CLS        画面を消去します。");
             sb.AppendLine("  EXIT       コマンド プロンプトを終了します。");

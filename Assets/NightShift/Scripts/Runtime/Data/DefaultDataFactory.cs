@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 3;
+        public const int DataVersion = 4;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -55,7 +55,7 @@ namespace NightShift.Data
             P("HR_ACCESS", "人事システム", PermissionCategory.SystemUse, 40, "人事・勤怠システム");
             P("ACCOUNTING_ACCESS", "経理システム", PermissionCategory.SystemUse, 50, "会計・経費システム");
             P("LOCAL_ADMIN", "ローカル管理者", PermissionCategory.Administrator, 110, "自分のPCの管理者権限");
-            P("SERVER_ADMIN", "サーバー管理者", PermissionCategory.Administrator, 120, "サーバーへの管理ログオン");
+            P("SERVER_ADMIN", "サーバー管理者", PermissionCategory.Administrator, 120, "サーバーへの管理ログイン");
             P("NETWORK_ADMIN", "ネットワーク管理", PermissionCategory.Administrator, 130, "ネットワーク機器の管理");
             P("USER_ADMIN", "ユーザー管理", PermissionCategory.Administrator, 140, "アカウントの作成・変更");
             P("SECURITY_ADMIN", "セキュリティ管理", PermissionCategory.Administrator, 150, "セキュリティ設定の変更");
@@ -271,7 +271,7 @@ namespace NightShift.Data
 
             var threat = b.Add(ScriptableObject.CreateInstance<ThreatScenarioDefinition>(), "Threats", "THREAT_WebProbeToAdmin");
             threat.scenarioId = "THREAT_WEB_PROBE";
-            threat.designNote = "外部の攻撃者（自動スクリプト＋手動操作）が公開Webを探索し、管理サーバーへのログオンを試みる。ログを見れば同一レンジのIPと気付ける。";
+            threat.designNote = "外部の攻撃者（自動スクリプト＋手動操作）が公開Webを探索し、管理サーバーへのログインを試みる。ログを見れば同一レンジのIPと気付ける。";
             threat.startWindow = new Vector2(128, 135);
             threat.sourceIpPrefix = "198.51.100.";
             threat.steps.Add(new ThreatStep { label = "公開Webへのアクセス", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = web, eventType = "HTTP", result = "200", detail = "GET / (python-urllib/2.0)" });
@@ -387,7 +387,7 @@ namespace NightShift.Data
                 "{SERVER_LIST}",
                 "",
                 B("■ 補足"),
-                $"・{Col("管理系", Deny)} のサーバーへのログオンには、サーバー管理者などの {Col("管理者権限", Check)} が必要です。",
+                $"・{Col("管理系", Deny)} のサーバーへのログインには、サーバー管理者などの {Col("管理者権限", Check)} が必要です。",
                 $"・{B("重要")} のサーバーは業務データを扱います。登録されていない端末からの利用は認められていません。");
 
             var manualTrouble = Doc("TROUBLE_MANUAL", "PCトラブル対応マニュアル（リモートサポート）", "トラブル対応マニュアル.doc", "helpdesk",

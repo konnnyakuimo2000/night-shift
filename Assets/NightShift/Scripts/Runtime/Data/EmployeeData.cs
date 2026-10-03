@@ -81,7 +81,7 @@ namespace NightShift.Data
             return device == deviceId || (!string.IsNullOrEmpty(laptopDeviceId) && device == laptopDeviceId);
         }
 
-        /// <summary>ログオン名（社員番号から生成）</summary>
+        /// <summary>ログイン名（社員番号から生成）</summary>
         public string LoginName => "nexus\\" + (employeeId ?? "").Replace("-", "").ToLowerInvariant();
     }
 }

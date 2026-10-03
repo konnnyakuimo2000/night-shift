@@ -45,7 +45,7 @@ namespace NightShift.Data
         public string sourceIpPrefix = "198.51.100.";
         public List<ThreatStep> steps = new List<ThreatStep>();
         [Tooltip("要求を許可してしまった場合のログ")]
-        public string compromiseLog = "管理コンソールへのログオンに成功";
+        public string compromiseLog = "管理コンソールへのログインに成功";
         [Tooltip("要求を拒否した場合、以降のステップを停止する")]
         public bool stopOnBlock = true;
     }

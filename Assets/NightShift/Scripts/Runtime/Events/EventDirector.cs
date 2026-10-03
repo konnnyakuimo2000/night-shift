@@ -124,7 +124,7 @@ namespace NightShift.Events
         {
             // Threat シナリオ外の不正接続を許可した場合も痕跡をログに残す（プレイヤーが後から気付ける）
             if (e.Owner == null && e.State == EventState.Allowed && e.IsMalicious)
-                _s.Logs.Add(_s.Time.CurrentMinute + 0.2f, e.SourceIp, e.DestinationLabel, e.DisplayUser, "AUTH", "SUCCESS", "管理ログオン成功 (外部)");
+                _s.Logs.Add(_s.Time.CurrentMinute + 0.2f, e.SourceIp, e.DestinationLabel, e.DisplayUser, "AUTH", "SUCCESS", "管理ログイン成功 (外部)");
         }
 
         public void Tick(float now, float delta)
