@@ -32,7 +32,7 @@ namespace NightShift.UI.Shift
                 M("   ネットワークマップ", () => NetworkMonitorView.Open(d), "globe", Data.Features.NetworkMap),
                 M("   サーバー運用管理", null, "server", Data.Features.ServerManagement),
                 MenuItem.Sep(),
-                new MenuItem("   業務連絡（ルール・マニュアル）", () => BriefingView.Open(d, null)) { Icon = "mail" },
+                new MenuItem("   メール（業務連絡・マニュアル）", () => MailboxView.Open(d)) { Icon = "mail" },
                 new MenuItem("   パスワードの変更", () => PasswordChangeView.Open(d)) { Icon = "lock" },
                 MenuItem.Sep(),
                 new MenuItem("6. システム設定", () => SettingsView.Open(d)) { Icon = "gear" },
@@ -126,8 +126,8 @@ namespace NightShift.UI.Shift
             var net = UIFactory.Image(art.transform, RetroTheme.BigIcon("network"), Color.white, "Net");
             net.rectTransform.Place(214, 90, 48, 48);
 
-            UIFactory.Button(c, "業務連絡を見る(B)", 304, 232, 136, 26, () => BriefingView.Open(_d, null), "mail");
-            _w.Accelerators[KeyCode.B] = () => BriefingView.Open(_d, null);
+            UIFactory.Button(c, "メールを見る(B)", 304, 232, 136, 26, () => MailboxView.Open(_d), "mail");
+            _w.Accelerators[KeyCode.B] = () => MailboxView.Open(_d);
             var lockBtn = UIFactory.Button(c, "サーバー運用管理", 446, 232, 136, 26, null, "lock");
             lockBtn.Interactable = _d.Unlocked(Data.Features.ServerManagement);
 
@@ -135,7 +135,7 @@ namespace NightShift.UI.Shift
             _notice = UIFactory.Label(ng, "", 12, TextAnchor.UpperLeft);
             _notice.rectTransform.Stretch(0, 0, 0, 0);
 
-            _w.SetStatus(0, "業務連絡を確認してください。");
+            _w.SetStatus(0, "メールで業務連絡を確認してください。");
             _w.SetStatus(1, $"ユーザー: {_d.Game.OperatorName}");
         }
 
@@ -146,7 +146,7 @@ namespace NightShift.UI.Shift
             _w.SetStatus(2, s.Time.Now);
             if (Time.frameCount % 15 != 0) return;
             var sb = new StringBuilder();
-            if (!_d.ShiftStarted) sb.AppendLine("業務開始前です。業務連絡を確認し、\n[START SHIFT] で業務を開始してください。");
+            if (!_d.ShiftStarted) sb.AppendLine("業務開始前です。メールで業務連絡を確認し、\n[START SHIFT] で業務を開始してください。");
             else
             {
                 sb.AppendLine($"保留中の接続要求: {s.Requests.Pending.Count} 件");
@@ -157,111 +157,6 @@ namespace NightShift.UI.Shift
                 if (s.EndWarningIssued) sb.AppendLine("\n※ 業務終了が近づいています。");
             }
             _notice.text = sb.ToString();
-        }
-    }
-
-    // ============================================================
-    /// <summary>業務連絡（メール）。簡潔なルール提示＋添付マニュアル。いつでも再表示できる。</summary>
-    public class BriefingView : MonoBehaviour
-    {
-        public const string Id = "briefing";
-
-        public static void Open(ShiftDesktop d, Action onStart)
-        {
-            bool preShift = !d.ShiftStarted && onStart != null;
-            var w = d.OpenWindow(new WindowSpec
-            {
-                Id = Id, Title = $"業務連絡 - DAY {d.S.Day.dayNumber}", Icon = "mail", Width = 680, Height = 660,
-                Closable = !preShift, Minimizable = !preShift, Maximizable = false, Position = new Vector2(300, 10)
-            }, out bool created);
-            if (!created) return;
-            var day = d.S.Day;
-            var c = w.Content;
-
-            void Row(string label, string value, float y)
-            {
-                UIFactory.Label(c, label, 0, y, 60, 20);
-                UIFactory.ValueBox(c, 62, y, 600, 20, value, false);
-            }
-            Row("差出人:", day.briefingFrom, 0);
-            Row("宛先:", $"夜間IT運用担当 {d.S.OperatorName} 様", 24);
-            Row("日付:", day.dateLabel, 48);
-            Row("件名:", $"【業務連絡】DAY {day.dayNumber} 夜間業務について", 72);
-
-            // 添付ファイル（目立つ枠に大きなアイコンで並べる）
-            float top = 100;
-            var docs = new List<Data.DocumentDefinition>();
-            foreach (var doc in day.attachments)
-                if (doc != null && (string.IsNullOrEmpty(doc.requiredFeature) || d.Unlocked(doc.requiredFeature))) docs.Add(doc);
-            if (docs.Count > 0)
-            {
-                var box = UIFactory.Image(c, RetroTheme.Field, new Color(1f, 0.97f, 0.82f), "Attachments");
-                box.rectTransform.Place(0, top, 662, 92);
-                var border = UIFactory.Image(box.transform, RetroTheme.Etched, Color.white, "Border");
-                border.raycastTarget = false;
-                border.rectTransform.Stretch(2, 2, 2, 2);
-                UIFactory.IconImage(box.transform, "doc", 8, 6);
-                var head = UIFactory.Label(box.transform, $"添付ファイル（{docs.Count}）— まずはこちらのマニュアルに目を通してください", 28, 4, 620, 20, 13);
-                head.fontStyle = FontStyle.Bold;
-                head.color = new Color(0.55f, 0.3f, 0f);
-                float x = 8;
-                foreach (var doc in docs)
-                {
-                    var dd = doc;
-                    var tile = UIFactory.Button(box.transform, doc.fileName, () => DocumentView.Open(d, dd), doc.icon);
-                    tile.Rect.Place(x, 28, 210, 56);
-                    tile.Icon.sprite = RetroTheme.BigIcon(doc.icon);
-                    tile.Icon.rectTransform.sizeDelta = new Vector2(32, 32);
-                    tile.Label.rectTransform.Stretch(44, 2, 4, 2);
-                    tile.Label.alignment = TextAnchor.MiddleLeft;
-                    tile.Label.fontSize = 12;
-                    tile.Label.fontStyle = FontStyle.Bold;
-                    x += 216;
-                }
-                top += 100;
-            }
-
-            var sb = new StringBuilder();
-            sb.AppendLine(day.briefingBody);
-            for (int i = 0; i < day.rules.Count; i++)
-            {
-                bool isNew = day.newRuleStartIndex >= 0 && i >= day.newRuleStartIndex;
-                bool changed = !isNew && day.changedRuleIndices.Contains(i);
-                string mark = isNew ? "  <color=#D04000><b>【NEW】</b></color>" : changed ? "  <color=#D04000><b>【変更】</b></color>" : "";
-                sb.AppendLine($"  <b>{i + 1}.</b> {day.rules[i]}{mark}");
-            }
-            sb.AppendLine();
-            sb.Append(day.briefingFooter);
-            UIFactory.ScrollText(c, sb.ToString(), out var sr);
-            ((RectTransform)sr.transform).Stretch(0, top, 0, preShift ? 44 : 34);
-
-            if (preShift)
-            {
-                var start = UIFactory.Button(c, "START SHIFT(S)", 0, 0, 180, 32, () =>
-                {
-                    w.Closable = true;
-                    w.Close();
-                    onStart();
-                }, "clock");
-                start.Rect.anchorMin = start.Rect.anchorMax = new Vector2(1, 0);
-                start.Rect.pivot = new Vector2(1, 0);
-                start.Rect.anchoredPosition = new Vector2(0, 2);
-                start.Label.fontStyle = FontStyle.Bold;
-                w.Accelerators[KeyCode.S] = start.Click;
-                var note = UIFactory.Label(c, "※ 業務開始後は時間が進みます（Esc で一時停止）", 12);
-                note.rectTransform.anchorMin = new Vector2(0, 0); note.rectTransform.anchorMax = new Vector2(1, 0);
-                note.rectTransform.pivot = new Vector2(0, 0);
-                note.rectTransform.offsetMin = new Vector2(0, 6); note.rectTransform.offsetMax = new Vector2(-190, 30);
-                note.color = RetroTheme.Shadow;
-            }
-            else
-            {
-                var close = UIFactory.Button(c, "閉じる(C)", 0, 0, 100, 26, w.RequestClose);
-                close.Rect.anchorMin = close.Rect.anchorMax = new Vector2(1, 0);
-                close.Rect.pivot = new Vector2(1, 0);
-                close.Rect.anchoredPosition = new Vector2(0, 2);
-                w.Accelerators[KeyCode.C] = w.RequestClose;
-            }
         }
     }
 
@@ -285,9 +180,9 @@ namespace NightShift.UI.Shift
             foreach (var sec in doc.sections)
             {
                 if (sec == null || (!string.IsNullOrEmpty(sec.requiredFeature) && !d.Unlocked(sec.requiredFeature))) continue;
-                text.Append("\n\n").Append(sec.text);
+                text.Append(System.Environment.NewLine).Append(System.Environment.NewLine).Append(sec.text);
             }
-            UIFactory.ScrollText(c, Expand(d, text.ToString()), out var sr);
+            var sr = DocumentRenderer.Render(c, Expand(d, text.ToString()), (id, holder) => ManualFigures.Build(id, holder, d.FigureContext));
             ((RectTransform)sr.transform).Stretch(0, 34, 0, 34);
             var close = UIFactory.Button(c, "閉じる(C)", 0, 0, 100, 26, w.RequestClose);
             close.Rect.anchorMin = close.Rect.anchorMax = new Vector2(1, 0);
@@ -358,11 +253,11 @@ namespace NightShift.UI.Shift
 
             var tools = UIFactory.Group(c, "ツール", 0, 156, 600, 62);
             UIFactory.Button(tools, "ネットワークマップ(N)", 0, 0, 170, 26, () => NetworkMonitorView.Open(d), "globe");
-            UIFactory.Button(tools, "業務連絡を表示(B)", 176, 0, 160, 26, () => BriefingView.Open(d, null), "mail");
+            UIFactory.Button(tools, "メール（業務連絡）(B)", 176, 0, 160, 26, () => MailboxView.Open(d), "mail");
             var locked = UIFactory.Button(tools, "サーバー運用管理", 342, 0, 160, 26, null, "lock");
             locked.Interactable = d.Unlocked(Data.Features.ServerManagement);
             w.Accelerators[KeyCode.N] = () => NetworkMonitorView.Open(d);
-            w.Accelerators[KeyCode.B] = () => BriefingView.Open(d, null);
+            w.Accelerators[KeyCode.B] = () => MailboxView.Open(d);
 
             var ag = UIFactory.Group(c, "セキュリティ警告の履歴", 0, 224, 600, 180);
             v._alerts = TableView.CreateStretch(ag, 0, 0, 0, 0, new TableColumn("時刻", 60), new TableColumn("件名", 140), new TableColumn("内容", 360));

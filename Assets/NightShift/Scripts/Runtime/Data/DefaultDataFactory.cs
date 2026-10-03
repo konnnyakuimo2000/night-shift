@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 8;
+        public const int DataVersion = 9;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -412,13 +412,19 @@ namespace NightShift.Data
                 "本書は社内情報システムの操作方法をまとめたものです。担当範囲が広がると、章が追加されます。");
             Sec(manualSystem, Features.ConnectionMonitor,
                 B("■ ネットワーク接続監視（接続要求の審査）"),
+                "{FIG:CONNECTION_SCREEN}",
                 "社内ネットワークへの接続要求が届くと、画面右下に通知が表示されます。一覧から要求を選び、内容を確認してから処理してください。",
                 $"・{Col("接続を許可(A)", Allow)} / {Col("接続を拒否(B)", Deny)} … 選択中の要求を処理します。{B("処理後の取り消しはできません。")}",
                 "・社員情報を参照(R) … 利用者の社員番号で社員情報を検索します。",
                 $"・要求には {B("受付からの期限")} があります。期限を過ぎた要求は自動的に破棄されます。",
-                "・確認する項目: 利用者 / 社員番号 / 接続先 / 接続種別");
+                "・確認する項目: 利用者 / 社員番号 / 接続先 / 接続種別",
+                "",
+                B("■ 審査の流れ"),
+                "本日のルールでの判断の流れです（担当範囲が広がると段階が増えます）。",
+                "{FIG:REVIEW_FLOW}");
             Sec(manualSystem, Features.EmployeeDirectory,
                 B("■ 社員情報の検索"),
+                "{FIG:DIRECTORY_SCREEN}",
                 "社員番号・氏名・部署で検索できます（部分一致）。検索結果には社員番号・氏名・所属・役職が表示されます。",
                 $"・{Col("該当する社員が見つからない", Deny)} 場合、その利用者は社員として登録されていません。");
             Sec(manualSystem, Features.DeviceCheck,
@@ -432,6 +438,7 @@ namespace NightShift.Data
                 $"・{Col("社員本人でも、別の端末からの接続は認められません。", Deny)}");
             Sec(manualSystem, Features.EmployeePermissions,
                 B("■ 権限情報"),
+                "{FIG:PERMISSION_MATCH}",
                 $"・{B("システム利用権限 / 管理者権限")} … ○ は権限あり、× は権限なし。",
                 $"・接続種別ごとに必要な権限は {Col("「社内サーバー構成資料」", Check)} を参照してください。",
                 $"・{B("通常利用システム")} … その社員が普段使うシステム。{Col("権限とは別の情報", Check)} です。");
@@ -465,6 +472,7 @@ namespace NightShift.Data
                 "本資料は社内ネットワークとサーバーの概要です。サーバーの管理操作（サービス停止・再起動など）は、まだ担当範囲ではありません。");
             Sec(manualServer, "",
                 B("■ ネットワークの区分"),
+                "{FIG:NETWORK_ZONES}",
                 $"・{B("社外 (INTERNET)")} … インターネット。すべての社外からの通信は FIREWALL を通ります。",
                 $"・{B("公開 (DMZ)")} … 社外に公開している Web サーバー。社外からのアクセスは日常的に発生します。",
                 $"・{B("社内")} … 業務システム。社外から利用する場合は {Col("VPN 経由", Check)} が必要です。",
@@ -481,6 +489,7 @@ namespace NightShift.Data
                 "社員PCの不具合にリモートで対応するための手順です。");
             Sec(manualTrouble, "",
                 B("■ 基本の流れ"),
+                "{FIG:REMOTE_FLOW}",
                 $"1. {B("症状を確認")} … 社員からの問い合わせ内容を読み、何ができないのかを把握する。",
                 $"2. {B("リモート接続")} … 受付管理から社員PCに接続する。",
                 $"3. {B("原因を調べる")} … 設定画面・通知領域のアイコン・コマンド プロンプトなどで状態を確認する。",
@@ -550,7 +559,7 @@ namespace NightShift.Data
                 blockUnregisteredToCritical = external,
                 requireVpnPermission = external
             };
-            const string Footer = "\n※ 操作方法などは添付のマニュアルを参照してください。この業務連絡は、タスクバーの [業務連絡] からいつでも確認できます。";
+            const string Footer = "\n※ 操作方法などは添付のマニュアルを参照してください。この業務連絡は、タスクバーの [メール] の受信トレイからいつでも確認できます。";
             string Tasks(params string[] lines) => "■ 本日の業務\n" + string.Join("\n", lines) + "\n\n■ 接続審査のルール";
 
             // DAY1: 社員かどうか

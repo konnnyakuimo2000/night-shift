@@ -12,6 +12,7 @@ namespace NightShift.Systems
         void OpenHelpDesk(Ticket focus);
         void OpenLogViewer();
         void OpenPasswordChange();
+        void OpenMailbox(MailMessage focus);
         void ShowStatus(string message);
     }
 
@@ -37,6 +38,7 @@ namespace NightShift.Systems
         public HelpDeskManager HelpDesk { get; }
         public EventFactory Factory { get; }
         public EventDirector Director { get; }
+        public MailManager Mail { get; }
 
         public IShiftUi Ui { get; set; }
         /// <summary>プレイヤーのユーザー名（ログインID）</summary>
@@ -105,6 +107,13 @@ namespace NightShift.Systems
             HelpDesk = new HelpDeskManager(this);
             Factory = new EventFactory(this);
             Director = new EventDirector(this);
+            Mail = new MailManager();
+            // 受信トレイ: これまでの業務連絡（既読）と今日の業務連絡（未読）
+            for (int n = 1; n <= day.dayNumber; n++)
+            {
+                var d = db.FindDay(n);
+                if (d != null) Mail.Add(MailManager.FromBriefing(d, OperatorName, n < day.dayNumber), false);
+            }
         }
 
         public void StartShift()

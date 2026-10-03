@@ -132,8 +132,26 @@ namespace NightShift.Events
             if (_s.HasOpenTask(OperatorTask.PasswordChange) || _s.PasswordChangedThisShift) return;
             _s.AddTask(OperatorTask.PasswordChange, "ログインパスワードの変更");
             _s.Logs.Add(_s.Time.CurrentMinute, "AUTH-SRV01", "-", _s.OperatorName, "ACCOUNT", "NOTICE", "初期パスワードの変更依頼");
-            _s.Notifications.Notify(NotificationType.Info, "情報システム部からの依頼",
-                "初期パスワードのままです。システム設定からパスワードを変更してください。", _s.Time.CurrentMinute, () => _s.Ui?.OpenPasswordChange());
+            var mail = _s.Mail.Add(new MailMessage
+            {
+                MailId = "TASK-PASSWORD-" + _s.Day.dayNumber,
+                From = "情報システム部 セキュリティ担当",
+                To = $"夜間IT運用担当 {_s.OperatorName} 様",
+                Subject = "【依頼】初期パスワードの変更について",
+                DateLabel = $"{_s.Day.dateLabel} {_s.Time.Now}",
+                Body = $"{_s.OperatorName} 様\n\n" +
+                       "お使いのアカウントのログインパスワードが、<b>初期設定のまま</b>になっています。\n" +
+                       "<b>本日中に</b>、[システム設定] → [パスワードの変更] から変更してください。\n\n" +
+                       "・パスワードは他人に教えないでください。\n" +
+                       "・社内のパスワード規程に従ってください（規程は変更画面に表示されます）。\n\n" +
+                       "情報システム部 セキュリティ担当",
+                Day = _s.Day.dayNumber,
+                ActionKey = MailManager.ActionPasswordChange,
+                ActionLabel = "パスワードの変更を開く",
+                ReceivedAt = _s.Time.CurrentMinute
+            });
+            _s.Notifications.Notify(NotificationType.Info, "新着メール",
+                $"情報システム部: {mail.Subject}", _s.Time.CurrentMinute, () => _s.Ui?.OpenMailbox(mail));
         }
 
         void OnResolved(EventInstance e)

@@ -69,7 +69,7 @@ namespace NightShift.UI.Shift
         // ---------------- Flow ----------------
         public void ShowBriefing(Action onStart)
         {
-            BriefingView.Open(this, () =>
+            MailboxView.Open(this, () =>
             {
                 onStart();
             });
@@ -105,6 +105,13 @@ namespace NightShift.UI.Shift
         public void OpenHelpDesk(Ticket focus) => HelpDeskView.Open(this, focus);
         public void OpenLogViewer() => LogViewerView.Open(this, null);
         public void OpenPasswordChange() => PasswordChangeView.Open(this);
+        public void OpenMailbox(MailMessage focus) => MailboxView.Open(this, null, focus);
+
+        /// <summary>マニュアルの図に渡す情報</summary>
+        public FigureContext FigureContext => new FigureContext
+        {
+            Day = S.Day, Unlocked = Unlocked, Nodes = S.Network.Nodes, Permissions = Game.Database.permissions
+        };
 
         public void ShowStatus(string message)
         {
@@ -257,7 +264,7 @@ namespace NightShift.UI.Shift
             v.Add(new MenuItem("ネットワークマップ(N)", () => NetworkMonitorView.Open(d), null, d.Unlocked(Data.Features.NetworkMap)));
             var help = new List<MenuItem>
             {
-                new MenuItem("業務連絡を表示(B)", () => BriefingView.Open(d, null)),
+                new MenuItem("メール（業務連絡）(B)", () => MailboxView.Open(d)),
                 new MenuItem("バージョン情報(A)", () => d.ShowStatus($"{d.Game.Database.systemName} {d.Game.Database.systemVersion}")),
             };
             return new List<KeyValuePair<string, List<MenuItem>>>
@@ -281,6 +288,7 @@ namespace NightShift.UI.Shift
         readonly Dictionary<RetroWindow, RetroButton> _map = new Dictionary<RetroWindow, RetroButton>();
         float _flash;
         Image _bell;
+        RetroButton _mail;
 
         public static Taskbar Build(Transform parent, ShiftDesktop d)
         {
@@ -296,7 +304,8 @@ namespace NightShift.UI.Shift
             start.Rect.Place(3, 3, 112, 24);
             start.Button.onClick.AddListener(() => tb.OpenStartMenu(start));
 
-            var mail = UIFactory.Button(bg.transform, "業務連絡", () => BriefingView.Open(d, null), "mail");
+            var mail = UIFactory.Button(bg.transform, "メール", () => MailboxView.Open(d), "mail");
+            tb._mail = mail;
             mail.Rect.Place(118, 3, 92, 24);
 
             tb._buttons = UIFactory.Rect("Buttons", bg.transform).Stretch(216, 3, 330, 3);
@@ -358,6 +367,8 @@ namespace NightShift.UI.Shift
             _counts.text = _d.Unlocked(Data.Features.HelpDesk)
                 ? $"接続要求 {s.Requests.Pending.Count}   受付 {s.HelpDesk.OpenCount}"
                 : $"接続要求 {s.Requests.Pending.Count}";
+            int unread = s.Mail.UnreadCount;
+            if (_mail != null) _mail.SetText(unread > 0 ? $"メール ({unread})" : "メール");
             if (_flash > 0)
             {
                 _flash -= Time.unscaledDeltaTime;
