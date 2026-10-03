@@ -61,6 +61,14 @@ namespace NightShift.Data
         [Tooltip("会社全体の背景通信の倍率")]
         public float backgroundActivityScale = 1f;
 
+        [Header("チュートリアル進行")]
+        [Tooltip("この時刻（ゲーム内分）より前に予定されたプレイヤー向けイベントは、前のタスクが片付くまで発生を待つ。0 で無効")]
+        public float tutorialGateUntilMinute = 0f;
+        [Tooltip("タスクが片付いてから次のイベントを出すまでの間（ゲーム内分）")]
+        public float tutorialGateBreathMinutes = 2f;
+        [Tooltip("待機できる最大時間（ゲーム内分）。これを過ぎたら強制的に発生")]
+        public float tutorialGateMaxDelayMinutes = 30f;
+
         [Header("ルール")]
         public PolicyRuleSet policy = new PolicyRuleSet();
 

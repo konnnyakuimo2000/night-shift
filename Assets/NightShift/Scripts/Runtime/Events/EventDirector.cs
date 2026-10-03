@@ -19,6 +19,13 @@ namespace NightShift.Events
         public HelpDeskGenerator HelpDeskGen { get; }
         public ThreatScenarioManager Threats { get; }
         public bool Stopped { get; private set; }
+        float _tasksClearedAt;
+        bool _hadOpenTasks;
+
+        /// <summary>プレイヤーが対応すべきタスク（保留中の要求・未対応の問い合わせ）の数</summary>
+        public int OpenPlayerTasks => _s.Requests.Pending.Count + _s.HelpDesk.OpenCount;
+
+        bool IsGated(float time) => time < _s.Day.tutorialGateUntilMinute;
 
         public EventDirector(ShiftSession s)
         {
@@ -49,10 +56,13 @@ namespace NightShift.Events
         void ScheduleDefinition(EventDefinition def, UnityEngine.Vector2 window, string label = null)
         {
             var d = def;
+            float t = Rand(window.x, window.y);
             if (def.preferWhileRemoteActive)
                 Scheduler.AddPreferRemote(window.x, window.y, label ?? def.eventId, () => Spawn(d));
+            else if (def.kind == EventKind.ConnectionRequest && IsGated(t))
+                Scheduler.AddGated(t, _s.Day.tutorialGateMaxDelayMinutes, label ?? def.eventId, () => Spawn(d));
             else
-                Scheduler.Add(Rand(window.x, window.y), label ?? def.eventId, () => Spawn(d));
+                Scheduler.Add(t, label ?? def.eventId, () => Spawn(d));
         }
 
         EventDefinition PickWeighted(List<EventDefinition> pool, int day)
@@ -121,7 +131,11 @@ namespace NightShift.Events
         {
             if (Stopped) return;
             bool remoteActive = _s.HelpDesk.ActiveSession != null && _s.HelpDesk.ActiveSession.Connected;
-            Scheduler.Tick(now, remoteActive);
+            int open = OpenPlayerTasks;
+            if (open > 0) _hadOpenTasks = true;
+            else if (_hadOpenTasks) { _hadOpenTasks = false; _tasksClearedAt = now; }
+            bool gateOpen = open == 0 && now - _tasksClearedAt >= _s.Day.tutorialGateBreathMinutes;
+            Scheduler.Tick(now, remoteActive, gateOpen);
             Normal.Tick(delta);
         }
 

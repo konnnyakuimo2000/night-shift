@@ -30,6 +30,7 @@ namespace NightShift.UI.Shift
                 new MenuItem("3. システムログの検索・参照", () => LogViewerView.Open(d, null)) { Icon = "log" },
                 new MenuItem("4. ITサポート受付管理", () => HelpDeskView.Open(d, null)) { Icon = "helpdesk" },
                 new MenuItem("5. セキュリティ情報", () => SecurityInfoView.Open(d)) { Icon = "shield" },
+                new MenuItem("   業務連絡（ルール）", () => BriefingView.Open(d, null)) { Icon = "mail" },
                 new MenuItem("   ネットワークマップ", () => NetworkMonitorView.Open(d)) { Icon = "globe" },
                 new MenuItem("   サーバー運用管理 (権限なし)", null, null, serverUnlocked) { Icon = "server" },
                 MenuItem.Sep(),
@@ -120,7 +121,9 @@ namespace NightShift.UI.Shift
             var net = UIFactory.Image(art.transform, RetroTheme.BigIcon("network"), Color.white, "Net");
             net.rectTransform.Place(214, 90, 48, 48);
 
-            var lockBtn = UIFactory.Button(c, "サーバー運用管理", 304, 232, 278, 26, () =>
+            UIFactory.Button(c, "業務連絡を見る(B)", 304, 232, 136, 26, () => BriefingView.Open(_d, null), "mail");
+            _w.Accelerators[KeyCode.B] = () => BriefingView.Open(_d, null);
+            var lockBtn = UIFactory.Button(c, "サーバー運用管理", 446, 232, 136, 26, () =>
             {
                 AudioFx.Error();
                 MessageBox.Show(_d, "サーバー運用管理", "このメニューを利用する権限がありません。\n（担当範囲: DAY 2 より）", "lock");
@@ -187,7 +190,7 @@ namespace NightShift.UI.Shift
             ((RectTransform)sr.transform).Stretch(0, 100, 0, preShift ? 44 : 34);
             var sb = new StringBuilder();
             sb.AppendLine(day.briefingBody);
-            for (int i = 0; i < day.rules.Count; i++) sb.AppendLine($"  {i + 1}. {day.rules[i]}");
+            for (int i = 0; i < day.rules.Count; i++) sb.AppendLine($"  <b>{i + 1}.</b> {day.rules[i]}");
             sb.AppendLine();
             sb.AppendLine(day.briefingFooter);
             var t = UIFactory.Label(content, sb.ToString(), 12, TextAnchor.UpperLeft);
@@ -249,7 +252,7 @@ namespace NightShift.UI.Shift
 
             var rg = UIFactory.Group(c, "接続審査の基本ルール", 0, 0, 600, 150);
             var sb = new StringBuilder();
-            for (int i = 0; i < day.rules.Count; i++) sb.AppendLine($"{i + 1}. {day.rules[i]}");
+            for (int i = 0; i < day.rules.Count; i++) sb.AppendLine($"<b>{i + 1}.</b> {day.rules[i]}");
             var rt = UIFactory.Label(rg, sb.ToString(), 12, TextAnchor.UpperLeft);
             rt.rectTransform.Stretch();
 

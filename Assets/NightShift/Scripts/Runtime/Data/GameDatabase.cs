@@ -12,6 +12,9 @@ namespace NightShift.Data
     {
         public const string ResourcePath = "NightShiftData/GameDatabase";
 
+        [Tooltip("初期データの版。DefaultDataFactory.DataVersion より古い場合、エディタで再生成を促す")]
+        public int dataVersion;
+
         public string companyName = "NEXUS CORPORATION";
         public string systemName = "社内情報システム";
         public string systemVersion = "Ver.4.21";

@@ -8,6 +8,8 @@ namespace NightShift.Events
         public float Time;
         public float Latest;             // preferWhileRemoteActive の場合の最終時刻
         public bool PreferWhileRemote;
+        public bool Gated;               // チュートリアル: 前のタスクが片付くまで待つ
+        public float GateDeadline;       // 待機の上限
         public string Label;
         public Action Fire;
         public bool Fired;
@@ -34,9 +36,19 @@ namespace NightShift.Events
             return it;
         }
 
-        public void Tick(float now, bool remoteActive)
+        public ScheduledItem AddGated(float time, float maxDelay, string label, Action fire)
+        {
+            var it = Add(time, label, fire);
+            it.Gated = true;
+            it.GateDeadline = time + maxDelay;
+            return it;
+        }
+
+        /// <summary>gateOpen: プレイヤーの未処理タスクがなく、次のイベントを出してよい状態</summary>
+        public void Tick(float now, bool remoteActive, bool gateOpen = true)
         {
             if (!AcceptNew) return;
+            ScheduledItem nextGated = null;
             // 列挙中に追加される可能性があるためインデックスで回す
             for (int i = 0; i < _items.Count; i++)
             {
@@ -46,10 +58,22 @@ namespace NightShift.Events
                     ? (now >= it.Time && remoteActive) || now >= it.Latest
                     : now >= it.Time;
                 if (!due) continue;
-                it.Fired = true;
-                try { it.Fire?.Invoke(); }
-                catch (Exception ex) { UnityEngine.Debug.LogException(ex); }
+                if (it.Gated && now < it.GateDeadline)
+                {
+                    // 待機中のチュートリアルイベントは、予定時刻の早いものから1件ずつ
+                    if (nextGated == null || it.Time < nextGated.Time) nextGated = it;
+                    continue;
+                }
+                Fire(it);
             }
+            if (nextGated != null && gateOpen) Fire(nextGated);
+        }
+
+        static void Fire(ScheduledItem it)
+        {
+            it.Fired = true;
+            try { it.Fire?.Invoke(); }
+            catch (Exception ex) { UnityEngine.Debug.LogException(ex); }
         }
 
         public int PendingCount

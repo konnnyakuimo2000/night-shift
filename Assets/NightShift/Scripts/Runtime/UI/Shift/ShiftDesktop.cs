@@ -283,7 +283,10 @@ namespace NightShift.UI.Shift
             start.Rect.Place(3, 3, 112, 24);
             start.Button.onClick.AddListener(() => tb.OpenStartMenu(start));
 
-            tb._buttons = UIFactory.Rect("Buttons", bg.transform).Stretch(122, 3, 330, 3);
+            var mail = UIFactory.Button(bg.transform, "業務連絡", () => BriefingView.Open(d, null), "mail");
+            mail.Rect.Place(118, 3, 92, 24);
+
+            tb._buttons = UIFactory.Rect("Buttons", bg.transform).Stretch(216, 3, 330, 3);
 
             var tray = UIFactory.Image(bg.transform, RetroTheme.ThinSunken, Color.white, "Tray");
             tray.rectTransform.AnchorTopRight(3, 3, 320, 24);

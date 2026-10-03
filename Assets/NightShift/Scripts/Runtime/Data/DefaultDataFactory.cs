@@ -11,6 +11,15 @@ namespace NightShift.Data
     /// </summary>
     public static class DefaultDataFactory
     {
+        /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
+        public const int DataVersion = 2;
+
+        // 業務連絡で使う強調（Text のリッチテキスト）
+        const string Allow = "#0030A0";   // 許可系
+        const string Deny = "#B00000";    // 禁止系
+        const string Check = "#8A4B00";   // 確認すること
+        static string B(string t) => $"<b>{t}</b>";
+        static string Col(string t, string c) => $"<color={c}><b>{t}</b></color>";
         public class Bundle
         {
             public GameDatabase database;
@@ -28,6 +37,7 @@ namespace NightShift.Data
         {
             var b = new Bundle();
             var db = b.Add(ScriptableObject.CreateInstance<GameDatabase>(), "", "GameDatabase");
+            db.dataVersion = DataVersion;
             b.database = db;
 
             // ---------------- Permissions ----------------
@@ -330,22 +340,26 @@ namespace NightShift.Data
             day1.briefingFrom = "情報システム部 課長 森田";
             day1.briefingBody =
                 "夜間IT担当として、今夜からよろしくお願いします。\n" +
-                "業務時間は 00:00〜04:00 です。今夜は営業部・開発部・人事部・経理部の一部と、\n" +
-                "カスタマーサポート部（夜勤）が勤務しています。\n\n" +
+                $"業務時間は {B("00:00〜04:00")} です。{B("時間は止まりません")}（Esc で一時停止できます）。\n" +
+                "今夜は営業部・開発部・人事部・経理部の一部と、カスタマーサポート部（夜勤）が勤務しています。\n\n" +
                 "■ 主な業務\n" +
-                "・社内ネットワークへの接続要求の審査\n" +
-                "・社員からのIT問い合わせ（相談・リモートサポート）\n" +
+                $"・{B("接続要求の審査")}（ネットワーク接続監視）\n" +
+                $"・社員からの{B("IT問い合わせ")}への対応（相談への回答／リモートサポート）\n" +
                 "・システムログの確認\n\n" +
                 "■ 接続審査の基本ルール";
-            day1.rules.Add("登録済みの社員端末から、通常業務システムへの通信は原則許可する。");
-            day1.rules.Add("未登録の端末から、社内の重要システムへの接続は禁止。");
-            day1.rules.Add("社外から管理系システムへの接続は禁止。");
-            day1.rules.Add("管理系システムへの接続は、利用者の管理者権限を確認すること。");
-            day1.rules.Add("社外からの接続(VPN)は、VPN利用を許可された社員の登録端末に限る。");
+            day1.rules.Add($"{B("登録済みの社員端末")}から、通常業務システムへの通信は {Col("原則許可", Allow)} する。");
+            day1.rules.Add($"{B("未登録の端末")}から、社内の重要システムへの接続は {Col("禁止", Deny)}。");
+            day1.rules.Add($"{B("社外")}から{B("管理系システム")}（ADMIN-SRV01 等）への接続は {Col("禁止", Deny)}。");
+            day1.rules.Add($"管理系システムへの接続は、利用者の {Col("管理者権限を確認", Check)} すること。");
+            day1.rules.Add($"社外からの接続(VPN)は、{Col("VPN利用を許可された社員の登録端末", Check)} に限る。");
             day1.briefingFooter =
-                "社員の所属・登録端末・権限は「社員情報の検索・参照」で確認できます。\n" +
+                $"利用者の所属・登録端末・権限は {Col("「社員情報の検索・参照」", Check)} で確認できます。\n" +
                 "サーバー運用管理は明日から担当範囲に加わります（本日は監視のみ）。\n" +
-                "迷ったら、まず調べること。";
+                $"{B("迷ったら、まず調べること。")}\n\n" +
+                "※ この業務連絡は、タスクバーの [業務連絡] からいつでも確認できます。";
+            day1.tutorialGateUntilMinute = 90f;
+            day1.tutorialGateBreathMinutes = 2f;
+            day1.tutorialGateMaxDelayMinutes = 30f;
             day1.fixedEvents.AddRange(new[] { firstNormal, dirCheck, unregistered, firstSuspicious, looksOdd, vpnLegit, finalQ });
             void Slot(string label, float a, float c, params EventDefinition[] pool)
             {
@@ -353,17 +367,12 @@ namespace NightShift.Data
                 s.pool.AddRange(pool);
                 day1.randomSlots.Add(s);
             }
-            Slot("routine-1", 6, 8, routine);
-            Slot("routine-2", 22, 25, routine);
-            Slot("routine-3", 52, 70, routine, routineVpn);
-            Slot("routine-4", 75, 80, routine);
-            Slot("routine-5", 105, 114, routine, routineVpn);
-            Slot("routine-6", 140, 147, routine);
-            Slot("routine-7", 166, 180, routine, routineVpn);
-            Slot("routine-8", 184, 194, routine);
-            Slot("routine-9", 212, 224, routine);
-            Slot("scan-noise", 20, 40, scanLog);
-            Slot("scan-noise-2", 160, 190, scanLog);
+            // DAY1 はチュートリアルのため、ランダムな通常要求は最小限（全拒否戦略が不利になる程度）
+            Slot("routine-1", 56, 66, routine, routineVpn);
+            Slot("routine-2", 105, 114, routine);
+            Slot("routine-3", 166, 180, routine, routineVpn);
+            Slot("routine-4", 212, 224, routine);
+            Slot("scan-noise", 60, 75, scanLog);
             day1.helpDesk.AddRange(new[] { hdA1, hdR1, hdA2, hdR2 });
             day1.threats.Add(noise);
             day1.threats.Add(threat);

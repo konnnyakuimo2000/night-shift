@@ -133,7 +133,10 @@ namespace NightShift.Events
                 if (def == null || day.dayNumber < def.minimumDay || day.dayNumber > def.maximumDay) continue;
                 float t = Lerp(def.triggerWindow.x, def.triggerWindow.y, (float)_s.Rng.NextDouble());
                 var d = def;
-                scheduler.Add(t, "HELPDESK " + def.definitionId, () => Spawn(d));
+                if (t < day.tutorialGateUntilMinute)
+                    scheduler.AddGated(t, day.tutorialGateMaxDelayMinutes, "HELPDESK " + def.definitionId, () => Spawn(d));
+                else
+                    scheduler.Add(t, "HELPDESK " + def.definitionId, () => Spawn(d));
             }
         }
 

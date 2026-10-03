@@ -32,7 +32,7 @@ namespace NightShift.EditorTools
             if (!File.Exists(DataRoot + "/GameDatabase.asset")) CreateDataAssets(false);
             else if (!IsDatabaseValid())
             {
-                Debug.LogWarning("[NightShift] GameDatabase の参照が壊れているため、DAY1 データアセットを再生成します。");
+                Debug.LogWarning("[NightShift] GameDatabase が古いか参照が壊れているため、DAY1 データアセットを再生成します。");
                 CreateDataAssets(false, true);
             }
             if (!SessionState.GetBool(SessionKey, false))
@@ -45,7 +45,7 @@ namespace NightShift.EditorTools
         static bool IsDatabaseValid()
         {
             var db = AssetDatabase.LoadAssetAtPath<GameDatabase>(DataRoot + "/GameDatabase.asset");
-            return db != null && db.IsValid();
+            return db != null && db.IsValid() && db.dataVersion >= DefaultDataFactory.DataVersion;
         }
 
         /// <summary>コマンドライン用: Unity -batchmode -executeMethod NightShift.EditorTools.NightShiftSetup.CommandLineSetup -quit</summary>
