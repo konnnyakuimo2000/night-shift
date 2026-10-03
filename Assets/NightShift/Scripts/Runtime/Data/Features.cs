@@ -10,6 +10,8 @@ namespace NightShift.Data
         public const string DeviceCheck = "DEVICE_CHECK";               // 端末の確認（登録端末の表示・端末番号検索）
         public const string EmployeeDetail = "EMPLOYEE_DETAIL";         // 社員詳細（写真・端末など）
         public const string EmployeePermissions = "EMPLOYEE_PERMISSIONS"; // 社員詳細の権限欄
+        public const string PermissionHint = "PERMISSION_HINT";         // 接続要求に「必要な権限」を表示（DAY3 のみ）
+        public const string ServerGuide = "SERVER_GUIDE";               // 社内サーバー構成資料（DAY4 から）
         public const string HelpDesk = "HELPDESK";
         public const string RemoteSupport = "REMOTE_SUPPORT";
         public const string SystemLog = "SYSTEM_LOG";
@@ -26,6 +28,8 @@ namespace NightShift.Data
                 case DeviceCheck: return "端末の確認";
                 case EmployeeDetail: return "社員情報の詳細表示";
                 case EmployeePermissions: return "社員の権限情報";
+                case PermissionHint: return "必要な権限の表示";
+                case ServerGuide: return "社内サーバー構成資料";
                 case HelpDesk: return "ITサポート受付管理";
                 case RemoteSupport: return "リモートサポート";
                 case SystemLog: return "システムログの検索・参照";

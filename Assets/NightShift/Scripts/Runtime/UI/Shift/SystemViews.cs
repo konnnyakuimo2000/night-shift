@@ -210,6 +210,23 @@ namespace NightShift.UI.Shift
         static string Expand(ShiftDesktop d, string body)
         {
             body = (body ?? "").Replace("{OPERATOR}", d.S.OperatorName);
+            if (body.Contains("{ACCESS_TABLE}"))
+            {
+                // 早見表: 接続先 → 接続種別 → 必要な権限（1行1項目）
+                var sb = new StringBuilder();
+                foreach (var n in d.S.Network.Nodes)
+                {
+                    if (n == null || n.role != Data.NodeRole.Server) continue;
+                    foreach (var a in n.accessTypes)
+                    {
+                        if (a.requiresVpnEnabled && !d.Unlocked(Data.Features.NetworkMap)) continue; // VPN は社外の話が出てから
+                        string need = string.IsNullOrEmpty(a.requiredPermission) ? "不要" : PermissionLabel(d, a.requiredPermission);
+                        if (a.requiresVpnEnabled) need += " ＋ VPN利用許可";
+                        sb.AppendLine($"　<b>{n.nodeId}</b>　{a.accessType}　→　<color=#8A4B00><b>{need}</b></color>");
+                    }
+                }
+                body = body.Replace("{ACCESS_TABLE}", sb.ToString().TrimEnd());
+            }
             if (body.Contains("{SERVER_LIST}"))
             {
                 var sb = new StringBuilder();

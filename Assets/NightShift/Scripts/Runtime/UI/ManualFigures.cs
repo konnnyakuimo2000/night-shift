@@ -41,7 +41,7 @@ namespace NightShift.UI
                 case "REVIEW_FLOW": return ReviewFlow(holder, ctx);
                 case "CONNECTION_SCREEN": return ConnectionScreen(holder);
                 case "DIRECTORY_SCREEN": return DirectoryScreen(holder, ctx);
-                case "PERMISSION_MATCH": return PermissionMatch(holder);
+                case "PERMISSION_MATCH": return PermissionMatch(holder, ctx);
                 case "NETWORK_ZONES": return NetworkZones(holder, ctx);
                 case "REMOTE_FLOW": return RemoteFlow(holder);
                 default: return 0;
@@ -268,15 +268,25 @@ namespace NightShift.UI
         }
 
         /// <summary>権限の照合の図</summary>
-        static float PermissionMatch(RectTransform holder)
+        static float PermissionMatch(RectTransform holder, FigureContext ctx)
         {
             const float h = 150;
             var f = Frame(holder, h, "権限の照らし合わせ方（例）");
-            Box(f, 12, 16, 170, 74, "接続要求\n接続先: FILE-SRV01\n接続種別: FILE READ", StepFill, Ink, 11);
-            Arrow(f, new Vector2(182, 53), new Vector2(214, 53), Ink);
-            Box(f, 216, 16, 170, 74, "社内サーバー構成資料\nFILE READ …\n必要な権限: 共有ファイル", AskFill, CheckInk, 11);
-            Arrow(f, new Vector2(386, 53), new Vector2(418, 53), Ink);
-            Box(f, 420, 16, 168, 74, "社員情報（権限欄）\n共有ファイル: ○", StepFill, Ink, 11);
+            if (ctx.Unlocked(Features.PermissionHint))
+            {
+                // DAY3: 要求に表示された「必要な権限」と社員の権限欄を見比べるだけ
+                Box(f, 40, 16, 230, 74, "接続要求\n接続種別: FILE READ\n必要な権限: 共有ファイル", AskFill, CheckInk, 12);
+                Arrow(f, new Vector2(270, 53), new Vector2(328, 53), Ink, "見比べる");
+                Box(f, 330, 16, 230, 74, "社員情報（権限欄）\n共有ファイル: ○", StepFill, Ink, 12);
+            }
+            else
+            {
+                Box(f, 12, 16, 170, 74, "接続要求\n接続先: FILE-SRV01\n接続種別: FILE READ", StepFill, Ink, 11);
+                Arrow(f, new Vector2(182, 53), new Vector2(214, 53), Ink);
+                Box(f, 216, 16, 170, 74, "社内サーバー構成資料\n（早見表）\nFILE READ → 共有ファイル", AskFill, CheckInk, 11);
+                Arrow(f, new Vector2(386, 53), new Vector2(418, 53), Ink);
+                Box(f, 420, 16, 168, 74, "社員情報（権限欄）\n共有ファイル: ○", StepFill, Ink, 11);
+            }
             Text(f, "○ なら", 300, 100, 60, 18, 12, TextAnchor.MiddleRight, AllowInk).fontStyle = FontStyle.Bold;
             Box(f, 362, 98, 70, 22, "許可", AllowFill, AllowInk, 12, true);
             Text(f, "× なら", 436, 100, 60, 18, 12, TextAnchor.MiddleRight, DenyInk).fontStyle = FontStyle.Bold;

@@ -56,7 +56,7 @@ namespace NightShift.UI.Shift
                 new TableColumn("接続元", 160), new TableColumn("接続先", 96), new TableColumn("接続種別", 102), new TableColumn("状態", 56));
             _table.SelectionChanged += _ => RefreshDetail();
 
-            var dg = UIFactory.Group(c, "要求内容", 0, 236, 560, 196);
+            var dg = UIFactory.Group(c, "要求内容", 0, 236, 560, 210);
             float y = 0;
             void F(string key, string label, float x, float w)
             {
@@ -67,7 +67,8 @@ namespace NightShift.UI.Shift
             F("user", "利用者:", 0, 160); F("emp", "社員番号:", 270, 180); y += 26;
             F("device", "端末:", 0, 160); F("src", "接続元:", 270, 180); y += 26;
             F("dest", "接続先:", 0, 160); F("access", "接続種別:", 270, 180); y += 26;
-            F("state", "状態:", 0, 160); F("decided", "処理時刻:", 270, 180); y += 30;
+            F("perm", "必要な権限:", 0, 160); F("state", "状態:", 270, 180); y += 26;
+            F("decided", "処理時刻:", 0, 160); y += 30;
             var hint = UIFactory.Label(dg, "※ 利用者・端末・権限は「社員情報の検索・参照」で確認してください。", 0, y, 540, 18, 11);
             hint.color = RetroTheme.Shadow;
 
@@ -164,10 +165,28 @@ namespace NightShift.UI.Shift
             Set("src", e.SourceLabel);
             Set("dest", e.Destination != null ? $"{e.Destination.nodeId} ({e.Destination.ipAddress})" : "-");
             Set("access", e.AccessType);
+            Set("perm", RequiredPermissionText(e));
             Set("state", StateLabel(e));
             Set("decided", e.State == EventState.Pending ? "-" : TimeManager.Format(e.DecidedTime > 0 ? e.DecidedTime : e.GeneratedTime + e.ResponseTime));
             bool pending = e.State == EventState.Pending;
             _allow.Interactable = _block.Interactable = pending;
+        }
+
+        /// <summary>
+        /// 「必要な権限」欄。DAY3 だけ表示し、DAY4 からは「社内サーバー構成資料」で調べさせる。
+        /// </summary>
+        string RequiredPermissionText(EventInstance e)
+        {
+            if (_d.Unlocked(Data.Features.PermissionHint))
+            {
+                var acc = e.Destination != null ? e.Destination.FindAccess(e.AccessType) : null;
+                if (acc == null || string.IsNullOrEmpty(acc.requiredPermission)) return "不要";
+                foreach (var p in _d.Game.Database.permissions)
+                    if (p != null && p.permissionId == acc.requiredPermission) return p.displayName;
+                return acc.requiredPermission;
+            }
+            if (_d.Unlocked(Data.Features.ServerGuide)) return "（資料で確認）";
+            return "—";
         }
 
         /// <summary>端末の確認は DAY2 から。それまでは端末名を表示しない（端末で判断させない）。</summary>

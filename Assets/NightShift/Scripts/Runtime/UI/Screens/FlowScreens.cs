@@ -93,7 +93,7 @@ namespace NightShift.UI.Screens
             Centered("終了(X)", onQuit, "exit", 28);
             host.SetAsLastSibling();
 
-            var foot = UIFactory.Label(root.transform, $"DAY 1-6 Tutorial  —  マウス＋キーボードでプレイ / {Core.GameSettings.KeyLabel(Core.GameSettings.Pause)}: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
+            var foot = UIFactory.Label(root.transform, $"DAY 1-7 Tutorial  —  マウス＋キーボードでプレイ / {Core.GameSettings.KeyLabel(Core.GameSettings.Pause)}: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
             foot.rectTransform.anchorMin = new Vector2(0, 0); foot.rectTransform.anchorMax = new Vector2(1, 0);
             foot.rectTransform.pivot = new Vector2(0.5f, 0);
             foot.rectTransform.offsetMin = new Vector2(0, 14); foot.rectTransform.offsetMax = new Vector2(0, 32);
