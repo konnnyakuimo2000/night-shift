@@ -81,12 +81,17 @@ namespace NightShift.UI.Shift
         }
 
         // ---------------- Flow ----------------
+        /// <summary>業務開始前の「業務開始」処理（メールを閉じて開き直しても使えるよう保持）</summary>
+        public Action PendingStart { get; private set; }
+
         public void ShowBriefing(Action onStart)
         {
-            MailboxView.Open(this, () =>
+            PendingStart = () =>
             {
+                PendingStart = null;
                 onStart();
-            });
+            };
+            MailboxView.Open(this, PendingStart);
         }
 
         public void OnShiftStarted()
@@ -366,6 +371,7 @@ namespace NightShift.UI.Shift
         float _flash;
         Image _bell;
         RetroButton _mail;
+        bool _mailLatched;
 
         public static Taskbar Build(Transform parent, ShiftDesktop d)
         {
@@ -381,7 +387,13 @@ namespace NightShift.UI.Shift
             start.Rect.Place(3, 3, 112, 24);
             start.Button.onClick.AddListener(() => tb.OpenStartMenu(start));
 
-            var mail = UIFactory.Button(bg.transform, "メール", () => MailboxView.Open(d), "mail");
+            var mail = UIFactory.Button(bg.transform, "メール", () =>
+            {
+                // メールウィンドウのタスクバーボタンを兼ねる（表示中なら最小化）
+                var win = d.Windows.Find(MailboxView.Id);
+                if (win != null && d.Windows.Active == win && !win.IsMinimized) win.Minimize();
+                else MailboxView.Open(d);
+            }, "mail");
             tb._mail = mail;
             mail.Rect.Place(118, 3, 92, 24);
 
@@ -445,7 +457,13 @@ namespace NightShift.UI.Shift
                 ? $"接続要求 {s.Requests.Pending.Count}   受付 {s.HelpDesk.OpenCount}"
                 : $"接続要求 {s.Requests.Pending.Count}";
             int unread = s.Mail.UnreadCount;
-            if (_mail != null) _mail.SetText(unread > 0 ? $"メール ({unread})" : "メール");
+            if (_mail != null)
+            {
+                _mail.SetText(unread > 0 ? $"メール ({unread})" : "メール");
+                var mw = _d.Windows.Find(MailboxView.Id);
+                bool latched = mw != null && _d.Windows.Active == mw && !mw.IsMinimized;
+                if (latched != _mailLatched) { _mailLatched = latched; _mail.SetLatched(latched); }
+            }
             if (_flash > 0)
             {
                 _flash -= Time.unscaledDeltaTime;

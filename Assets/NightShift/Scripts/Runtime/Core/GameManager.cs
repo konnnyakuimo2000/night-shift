@@ -75,6 +75,7 @@ namespace NightShift.Core
             Application.runInBackground = true;
             Database = GameDatabase.Load();
             AudioFx.Init(gameObject);
+            RetroCursor.Install(gameObject);
             KeyboardCapture.Install();
             BuildCanvas();
         }

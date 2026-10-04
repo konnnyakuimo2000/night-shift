@@ -27,11 +27,14 @@ namespace NightShift.UI.Shift
 
         public static void Open(ShiftDesktop d, Action onStart = null, MailMessage focus = null)
         {
+            // 業務開始前に閉じても、開き直せば「業務開始」ボタンが残る
+            if (onStart == null && !d.ShiftStarted) onStart = d.PendingStart;
             bool preShift = !d.ShiftStarted && onStart != null;
             var w = d.OpenWindow(new WindowSpec
             {
                 Id = Id, Title = "メール - 受信トレイ", Icon = "mail", Width = 1180, Height = 740,
-                Closable = !preShift, Minimizable = !preShift, Maximizable = false, Position = new Vector2(50, 4),
+                Closable = true, Minimizable = true, Maximizable = false, Position = new Vector2(50, 4),
+                ShowInTaskbar = false, // タスクバーの常設 [メール] ボタンがこのウィンドウのボタンを兼ねる
                 Menus = ShiftDesktop.StandardMenus(d), StatusCells = 2, StatusWidths = new float[] { 160 }
             }, out bool created);
             var v = created ? w.gameObject.AddComponent<MailboxView>() : w.GetComponent<MailboxView>();
@@ -99,7 +102,7 @@ namespace NightShift.UI.Shift
             _w.Accelerators[KeyCode.UpArrow] = () => _table.MoveSelection(-1);
             _w.Accelerators[KeyCode.DownArrow] = () => _table.MoveSelection(1);
             _w.Accelerators[KeyCode.F5] = Refresh;
-            if (_onStart == null) _w.Accelerators[KeyCode.C] = _w.RequestClose;
+            _w.Accelerators[KeyCode.C] = _w.RequestClose;
 
             _d.S.Mail.Changed += OnMailChanged;
         }
