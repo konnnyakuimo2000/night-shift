@@ -8,7 +8,7 @@ namespace NightShift.UI.Shift
 {
     /// <summary>
     /// メール（受信トレイ）。業務連絡・作業依頼はすべてここに届く。
-    /// 業務開始前は今日の業務連絡を開いた状態で表示し、START SHIFT もここから行う。
+    /// 業務開始前は今日の業務連絡を開いた状態で表示し、「業務開始」もここから行う。
     /// </summary>
     public class MailboxView : MonoBehaviour
     {
@@ -19,6 +19,7 @@ namespace NightShift.UI.Shift
         RectTransform _preview;
         RetroButton _inboxButton;
         RetroButton _start;
+        StartButtonPulse _startPulse;
         Text _checklist;
         Action _onStart;
         bool _dirty;
@@ -54,13 +55,19 @@ namespace NightShift.UI.Shift
                 UIFactory.Button(c, label, x, 0, 70, 24, null).Interactable = false;
             if (_onStart != null)
             {
-                _start = UIFactory.Button(c, "START SHIFT(S)", 0, 0, 190, 28, StartShift, "clock");
-                _start.Rect.AnchorTopRight(0, 0, 190, 28);
+                _start = UIFactory.Button(c, "業務開始", 0, 0, 240, 30, StartShift, "clock");
+                _start.Rect.AnchorTopRight(0, 0, 240, 30);
                 _start.Label.fontStyle = FontStyle.Bold;
+                _start.Label.fontSize = 15;
+                var shadow = _start.Label.gameObject.AddComponent<Shadow>();
+                shadow.effectColor = new Color(0, 0, 0, 0.5f);
+                shadow.effectDistance = new Vector2(1, -1);
+                _startPulse = _start.gameObject.AddComponent<StartButtonPulse>();
+                _startPulse.Button = _start;
                 _w.Accelerators[KeyCode.S] = StartShift;
                 // 業務開始前に読むもののチェックリスト
                 _checklist = UIFactory.Label(c, "", 11, TextAnchor.MiddleRight);
-                _checklist.rectTransform.AnchorTopRight(196, 0, 560, 30);
+                _checklist.rectTransform.AnchorTopRight(246, 0, 520, 30);
                 _checklist.horizontalOverflow = HorizontalWrapMode.Wrap;
                 _d.ReadingChanged += OnReadingChanged;
                 UpdateStartState();
@@ -120,7 +127,7 @@ namespace NightShift.UI.Shift
             Show(keep);
         }
 
-        /// <summary>メール本文と必要なマニュアルを最後まで読むまで START SHIFT を押せない</summary>
+        /// <summary>メール本文と必要なマニュアルを最後まで読むまで「業務開始」を押せない</summary>
         void UpdateStartState()
         {
             if (_start == null || _onStart == null) return;
@@ -136,6 +143,8 @@ namespace NightShift.UI.Shift
             }
             _checklist.text = sb.ToString();
             _start.Interactable = all;
+            _start.SetText(all ? "業務開始  ▶  (S)" : "業務開始（未読あり）");
+            if (_startPulse != null) _startPulse.Ready = all;
         }
 
         void StartShift()
@@ -264,6 +273,36 @@ namespace NightShift.UI.Shift
                 var keep = _shown;
                 Refresh();
                 if (keep != null) _table.SelectData(keep);
+            }
+        }
+    }
+}
+
+namespace NightShift.UI.Shift
+{
+    /// <summary>業務開始ボタンを目立たせる（読了後はオレンジ色で脈打つ）</summary>
+    public class StartButtonPulse : MonoBehaviour
+    {
+        public RetroButton Button;
+        public bool Ready;
+        static readonly Color Orange = new Color(1f, 0.62f, 0.15f);
+        static readonly Color Disabled = new Color(0.82f, 0.82f, 0.82f);
+
+        void Update()
+        {
+            if (Button == null) return;
+            if (Ready)
+            {
+                float k = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4f);
+                Button.Background.color = Color.Lerp(Orange, new Color(1f, 0.85f, 0.45f), k * 0.6f);
+                Button.Label.color = Color.white;
+                float s = 1f + 0.035f * k;
+                Button.transform.localScale = new Vector3(s, s, 1);
+            }
+            else
+            {
+                Button.Background.color = Disabled;
+                Button.transform.localScale = Vector3.one;
             }
         }
     }

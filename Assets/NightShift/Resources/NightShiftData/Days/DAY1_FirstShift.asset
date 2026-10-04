@@ -21,6 +21,7 @@ MonoBehaviour:
   realSecondsPerGameMinute: 1.25
   endWarningMinute: 230
   graceRealSeconds: 20
+  requestsExpire: 0
   briefingFrom: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u90E8 \u8AB2\u9577 \u68EE\u7530"
   briefingBody: "\u591C\u9593IT\u62C5\u5F53\u3068\u3057\u3066\u3001\u4ECA\u591C\u304B\u3089\u3088\u308D\u3057\u304F\u304A\u9858\u3044\u3057\u307E\u3059\u3002\n\u696D\u52D9\u6642\u9593\u306F
     <b>00:00\u301C04:00</b> \u3067\u3059\u3002<b>\u6642\u9593\u306F\u6B62\u307E\u308A\u307E\u305B\u3093</b>\uFF08{KEY:PAUSE}

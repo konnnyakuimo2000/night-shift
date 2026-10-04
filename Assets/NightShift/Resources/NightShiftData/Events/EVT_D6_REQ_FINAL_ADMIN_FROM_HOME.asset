@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62edd6c1e4f726439a7d85a52522454, type: 3}
-  m_Name: EVT_D6_REQ_FINAL_VPN_TO_ADMIN
+  m_Name: EVT_D6_REQ_FINAL_ADMIN_FROM_HOME
   m_EditorClassIdentifier: 
-  eventId: D6_REQ_FINAL_VPN_TO_ADMIN
+  eventId: D6_REQ_FINAL_ADMIN_FROM_HOME
   category: 0
   kind: 1
   minimumDay: 1
@@ -24,10 +24,11 @@ MonoBehaviour:
   employeeConditions:
     departments: []
     excludeDepartments: []
-    requiredPermissions: []
+    requiredPermissions:
+    - {fileID: 11400000, guid: d0ce9c5970dabd845b4f0faf744a1a12, type: 2}
     excludedPermissions: []
     requiredNormalTargets: []
-    requireOnShift: 1
+    requireOnShift: 0
     requireVpnEnabled: 1
     requireVpnDisabled: 0
     requireLaptop: 1

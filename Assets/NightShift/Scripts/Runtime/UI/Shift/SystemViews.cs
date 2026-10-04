@@ -146,7 +146,7 @@ namespace NightShift.UI.Shift
             _w.SetStatus(2, s.Time.Now);
             if (Time.frameCount % 15 != 0) return;
             var sb = new StringBuilder();
-            if (!_d.ShiftStarted) sb.AppendLine("業務開始前です。メールで業務連絡を確認し、\n[START SHIFT] で業務を開始してください。");
+            if (!_d.ShiftStarted) sb.AppendLine("業務開始前です。メールで業務連絡を確認し、\n[業務開始] で業務を開始してください。");
             else
             {
                 sb.AppendLine($"保留中の接続要求: {s.Requests.Pending.Count} 件");
