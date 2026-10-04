@@ -74,6 +74,7 @@ namespace NightShift.Core
             GameSettings.Changed += ApplyUiScale;
             Application.runInBackground = true;
             Database = GameDatabase.Load();
+            if (Database != null && !string.IsNullOrEmpty(Database.companyNameJa)) MailManager.CompanyName = Database.companyNameJa;
             AudioFx.Init(gameObject);
             RetroCursor.Install(gameObject);
             KeyboardCapture.Install();
@@ -143,7 +144,7 @@ namespace NightShift.Core
             SetScreen(TitleScreen.Build(ScreenLayer, StartNewGame, reached > 1 ? ContinueGame : (System.Action)null, reached, Quit, Database.days.Count, StartFromDay), GameState.Title);
         }
 
-        public void ShowClockIn() => SetScreen(ClockInScreen.Build(ScreenLayer, Database.GetDay(CurrentDay), OperatorName, name =>
+        public void ShowClockIn() => SetScreen(ClockInScreen.Build(ScreenLayer, Database.GetDay(CurrentDay), OperatorName, Database.companyNameJa, name =>
         {
             OperatorName = name;
             if (Account.UserId != name) { Account.UserId = name; Account.Save(); }
@@ -267,12 +268,12 @@ namespace NightShift.Core
             sb.AppendLine();
             sb.AppendLine($"現在の所持金: <b>{Y(Wallet.Balance)}</b>");
             sb.AppendLine();
-            sb.Append("総務部 給与担当");
+            sb.Append(MailManager.Signature("総務部 給与担当"));
             Session.Mail.Add(new MailMessage
             {
                 MailId = "PAYSLIP-" + slip.day,
-                From = "総務部 給与担当",
-                To = $"夜間IT運用担当 {OperatorName} 様",
+                From = MailManager.Sender("総務部 給与担当"),
+                To = MailManager.Recipient(OperatorName),
                 Subject = $"【給与明細】DAY {slip.day} 日当",
                 DateLabel = (string.IsNullOrEmpty(day.clockInDateLabel) ? day.dateLabel : day.clockInDateLabel) + " 18:00",
                 Body = sb.ToString(),

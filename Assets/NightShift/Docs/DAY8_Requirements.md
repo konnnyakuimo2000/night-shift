@@ -21,6 +21,7 @@ DAY1〜7 は研修期間（チュートリアル）。DAY8 からは「本番業
 
 ### 日ごとの解禁（案）
 **毎朝のネットニュース**（DAY8〜、タイムカードの前に表示。その夜の脅威と対処のヒント）は [NEWS_DESIGN.md](NEWS_DESIGN.md)。
+ITサポートの問題（二択・リモート操作。IPA 過去問題を参照）は [HELPDESK_CATALOG.md](HELPDESK_CATALOG.md)。
 脅威の番号（T1〜T15）は [THREAT_CATALOG.md](THREAT_CATALOG.md)、ウイルスと被害イベント（V1〜V8）は [VIRUS_CATALOG.md](VIRUS_CATALOG.md) を参照。
 
 | DAY | 新しく出るもの | 新しい仕組み・ストア |

@@ -56,5 +56,11 @@ namespace NightShift.Data
         [TextArea] public string successReply = "直りました！ありがとうございます。";
         [TextArea] public string failureReply = "すみません、まだ直っていないようです…";
         [Min(1)] public int maxReports = 2;
+
+        [Header("解説・出典（対応の後に表示）")]
+        [Tooltip("正しい対応の理由（短く）")]
+        [TextArea] public string explanation;
+        [Tooltip("参考にしたIPA試験の過去問題の出典。例: 平成28年度 春期 ITパスポート試験 問86（改変）")]
+        public string sourceNote;
     }
 }

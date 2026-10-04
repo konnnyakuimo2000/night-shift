@@ -27,6 +27,18 @@ namespace NightShift.Systems
     {
         public const string ActionPasswordChange = "PASSWORD";
 
+        /// <summary>社内メールに表示する社名（GameManager が GameDatabase から設定する）</summary>
+        public static string CompanyName = "ネクサスコーポレーション";
+
+        /// <summary>社内の差出人（例: ネクサスコーポレーション 総務部 給与担当）</summary>
+        public static string Sender(string dept) => string.IsNullOrEmpty(CompanyName) ? dept : $"{CompanyName} {dept}";
+
+        /// <summary>運用担当者宛ての宛先</summary>
+        public static string Recipient(string operatorName) => $"{CompanyName} 夜間IT運用担当 {operatorName} 様";
+
+        /// <summary>社内メールの署名</summary>
+        public static string Signature(string dept) => $"\n――――――――――――――――\n{CompanyName}\n{dept}";
+
         readonly List<MailMessage> _inbox = new List<MailMessage>();
         public IReadOnlyList<MailMessage> Inbox => _inbox;
         public event Action<MailMessage> Received;
@@ -63,11 +75,11 @@ namespace NightShift.Systems
             return new MailMessage
             {
                 MailId = "BRIEFING-" + day.dayNumber,
-                From = day.briefingFrom,
-                To = $"夜間IT運用担当 {operatorName} 様",
+                From = Sender(day.briefingFrom),
+                To = Recipient(operatorName),
                 Subject = $"【業務連絡】DAY {day.dayNumber} 夜間業務について",
                 DateLabel = (string.IsNullOrEmpty(day.clockInDateLabel) ? day.dateLabel : day.clockInDateLabel) + " 21:30",
-                Body = ComposeBriefing(day),
+                Body = ComposeBriefing(day) + "\n" + Signature(day.briefingFrom),
                 Attachments = new List<DocumentDefinition>(day.attachments),
                 Read = read,
                 Day = day.dayNumber,

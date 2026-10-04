@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 18;
+        public const int DataVersion = 19;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -416,6 +416,8 @@ namespace NightShift.Data
             hdA1.incorrectOption = "情報システムの担当者なら問題ないので、折り返して伝えてよいと回答する。";
             hdA1.replyAfterAnswer = "わかりました。そのようにします。";
             hdA1.reminderMessage = "すみません、先ほどの件どうしたらいいでしょうか…？";
+            hdA1.explanation = "社員や関係者を装って電話でパスワードなどを聞き出す手口は「ソーシャルエンジニアリング」の典型例。相手が誰であっても、パスワードは教えない。";
+            hdA1.sourceNote = "平成28年度 春期 ITパスポート試験 問86（改変）";
 
             var hdR1 = H("R1_NO_INTERNET", HelpDeskType.Remote, new Vector2(40, 46), 5);
             hdR1.subject = "インターネットにつながらない";
@@ -434,6 +436,8 @@ namespace NightShift.Data
             hdA2.incorrectOption = "内容を確認しないと判断できないので、一度開いてみるよう伝える。";
             hdA2.replyAfterAnswer = "了解です。確認してみます。";
             hdA2.reminderMessage = "あの、さっきのファイル、開いちゃっていいですかね？";
+            hdA2.explanation = "文書や表計算のファイルには、マクロ機能を悪用したウイルス（マクロウイルス）が仕込まれていることがある。心当たりのない添付は開かず、送信元を確かめる。";
+            hdA2.sourceNote = "令和2年度 秋期 ITパスポート試験 問58（改変）";
 
             var hdR2 = H("R2_CANNOT_PRINT", HelpDeskType.Remote, new Vector2(25, 31), 7);
             hdR2.subject = "印刷できない";

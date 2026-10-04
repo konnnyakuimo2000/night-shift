@@ -135,12 +135,12 @@ namespace NightShift.UI.Screens
             return null;
         }
 
-        public static GameObject Build(RectTransform parent, DayDefinition day, string currentName, Action<string> onDone)
+        public static GameObject Build(RectTransform parent, DayDefinition day, string currentName, string company, Action<string> onDone)
         {
             var root = UIFactory.Solid(parent, new Color(0.08f, 0.08f, 0.09f), "ClockIn");
             root.rectTransform.Stretch();
 
-            var hint = UIFactory.Label(root.transform, "通用口  —  夜間入館", 14, TextAnchor.MiddleCenter, new Color(0.6f, 0.6f, 0.6f));
+            var hint = UIFactory.Label(root.transform, $"{company}  本社ビル 通用口  —  夜間入館", 14, TextAnchor.MiddleCenter, new Color(0.6f, 0.6f, 0.6f));
             hint.rectTransform.StretchH(90, 24);
 
             var machine = UIFactory.Panel(root.transform, RetroTheme.Raised, "TimeRecorder");
@@ -167,20 +167,21 @@ namespace NightShift.UI.Screens
             // タイムカード（氏名欄に記入する）
             var card = UIFactory.Image(machine.transform, RetroTheme.Field, new Color(0.96f, 0.93f, 0.82f), "Card");
             card.rectTransform.Place(70, 148, 220, 130);
-            UIFactory.Label(card.transform, "タイムカード　　夜間IT運用", 6, 4, 208, 18, 11, TextAnchor.MiddleCenter);
-            UIFactory.Solid(card.transform, new Color(0.6f, 0.45f, 0.4f), "Rule").rectTransform.Place(6, 23, 208, 1);
-            UIFactory.Label(card.transform, "氏名:", 8, 30, 40, 22, 12);
+            UIFactory.Label(card.transform, company, 6, 3, 208, 14, 10, TextAnchor.MiddleCenter);
+            UIFactory.Label(card.transform, "タイムカード　　夜間IT運用", 6, 16, 208, 16, 11, TextAnchor.MiddleCenter).fontStyle = FontStyle.Bold;
+            UIFactory.Solid(card.transform, new Color(0.6f, 0.45f, 0.4f), "Rule").rectTransform.Place(6, 33, 208, 1);
+            UIFactory.Label(card.transform, "氏名:", 8, 38, 40, 22, 12);
             // 氏名の記入は初日だけ。2日目以降は記入済みのカードに打刻するだけ
             bool firstDay = day == null || day.dayNumber <= 1 || string.IsNullOrEmpty(currentName) || currentName == Core.GameManager.DefaultOperatorName;
             string initial = currentName == Core.GameManager.DefaultOperatorName ? "" : currentName;
-            var nameField = UIFactory.Input(card.transform, 48, 30, 164, 22, initial);
+            var nameField = UIFactory.Input(card.transform, 48, 38, 164, 22, initial);
             nameField.characterLimit = MaxNameLength;
             if (!firstDay)
             {
                 nameField.interactable = false;
                 nameField.GetComponent<Image>().color = new Color(0.96f, 0.93f, 0.82f);
             }
-            var stamp = UIFactory.Label(card.transform, "", 6, 60, 208, 62, 13, TextAnchor.MiddleCenter);
+            var stamp = UIFactory.Label(card.transform, "", 6, 64, 208, 60, 13, TextAnchor.MiddleCenter);
             stamp.color = new Color(0.75f, 0.1f, 0.1f);
 
             var msg = UIFactory.Label(machine.transform, firstDay ? "氏名を記入して打刻してください（ログインIDになります）" : "カードを差し込んで打刻してください", 10, 284, 340, 18, 11, TextAnchor.MiddleCenter);

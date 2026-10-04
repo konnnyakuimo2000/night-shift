@@ -16,6 +16,8 @@ namespace NightShift.Data
         public int dataVersion;
 
         public string companyName = "NEXUS CORPORATION";
+        [Tooltip("日本語の社名（タイムカード・メールに表示）")]
+        public string companyNameJa = "ネクサスコーポレーション";
         public string systemName = "社内情報システム";
         public string systemVersion = "Ver.4.21";
 

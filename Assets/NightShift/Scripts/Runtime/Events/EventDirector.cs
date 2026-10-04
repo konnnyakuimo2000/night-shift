@@ -135,16 +135,16 @@ namespace NightShift.Events
             var mail = _s.Mail.Add(new MailMessage
             {
                 MailId = "TASK-PASSWORD-" + _s.Day.dayNumber,
-                From = "情報システム部 セキュリティ担当",
-                To = $"夜間IT運用担当 {_s.OperatorName} 様",
+                From = MailManager.Sender("情報システム部 セキュリティ担当"),
+                To = MailManager.Recipient(_s.OperatorName),
                 Subject = "【依頼】初期パスワードの変更について",
                 DateLabel = $"{_s.Day.dateLabel} {_s.Time.Now}",
                 Body = $"{_s.OperatorName} 様\n\n" +
                        "お使いのアカウントのログインパスワードが、<b>初期設定のまま</b>になっています。\n" +
                        "<b>本日中に</b>、[システム設定] → [パスワードの変更] から変更してください。\n\n" +
                        "・パスワードは他人に教えないでください。\n" +
-                       "・社内のパスワード規程に従ってください（規程は変更画面に表示されます）。\n\n" +
-                       "情報システム部 セキュリティ担当",
+                       "・社内のパスワード規程に従ってください（規程は変更画面に表示されます）。\n" +
+                       MailManager.Signature("情報システム部 セキュリティ担当"),
                 Day = _s.Day.dayNumber,
                 ActionKey = MailManager.ActionPasswordChange,
                 ActionLabel = "パスワードの変更を開く",
