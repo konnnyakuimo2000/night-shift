@@ -13,9 +13,9 @@ namespace NightShift.UI
     {
         enum Kind { None, Arrow, Hand, Beam }
 
-        // 16x16 の絵を 1.5 倍（24x24）で表示
-        const float Scale = 1.5f;
-        const int Size = 24;
+        // 16x16 の絵を 1.25 倍（20x20）で表示
+        const float Scale = 1.25f;
+        const int Size = 20;
         static Texture2D _arrow, _hand, _beam;
         Kind _current = Kind.None;
         readonly List<RaycastResult> _hits = new List<RaycastResult>();
