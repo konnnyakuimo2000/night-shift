@@ -107,6 +107,18 @@ namespace NightShift.UI
             return t;
         }
 
+        static Sprite _arrowSprite;
+
+        /// <summary>矢印カーソルの絵（ホラー演出の「もう1つのカーソル」に使う）</summary>
+        public static Sprite ArrowSprite()
+        {
+            if (_arrowSprite != null) return _arrowSprite;
+            var tex = Make(ArrowArt);
+            _arrowSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0, 1), 100f);
+            _arrowSprite.hideFlags = HideFlags.DontSave;
+            return _arrowSprite;
+        }
+
         public static RetroCursor Install(GameObject host)
         {
             if (_arrow == null) _arrow = Make(ArrowArt);

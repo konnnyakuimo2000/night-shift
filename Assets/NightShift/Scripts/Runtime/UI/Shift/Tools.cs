@@ -22,7 +22,7 @@ namespace NightShift.UI.Shift
             switch (id)
             {
                 case Items.ProfilePanel: Open<ProfilePanelTool>(ws, id, "社員情報パネル", "people", 420, 380); break;
-                case Items.AutoReview: Open<AutoReviewTool>(ws, id, "自動審査ツール", "check", 520, 470); break;
+                case Items.AutoReview: Open<AutoReviewTool>(ws, id, "自動審査ツール", "check", 520, 490); break;
                 case Items.LogAnalyzer: Open<LogAnalyzerTool>(ws, id, "ログ解析", "log", 520, 360); break;
                 case Items.FwConsole: Open<FirewallConsoleTool>(ws, id, "遮断コンソール", "firewall", 380, 330); break;
                 case Items.MailInspector: Open<MailInspectorTool>(ws, id, "メール差出人チェッカー", "mail", 460, 220); break;
@@ -131,7 +131,7 @@ namespace NightShift.UI.Shift
         protected override void Build(RectTransform c)
         {
             var career = CareerRecord.Current;
-            var g = UIFactory.Group(c, "自動で許可する条件（すべて満たした要求だけ）", 0, 0, 500, 196);
+            var g = UIFactory.Group(c, "自動で許可する条件（すべて満たした要求だけ）", 0, 0, 500, 214);
             UIFactory.Label(g, "☑ 社内からの接続（常に必須）　※社外・管理系・VPN・セキュリティ警告は常に手動", 0, 0, 490, 18, 11);
             for (int i = 0; i < Conditions.Length; i++)
             {
@@ -149,7 +149,7 @@ namespace NightShift.UI.Shift
             _enabled.GetComponent<RectTransform>().Place(320, 22, 170, 20);
             _count = UIFactory.Label(g, "", 320, 50, 170, 40, 11, TextAnchor.UpperLeft);
 
-            var q = UIFactory.Group(c, "要求キュー（期限の近い順）", 0, 202, 500, 200);
+            var q = UIFactory.Group(c, "要求キュー（期限の近い順）", 0, 220, 500, 200);
             _queue = TableView.CreateStretch(q, 0, 0, 0, 0,
                 new TableColumn("要求", 70), new TableColumn("利用者", 110), new TableColumn("接続元", 104), new TableColumn("接続先", 100), new TableColumn("残り", 60));
             S.Requests.Created += OnCreated;
@@ -412,7 +412,7 @@ namespace NightShift.UI.Shift
             var sb = new StringBuilder();
             if (e != null && e.Employee != null)
             {
-                sb.AppendLine($"<b>{e.Employee.DisplayName}</b> の普段: 勤務時間 {e.Employee.workHours}／普段使うシステム {string.Join("・", e.Employee.normalAccessTargets)}");
+                sb.AppendLine($"<b>{e.Employee.DisplayName}</b> の普段: 勤務時間 {e.Employee.workHours}／普段使うシステム {string.Join("・", e.Employee.normalAccessTargets.ConvertAll(EmployeeDetailView.ServiceLabel))}");
                 sb.AppendLine();
             }
             // 社外の接続元を範囲ごとに時系列で並べる（関連があるかの判断はプレイヤー）
@@ -432,7 +432,7 @@ namespace NightShift.UI.Shift
                 for (int i = from; i < kv.Value.Count; i++)
                 {
                     var l = kv.Value[i];
-                    sb.AppendLine($"   {TimeManager.Format(l.Time)}  {l.Source} → {l.Destination}  {l.EventType} {l.Result}  {l.Detail}");
+                    sb.AppendLine($"   {TimeManager.Format(l.Time)}  {l.Source} → {EmployeeDetailView.ServiceLabel(l.Destination)}  {l.EventType} {l.Result}  {l.Detail}");
                 }
             }
             _text.text = sb.Length == 0 ? "まだ記録がありません。" : sb.ToString();

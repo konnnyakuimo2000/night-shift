@@ -87,8 +87,8 @@ namespace NightShift.UI.Shift
             _remoteInfo.rectTransform.Place(0, 0, 294, 80);
             _connect = UIFactory.Button(_remotePanel, "リモート接続(R)", 0, 92, 294, 32, Connect, "remote");
             _report = UIFactory.Button(_remotePanel, "対応完了を報告(P)", 0, 132, 294, 30, Report, "check");
-            var note = UIFactory.Label(_remotePanel, "リモート接続中も業務時間は進みます。\n接続は中断（最小化・切断）しても再開できます。", 0, 172, 294, 40, 11, TextAnchor.UpperLeft);
-            note.color = RetroTheme.Shadow;
+            var note = UIFactory.Label(_remotePanel, "リモート接続中も業務時間は進みます。\n接続は中断（最小化・切断）しても再開できます。", 0, 172, 294, 40, 12, TextAnchor.UpperLeft);
+            note.color = RetroTheme.HintText;
 
             UIFactory.Button(c, "閉じる(C)", 690, 456, 110, 26, _w.RequestClose, "exit");
 
@@ -173,7 +173,7 @@ namespace NightShift.UI.Shift
             {
                 for (int i = 0; i < 2; i++)
                 {
-                    _options[i].LabelText.text = $"{(char)('A' + i)}: {t.Options[i]}";
+                    _options[i].LabelText.text = $"{i + 1}: {t.Options[i]}"; // キーの 1 / 2 と同じ番号
                     _options[i].SetValue(t.AnsweredIndex == i, false);
                     _options[i].Interactable = t.IsOpen;
                 }

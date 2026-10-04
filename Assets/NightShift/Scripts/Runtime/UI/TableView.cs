@@ -125,7 +125,7 @@ namespace NightShift.UI
             float x = 0;
             if (ShowMarker)
             {
-                r.Marker = UIFactory.Label(go, "", 9, TextAnchor.MiddleCenter);
+                r.Marker = UIFactory.Label(go, "", 11, TextAnchor.MiddleCenter);
                 r.Marker.rectTransform.Place(0, 0, 14, RetroTheme.RowHeight);
                 x = 14;
             }

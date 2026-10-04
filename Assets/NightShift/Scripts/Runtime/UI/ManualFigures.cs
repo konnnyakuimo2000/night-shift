@@ -134,7 +134,7 @@ namespace NightShift.UI
             win.rectTransform.Place(x, y, w, h);
             var bar = UIFactory.Image(win.transform, RetroTheme.GradientSprite(RetroTheme.TitleActiveA, RetroTheme.TitleActiveB), Color.white, "Bar");
             bar.rectTransform.StretchH(3, 14, 3, 3);
-            var t = UIFactory.Label(bar.transform, " " + title, 10, TextAnchor.MiddleLeft, Color.white);
+            var t = UIFactory.Label(bar.transform, " " + title, 11, TextAnchor.MiddleLeft, Color.white);
             t.rectTransform.Stretch();
             t.fontStyle = FontStyle.Bold;
             return win.rectTransform;
@@ -144,7 +144,7 @@ namespace NightShift.UI
         {
             var b = UIFactory.Image(p, RetroTheme.Raised, Color.white, "MockButton");
             b.rectTransform.Place(x, y, w, 18);
-            var t = UIFactory.Label(b.transform, label, 10, TextAnchor.MiddleCenter);
+            var t = UIFactory.Label(b.transform, label, 11, TextAnchor.MiddleCenter);
             t.rectTransform.Stretch();
         }
 

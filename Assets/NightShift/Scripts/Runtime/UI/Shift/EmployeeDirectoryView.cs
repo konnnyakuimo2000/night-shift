@@ -252,7 +252,7 @@ namespace NightShift.UI.Shift
                 .rectTransform.Stretch();
         }
 
-        static string ServiceLabel(string serviceId)
+        public static string ServiceLabel(string serviceId)
         {
             switch (serviceId)
             {

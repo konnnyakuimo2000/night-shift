@@ -70,10 +70,10 @@ namespace NightShift.UI.Shift
             F("dest", "接続先:", 0, 160); F("access", "利用システム:", 270, 180); y += 26;
             F("perm", "必要な権限:", 0, 160); F("state", "状態:", 270, 180); y += 26;
             F("decided", "処理時刻:", 0, 160); y += 30;
-            _hint = UIFactory.Label(dg, DefaultHint, 0, y, 540, 36, 11, TextAnchor.UpperLeft);
-            _hint.color = RetroTheme.Shadow;
+            _hint = UIFactory.Label(dg, DefaultHint, 0, y, 540, 36, 12, TextAnchor.UpperLeft);
+            _hint.color = RetroTheme.HintText;
 
-            var ag = UIFactory.Group(c, "処理", 566, 236, 214, 196);
+            var ag = UIFactory.Group(c, "処理", 566, 236, 214, 212);
             _allow = UIFactory.Button(ag, $"接続を許可 [{Core.GameSettings.KeyLabel(Core.GameSettings.Allow)}]", 0, 0, 196, 32, () => Decide(PlayerAction.Allow), "check");
             _block = UIFactory.Button(ag, $"接続を拒否 [{Core.GameSettings.KeyLabel(Core.GameSettings.Block)}]", 0, 38, 196, 32, () => Decide(PlayerAction.Block), "lock");
             UIFactory.Separator(ag, 0, 80, 196);
@@ -102,7 +102,13 @@ namespace NightShift.UI.Shift
             _d.S.Requests.Resolved -= OnChanged;
         }
 
-        void OnChanged(EventInstance e) => _dirty = true;
+        void OnChanged(EventInstance e)
+        {
+            _dirty = true;
+            // 自動審査ツールが許可したものは、黙って消さずに知らせる
+            if (e != null && e.AutoDecided && e.State == EventState.Allowed && _w != null)
+                _w.SetStatus(0, $"自動許可: {e.RequestId}（{e.DisplayUser}）— 処理済みの要求で確認できます。");
+        }
 
         void SetTab(bool processed)
         {
@@ -177,7 +183,7 @@ namespace NightShift.UI.Shift
             bool pending = e.State == EventState.Pending;
             _allow.Interactable = _block.Interactable = pending;
             _hint.text = string.IsNullOrEmpty(e.Note) ? (e.AutoDecided ? "※ この要求は自動的に処理されました。" : DefaultHint) : "備考: " + e.Note;
-            _hint.color = string.IsNullOrEmpty(e.Note) ? RetroTheme.Shadow : RetroTheme.Text;
+            _hint.color = string.IsNullOrEmpty(e.Note) ? RetroTheme.HintText : RetroTheme.Text;
             if (_fwBtn != null) _fwBtn.Interactable = !_d.S.Security.IsBlocked(e.SourceIp);
             if (_reportBtn != null) _reportBtn.Interactable = true;
             CheckClues(e);

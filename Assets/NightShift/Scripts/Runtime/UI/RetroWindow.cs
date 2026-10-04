@@ -45,6 +45,8 @@ namespace NightShift.UI
         /// <summary>このWindowがアクティブな時のキー処理。true を返すと消費。</summary>
         public Func<KeyCode, bool, bool, bool> KeyHandler; // key, ctrl, alt
         public readonly Dictionary<KeyCode, Action> Accelerators = new Dictionary<KeyCode, Action>();
+        /// <summary>メニューバーの「ファイル(F)」などを Alt＋文字で開く</summary>
+        public readonly Dictionary<KeyCode, Action> MenuMnemonics = new Dictionary<KeyCode, Action>();
         /// <summary>閉じる直前の確認。false で閉じない。</summary>
         public Func<bool> CanClose;
 
@@ -87,7 +89,7 @@ namespace NightShift.UI
             w._titleText = UIFactory.Label(tb.transform, spec.Title, RetroTheme.FontSize, TextAnchor.MiddleLeft, Color.white);
             w._titleText.fontStyle = FontStyle.Bold;
             w._titleText.rectTransform.Stretch(iconX, 0, 60, 0);
-            w._titleText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            EllipsisText.Attach(w._titleText); // 長いタイトルは「…」で省略（ボタンの下に潜らない）
             w.Title = spec.Title;
 
             float bx = 2;
@@ -125,13 +127,21 @@ namespace NightShift.UI
                     float tw = b.Label.preferredWidth + 14;
                     b.Rect.Place(mx, 1, tw, RetroTheme.MenuBarHeight - 2);
                     var bt = b;
-                    b.Button.onClick.AddListener(() =>
+                    Action open = () =>
                     {
                         w.Focus();
                         var corners = new Vector3[4];
                         bt.Rect.GetWorldCorners(corners);
                         PopupMenu.Show(items, RectTransformUtility.WorldToScreenPoint(null, corners[0]));
-                    });
+                    };
+                    b.Button.onClick.AddListener(() => open());
+                    // 「ファイル(F)」→ Alt+F
+                    int lp = kv.Key.LastIndexOf('(');
+                    if (lp >= 0 && lp + 1 < kv.Key.Length)
+                    {
+                        char ch = char.ToUpperInvariant(kv.Key[lp + 1]);
+                        if (ch >= 'A' && ch <= 'Z') w.MenuMnemonics[KeyCode.A + (ch - 'A')] = open;
+                    }
                     mx += tw;
                 }
                 top += RetroTheme.MenuBarHeight + 1;

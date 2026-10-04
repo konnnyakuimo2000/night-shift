@@ -33,6 +33,7 @@ namespace NightShift.UI.Screens
             UIFactory.Button(paper.transform, "タイトルへ(T)", 410, 340, 170, 30, toTitle, "exit");
             var k1 = root.gameObject.AddComponent<KeyAction>(); k1.Key = KeyCode.R; k1.Action = retryNight;
             var k3 = root.gameObject.AddComponent<KeyAction>(); k3.Key = KeyCode.T; k3.Action = toTitle;
+            if (retryWeek != null) { var k2 = root.gameObject.AddComponent<KeyAction>(); k2.Key = KeyCode.W; k2.Action = retryWeek; }
             AudioFx.Error();
             return root.gameObject;
         }

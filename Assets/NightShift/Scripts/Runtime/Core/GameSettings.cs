@@ -97,6 +97,8 @@ namespace NightShift.Core
         public const string Refresh = "REFRESH";
         public const string DebugPanel = "DEBUG";
         public const string DebugOverlay = "OVERLAY";
+        public const string MonitorPrev = "MONITOR_PREV";
+        public const string MonitorNext = "MONITOR_NEXT";
 
         public static readonly (string id, string label, string group)[] Actions =
         {
@@ -107,6 +109,8 @@ namespace NightShift.Core
             (Allow, "接続を許可", "接続監視"),
             (Block, "接続を拒否", "接続監視"),
             (Lookup, "社員情報を参照", "接続監視"),
+            (MonitorPrev, "前のモニターへ", "サブモニター"),
+            (MonitorNext, "次のモニターへ", "サブモニター"),
             (RemoteStart, "スタートメニュー", "リモートPC"),
             (RemoteRun, "ファイル名を指定して実行", "リモートPC"),
             (RemoteExplorer, "エクスプローラー", "リモートPC"),
@@ -131,6 +135,8 @@ namespace NightShift.Core
                 K(Allow, KeyCode.A),
                 K(Block, KeyCode.B),
                 K(Lookup, KeyCode.R),
+                K(MonitorPrev, KeyCode.LeftArrow, c: true),
+                K(MonitorNext, KeyCode.RightArrow, c: true),
                 K(RemoteStart, KeyCode.Home, al: true),
                 K(RemoteRun, KeyCode.R, c: true, al: true),
                 K(RemoteExplorer, KeyCode.E, c: true, al: true),

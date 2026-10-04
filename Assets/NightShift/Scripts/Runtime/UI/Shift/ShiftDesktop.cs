@@ -306,13 +306,14 @@ namespace NightShift.UI.Shift
                 return;
             }
 
-            // モニターの切り替え（Ctrl+←/→、Ctrl+1〜3）
-            if (ShortcutInput.Ctrl && !ShortcutInput.TextFieldFocused && MonitorCount > 1)
+            // モニターの切り替え（キー設定で変更可。既定 Ctrl+←/→）と Ctrl+1〜3
+            if (!ShortcutInput.TextFieldFocused && MonitorCount > 1)
             {
-                if (Input.GetKeyDown(KeyCode.LeftArrow)) { ShowMonitor((CurrentMonitor + MonitorCount - 1) % MonitorCount); return; }
-                if (Input.GetKeyDown(KeyCode.RightArrow)) { ShowMonitor((CurrentMonitor + 1) % MonitorCount); return; }
-                for (int i = 0; i < MonitorCount; i++)
-                    if (Input.GetKeyDown(KeyCode.Alpha1 + i)) { ShowMonitor(i); return; }
+                if (Core.GameSettings.Pressed(Core.GameSettings.MonitorPrev)) { ShowMonitor((CurrentMonitor + MonitorCount - 1) % MonitorCount); return; }
+                if (Core.GameSettings.Pressed(Core.GameSettings.MonitorNext)) { ShowMonitor((CurrentMonitor + 1) % MonitorCount); return; }
+                if (ShortcutInput.Ctrl)
+                    for (int i = 0; i < MonitorCount; i++)
+                        if (Input.GetKeyDown(KeyCode.Alpha1 + i)) { ShowMonitor(i); return; }
             }
             if (CurrentMonitor != 0)
             {
@@ -346,6 +347,10 @@ namespace NightShift.UI.Shift
             {
                 bool text = ShortcutInput.TextFieldFocused;
                 bool alt = ShortcutInput.Alt, ctrl = ShortcutInput.Ctrl;
+                // Alt＋文字 でメニューバーを開く（同じ文字のボタン操作がないときだけ）
+                if (alt && !ctrl)
+                    foreach (var kv in active.MenuMnemonics)
+                        if (Input.GetKeyDown(kv.Key) && !active.Accelerators.ContainsKey(kv.Key)) { kv.Value?.Invoke(); return; }
                 foreach (var kv in active.Accelerators)
                 {
                     if (!Input.GetKeyDown(kv.Key)) continue;
@@ -441,10 +446,24 @@ namespace NightShift.UI.Shift
             bar.rectTransform.StretchH(3, 18, 3, 3);
             UIFactory.Label(bar.transform, " 一時停止", 12, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
             UIFactory.Label(box.transform, "PAUSED  —  時計は停止しています", 20, 30, 260, 20, 12, TextAnchor.MiddleCenter);
-            UIFactory.Button(box.transform, "業務に戻る(R)", 50, 60, 200, 26, ClosePause);
-            UIFactory.Button(box.transform, "システム設定(S)", 50, 92, 200, 26, () => { ClosePause(); SettingsView.Open(this); });
-            UIFactory.Button(box.transform, $"DAY{S.Day.dayNumber} をやり直す", 50, 124, 200, 26, () => { ClosePause(); Game.RestartDay(); });
-            UIFactory.Button(box.transform, "タイトルへ戻る", 50, 156, 200, 26, () => { ClosePause(); Game.ShowTitle(); });
+            Action resume = ClosePause;
+            Action settings = () => { ClosePause(); SettingsView.Open(this); };
+            UIFactory.Button(box.transform, "業務に戻る(R)", 50, 60, 200, 26, resume);
+            UIFactory.Button(box.transform, "システム設定(S)", 50, 92, 200, 26, settings);
+            // やり直し・タイトルへは、今夜の進み具合が失われるので確認する
+            UIFactory.Button(box.transform, $"DAY{S.Day.dayNumber} をやり直す", 50, 124, 200, 26, () =>
+                ShowModal("やり直しの確認", $"DAY{S.Day.dayNumber} を最初からやり直します。\n今夜の進み具合は失われます。よろしいですか？", "warning",
+                    "やり直す", () => { ClosePause(); Game.RestartDay(); }, "やめる", null));
+            UIFactory.Button(box.transform, "タイトルへ戻る", 50, 156, 200, 26, () =>
+                ShowModal("タイトルへ戻る", "タイトルへ戻ります。\n今夜の進み具合は失われます。よろしいですか？", "warning",
+                    "タイトルへ戻る", () => { ClosePause(); Game.ShowTitle(); }, "やめる", null));
+            foreach (var (key, act) in new[] { (KeyCode.R, resume), (KeyCode.S, settings) })
+            {
+                var k = dim.gameObject.AddComponent<Screens.KeyAction>();
+                k.Key = key;
+                var a = act;
+                k.Action = () => { if (!ModalOpen) a(); };
+            }
             UIFactory.Label(box.transform, $"{Core.GameSettings.KeyLabel(Core.GameSettings.Pause)} で再開", 20, 192, 260, 18, 11, TextAnchor.MiddleCenter).color = RetroTheme.Shadow;
         }
 
@@ -608,8 +627,8 @@ namespace NightShift.UI.Shift
         {
             var file = new List<MenuItem>();
             if (extraFile != null) { file.AddRange(extraFile); file.Add(MenuItem.Sep()); }
-            file.Add(new MenuItem("一時停止(P)", d.OpenPause, "Esc"));
-            file.Add(new MenuItem("閉じる(C)", () => d.Windows.Active?.RequestClose(), "Alt+F4"));
+            file.Add(new MenuItem("一時停止(P)", d.OpenPause, Core.GameSettings.KeyLabel(Core.GameSettings.Pause)));
+            file.Add(new MenuItem("閉じる(C)", () => d.Windows.Active?.RequestClose(), Core.GameSettings.KeyLabel(Core.GameSettings.CloseWindow)));
             var edit = new List<MenuItem>
             {
                 new MenuItem("コピー(C)", null, "Ctrl+C", false),
@@ -672,9 +691,9 @@ namespace NightShift.UI.Shift
             tb._mail = mail;
             mail.Rect.Place(118, 3, 92, 24);
 
-            tb._buttons = UIFactory.Rect("Buttons", bg.transform).Stretch(216, 3, 480, 3);
+            tb._buttons = UIFactory.Rect("Buttons", bg.transform).Stretch(216, 3, 494, 3);
             tb._monitors = UIFactory.Rect("Monitors", bg.transform);
-            tb._monitors.AnchorTopRight(328, 3, 140, 24);
+            tb._monitors.AnchorTopRight(328, 3, 160, 24);
 
             var tray = UIFactory.Image(bg.transform, RetroTheme.ThinSunken, Color.white, "Tray");
             tray.rectTransform.AnchorTopRight(3, 3, 320, 24);
@@ -706,6 +725,11 @@ namespace NightShift.UI.Shift
         {
             foreach (Transform t in _buttons) Destroy(t.gameObject);
             _map.Clear();
+            // ウィンドウが多いときは、ボタンを細くして並びきるようにする（あふれて他と重ならない）
+            int count = 0;
+            foreach (var w in _d.Windows.Windows) if (w != null && w.ShowInTaskbar) count++;
+            float avail = Mathf.Max(200f, _buttons.rect.width);
+            float bw = count == 0 ? 150 : Mathf.Clamp((avail - 2 * count) / count, 40f, 150f);
             float x = 0;
             foreach (var w in _d.Windows.Windows)
             {
@@ -717,10 +741,11 @@ namespace NightShift.UI.Shift
                     else _d.Windows.Focus(win);
                 }, w.IconName);
                 b.Label.alignment = TextAnchor.MiddleLeft;
-                b.Rect.Place(x, 0, 150, 24);
+                EllipsisText.Attach(b.Label);
+                b.Rect.Place(x, 0, bw, 24);
                 b.SetLatched(_d.Windows.Active == w && !w.IsMinimized);
                 _map[w] = b;
-                x += 152;
+                x += bw + 2;
             }
         }
 

@@ -179,7 +179,7 @@ namespace NightShift.UI
                 v => { S.letterAccelerators = v; Saved(); });
             letters.GetComponent<RectTransform>().Place(0, y, 480, 20);
             y += 22;
-            UIFactory.Label(_page, "オフにすると、Alt＋文字キーで操作します（入力ミスを防げます）。", 18, y, 460, 18, 11).color = RetroTheme.Shadow;
+            UIFactory.Label(_page, "オフにすると、Alt＋文字キーで操作します（入力ミスを防げます）。", 18, y, 460, 18, 12).color = RetroTheme.HintText;
             y += 30;
 
             UIFactory.Label(_page, "通知の表示時間:", 0, y, 120, 20);
@@ -193,7 +193,7 @@ namespace NightShift.UI
             RetroDropdown.Create(_page, 130, y, 140, times, ti, v => { S.notificationSeconds = GameSettings.NotificationTimes[v]; Saved(); });
             y += 36;
 
-            UIFactory.Label(_page, "Windows キー・Alt+Tab・Ctrl+Shift+Esc などは手元のPCが処理するため、\nリモートPCの操作には [キー設定] で割り当てたキーを使います。", 0, y, 480, 34, 11).color = RetroTheme.Shadow;
+            UIFactory.Label(_page, "Windows キー・Alt+Tab・Ctrl+Shift+Esc などは手元のPCが処理するため、\nリモートPCの操作には [キー設定] で割り当てたキーを使います。", 0, y, 480, 34, 12).color = RetroTheme.HintText;
             y += 44;
 
             var debug = UIFactory.Check(_page, "デバッグモード（タイトルから任意の日を開始・デバッグパネル）", S.debugMode, v => { S.debugMode = v; Saved(); });

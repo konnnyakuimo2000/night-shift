@@ -90,9 +90,9 @@ namespace NightShift.UI.Shift
             // サブモニターからも一時停止できるように（Esc でも可）
             var pause = UIFactory.Button(bar.transform, "一時停止", () => Desktop.OpenPause(), "clock");
             pause.Rect.Place(90, 3, 84, 24);
-            _taskButtons = UIFactory.Rect("Tasks", bar.transform).Stretch(178, 3, 300, 3);
+            _taskButtons = UIFactory.Rect("Tasks", bar.transform).Stretch(178, 3, 320, 3);
             _switcher = UIFactory.Rect("Monitors", bar.transform);
-            _switcher.AnchorTopRight(150, 3, 140, 24);
+            _switcher.AnchorTopRight(150, 3, 160, 24);
             var tray = UIFactory.Image(bar.transform, RetroTheme.ThinSunken, Color.white, "Tray");
             tray.rectTransform.AnchorTopRight(3, 3, 140, 24);
             _clock = UIFactory.Label(tray.transform, "", 12, TextAnchor.MiddleRight);
@@ -120,6 +120,10 @@ namespace NightShift.UI.Shift
         void RebuildTasks()
         {
             foreach (Transform t in _taskButtons) Destroy(t.gameObject);
+            int count = 0;
+            foreach (var w in Windows.Windows) if (w != null && w.ShowInTaskbar) count++;
+            float avail = Mathf.Max(200f, _taskButtons.rect.width);
+            float bw = count == 0 ? 140 : Mathf.Clamp((avail - 2 * count) / count, 40f, 140f);
             float x = 0;
             foreach (var w in Windows.Windows)
             {
@@ -131,9 +135,10 @@ namespace NightShift.UI.Shift
                     else Windows.Focus(win);
                 }, w.IconName);
                 b.Label.alignment = TextAnchor.MiddleLeft;
-                b.Rect.Place(x, 0, 140, 24);
+                EllipsisText.Attach(b.Label);
+                b.Rect.Place(x, 0, bw, 24);
                 b.SetLatched(Windows.Active == w && !w.IsMinimized);
-                x += 142;
+                x += bw + 2;
             }
         }
 
@@ -161,13 +166,15 @@ namespace NightShift.UI.Shift
             {
                 int idx = i;
                 bool current = d.CurrentMonitor == i;
-                string label = i == 0 ? (current ? "■メイン" : "□メイン") : (current ? $"■{i + 1}" : $"□{i + 1}");
+                // 見ていないメインモニターに通知があるときは「●」を付ける（色だけに頼らない）
+                bool unseen = i == 0 && !current && d.MainHasUnseen;
+                string label = i == 0 ? (current ? "■メイン" : unseen ? "□メイン●" : "□メイン") : (current ? $"■{i + 1}" : $"□{i + 1}");
                 var b = UIFactory.Button(parent, label, () => d.ShowMonitor(idx));
-                b.Rect.Place(x, 0, i == 0 ? 62 : 36, 24);
+                b.Rect.Place(x, 0, i == 0 ? 70 : 36, 24);
                 b.Label.fontSize = 11;
                 b.SetLatched(current);
                 if (i == 0 && !current && d.MainHasUnseen) b.Label.color = new Color(0.8f, 0, 0);
-                x += i == 0 ? 64 : 38;
+                x += i == 0 ? 72 : 38;
             }
         }
     }

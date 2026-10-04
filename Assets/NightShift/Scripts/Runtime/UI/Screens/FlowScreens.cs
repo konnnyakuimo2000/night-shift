@@ -81,7 +81,7 @@ namespace NightShift.UI.Screens
             // 設定（タイトル画面上にウィンドウとして開く）
             var host = UIFactory.Rect("WindowHost", root.transform).Stretch();
             var wm = WindowManager.Create(host);
-            Centered("設定(O)", () =>
+            Action openSettings = () =>
             {
                 var w = wm.Open(new WindowSpec
                 {
@@ -89,8 +89,11 @@ namespace NightShift.UI.Screens
                     Minimizable = false, Maximizable = false, Position = new Vector2(360, 160)
                 }, out bool created);
                 if (created) SettingsPanel.Build(w.Content);
-            }, "gear", 28);
+            };
+            Centered("設定(O)", openSettings, "gear", 28);
             Centered("終了(X)", onQuit, "exit", 28);
+            var keyO = root.gameObject.AddComponent<KeyAction>(); keyO.Key = KeyCode.O; keyO.Action = () => { if (wm.Find("settings") == null) openSettings(); };
+            var keyX = root.gameObject.AddComponent<KeyAction>(); keyX.Key = KeyCode.X; keyX.Action = () => { if (wm.Find("settings") == null) onQuit?.Invoke(); };
 
             // デバッグモード: 任意の日から開始
             if (onStartDay != null && dayCount > 0)
@@ -414,5 +417,51 @@ namespace NightShift.UI.Screens
             var k2 = root.gameObject.AddComponent<KeyAction>(); k2.Key = KeyCode.T; k2.Action = onTitle;
             return root.gameObject;
         }
+    }
+}
+
+namespace NightShift.UI.Screens
+{
+    /// <summary>
+    /// 業務デスクトップの外の画面（評価画面など）で使う確認。画面全体を暗くして最前面に出す。
+    /// Enter / Y = はい、Esc / N = いいえ。
+    /// </summary>
+    public static class ScreenConfirm
+    {
+        public static void Show(RectTransform parent, string title, string message, Action onYes)
+        {
+            var dim = UIFactory.Solid(parent, new Color(0, 0, 0, 0.5f), "ConfirmDim");
+            dim.rectTransform.Stretch();
+            dim.transform.SetAsLastSibling();
+            var box = UIFactory.Panel(dim.transform, RetroTheme.Raised, "Confirm");
+            box.rectTransform.anchorMin = box.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            box.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            box.rectTransform.sizeDelta = new Vector2(400, 160);
+            var bar = UIFactory.Image(box.transform, RetroTheme.GradientSprite(RetroTheme.TitleActiveA, RetroTheme.TitleActiveB), Color.white, "Title");
+            bar.rectTransform.StretchH(3, 18, 3, 3);
+            UIFactory.Label(bar.transform, " " + title, 12, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
+            var ic = UIFactory.Image(box.transform, RetroTheme.BigIcon("warning"), Color.white, "Icon");
+            ic.rectTransform.Place(14, 34, 32, 32);
+            UIFactory.Label(box.transform, message, 58, 28, 330, 80, 12, TextAnchor.MiddleLeft);
+            bool done = false;
+            void Close(bool yes)
+            {
+                if (done) return;
+                done = true;
+                UnityEngine.Object.Destroy(dim.gameObject);
+                if (yes) onYes?.Invoke();
+            }
+            UIFactory.Button(box.transform, "はい(Y)", 70, 118, 120, 28, () => Close(true));
+            UIFactory.Button(box.transform, "いいえ(N)", 210, 118, 120, 28, () => Close(false));
+            foreach (var (key, yes) in new[] { (KeyCode.Y, true), (KeyCode.Return, true), (KeyCode.N, false), (KeyCode.Escape, false) })
+            {
+                var k = dim.gameObject.AddComponent<KeyAction>();
+                k.Key = key;
+                bool y = yes;
+                k.Action = () => Close(y);
+            }
+        }
+
+        public static bool IsOpen(RectTransform parent) => parent != null && parent.Find("ConfirmDim") != null;
     }
 }

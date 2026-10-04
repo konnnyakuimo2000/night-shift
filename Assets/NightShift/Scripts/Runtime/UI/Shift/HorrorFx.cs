@@ -155,13 +155,13 @@ namespace NightShift.UI.Shift
         {
             if (_ghost == null)
             {
-                var t = UIFactory.Label(_layer, "↖", 30, TextAnchor.MiddleCenter, Color.white);
-                t.raycastTarget = false;
-                var outline = t.gameObject.AddComponent<Outline>();
-                outline.effectColor = Color.black;
-                t.rectTransform.anchorMin = t.rectTransform.anchorMax = new Vector2(0, 0);
-                t.rectTransform.sizeDelta = new Vector2(30, 34);
-                _ghost = t.gameObject;
+                // 本物と同じ絵のカーソル（文字ではなく、RetroCursor の矢印）
+                var img = UIFactory.Image(_layer, RetroCursor.ArrowSprite(), Color.white, "GhostCursor");
+                img.raycastTarget = false;
+                img.rectTransform.anchorMin = img.rectTransform.anchorMax = new Vector2(0, 0);
+                img.rectTransform.pivot = new Vector2(0, 1);
+                img.rectTransform.sizeDelta = new Vector2(32, 32);
+                _ghost = img.gameObject;
                 _ghostPos = new Vector2(600, 400);
                 _ghostTarget = _ghostPos;
             }

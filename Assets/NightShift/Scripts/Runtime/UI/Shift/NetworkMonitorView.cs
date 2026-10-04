@@ -111,7 +111,7 @@ namespace NightShift.UI.Shift
             var t = UIFactory.Label(root, n.nodeId, 11, TextAnchor.UpperCenter, new Color(0.85f, 0.92f, 1f));
             t.rectTransform.Stretch(-20, 28, -20, 0);
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
-            var cnt = UIFactory.Label(root, "", 10, TextAnchor.UpperCenter, new Color(0.5f, 0.6f, 0.7f));
+            var cnt = UIFactory.Label(root, "", 11, TextAnchor.UpperCenter, new Color(0.5f, 0.6f, 0.7f));
             cnt.rectTransform.Stretch(-20, 41, -20, -12);
             cnt.horizontalOverflow = HorizontalWrapMode.Overflow;
             _counters[n.nodeId] = cnt;

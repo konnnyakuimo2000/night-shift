@@ -259,7 +259,7 @@ namespace NightShift.UI.Screens
                 if (previous != null)
                     note = updated ? $"（前回 {Y(previous.total)} から更新）" : $"（このDAYは前回の {Y(previous.total)} で計上）";
                 if (slip.deductionNotes.Count > 0) note = "罰金・控除: " + string.Join("、", slip.deductionNotes) + " " + note;
-                var noteText = UIFactory.Label(paper.transform, note, 10, ly + 22, 320, 32, 10, TextAnchor.UpperLeft, RetroTheme.Shadow);
+                var noteText = UIFactory.Label(paper.transform, note, 10, ly + 22, 320, 32, 11, TextAnchor.UpperLeft, RetroTheme.Shadow);
                 noteText.color = new Color(0.45f, 0.45f, 0.5f, 0);
                 anim.Add(t, 0.6f, p =>
                 {
@@ -274,7 +274,9 @@ namespace NightShift.UI.Screens
             // ---------------- ボタン ----------------
             var next = UIFactory.Button(c, "翌日へ(N)", 640, 612, 150, 32, onNext, "clock");
             next.Label.fontStyle = FontStyle.Bold;
-            var retry = UIFactory.Button(c, $"DAY{day.dayNumber}をやり直す(R)", 798, 612, 162, 32, onRestart);
+            // やり直しは、その夜の記録が消えるので確認する
+            Action confirmRestart = () => ScreenConfirm.Show(root.rectTransform, "やり直しの確認", $"DAY{day.dayNumber} を最初からやり直します。\n今夜の業務記録は失われます。よろしいですか？", onRestart);
+            var retry = UIFactory.Button(c, $"DAY{day.dayNumber}をやり直す(R)", 798, 612, 162, 32, confirmRestart);
             next.Interactable = retry.Interactable = false;
             anim.Add(t, 0.01f, p => { }, () =>
             {
@@ -289,8 +291,9 @@ namespace NightShift.UI.Screens
             player.OnKey = () =>
             {
                 if (!player.Finished) { player.Skip(); return; }
+                if (ScreenConfirm.IsOpen(root.rectTransform)) return;
                 if (Input.GetKeyDown(KeyCode.N)) onNext();
-                else if (Input.GetKeyDown(KeyCode.R)) onRestart();
+                else if (Input.GetKeyDown(KeyCode.R)) confirmRestart();
             };
             return root.gameObject;
         }

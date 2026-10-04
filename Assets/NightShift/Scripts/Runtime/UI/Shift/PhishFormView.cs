@@ -16,8 +16,9 @@ namespace NightShift.UI.Shift
             }, out bool created);
             if (!created) return;
             var c = w.Content;
-            var bar = UIFactory.Label(c, "アドレス:  http://nexus-c0rp-helpdesk.example/account/re-register", 0, 0, 500, 20, 11, TextAnchor.MiddleLeft);
-            bar.color = RetroTheme.Shadow;
+            // アドレス欄は実際のブラウザーのように白い枠で、はっきり読めるように（偽の綴りに気づけることが大事）
+            UIFactory.Label(c, "アドレス:", 0, 0, 60, 20, 12, TextAnchor.MiddleLeft);
+            UIFactory.ValueBox(c, 62, 0, 438, 20, "http://nexus-c0rp-helpdesk.example/account/re-register");
             var head = UIFactory.Solid(c, RetroTheme.Navy, "Head");
             head.rectTransform.Place(0, 24, 500, 34);
             UIFactory.Label(head.transform, "  NEXUS 社内アカウント 再登録", 16, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();

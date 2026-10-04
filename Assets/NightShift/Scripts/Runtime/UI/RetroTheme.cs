@@ -18,6 +18,8 @@ namespace NightShift.UI
         public static readonly Color Shadow = C(128, 128, 128);
         public static readonly Color DarkShadow = C(64, 64, 64);
         public static readonly Color Text = Color.black;
+        /// <summary>補足説明の文字（灰色の背景でも読める濃さ）</summary>
+        public static readonly Color HintText = new Color(0.25f, 0.25f, 0.25f);
         public static readonly Color TextDisabled = C(128, 128, 128);
         public static readonly Color TextBlue = C(0, 32, 140);
         public static readonly Color Selection = C(10, 36, 106);
