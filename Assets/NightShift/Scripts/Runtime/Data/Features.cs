@@ -19,6 +19,17 @@ namespace NightShift.Data
         public const string NetworkMap = "NETWORK_MAP";
         public const string SecurityInfo = "SECURITY_INFO";
         public const string ServerManagement = "SERVER_MANAGEMENT";
+        // ---- 本番業務（DAY8〜） ----
+        public const string Store = "STORE";                       // 社内購買システム
+        public const string News = "NEWS";                         // 朝のネットニュース
+        public const string IpCheck = "IP_CHECK";                  // 接続元IPと端末IPの照合（DAY9）
+        public const string WorkStatus = "WORK_STATUS";            // 勤務状態のルール（DAY10）
+        public const string FirewallBlock = "FIREWALL_BLOCK";      // 接続元の遮断（DAY11）
+        public const string EmploymentStatus = "EMPLOYMENT_STATUS"; // 在籍状態（DAY12）
+        public const string Report = "REPORT";                     // 報告（DAY13）
+        public const string MailSender = "MAIL_SENDER";            // メールの差出人アドレス表示（DAY13）
+        public const string Isolation = "ISOLATION";               // 端末の隔離（DAY16）
+        public const string UserManagement = "USER_MANAGEMENT";    // ユーザー管理（DAY19）
 
         public static string Label(string feature)
         {
@@ -38,6 +49,16 @@ namespace NightShift.Data
                 case NetworkMap: return "ネットワークマップ";
                 case SecurityInfo: return "セキュリティ情報";
                 case ServerManagement: return "サーバー運用管理";
+                case Store: return "社内購買システム";
+                case News: return "ネットニュース";
+                case IpCheck: return "接続元IPの照合";
+                case WorkStatus: return "勤務状態の確認";
+                case FirewallBlock: return "接続元の遮断";
+                case EmploymentStatus: return "在籍状態の確認";
+                case Report: return "報告";
+                case MailSender: return "メールの差出人表示";
+                case Isolation: return "端末の隔離";
+                case UserManagement: return "ユーザー管理";
                 default: return feature;
             }
         }

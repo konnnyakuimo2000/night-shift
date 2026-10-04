@@ -12,7 +12,8 @@ namespace NightShift.Data
     {
         Employee,       // 条件に合う実在社員
         Unknown,        // USER: UNKNOWN
-        NamedAccount    // 例: admin（社員ではないアカウント名）
+        NamedAccount,   // 例: admin（社員ではないアカウント名）
+        OperatorAccount // 夜間運用担当（プレイヤー自身）のID
     }
 
     public enum SourceType
@@ -24,10 +25,13 @@ namespace NightShift.Data
         AttackerSource,           // Threat Scenario の攻撃元
         AttackerRelatedSource,    // 攻撃元と関連する（同一レンジの）別IP
         OtherEmployeeDevice,      // 別の社員の登録端末（社内）… 本人の端末ではない
-        RegisteredDeviceExternal  // 本人の社内PCを名乗る社外からの接続
+        RegisteredDeviceExternal, // 本人の社内PCを名乗る社外からの接続
+        SpoofedSource             // 本人の登録端末名を名乗るが、接続元IPが端末IPと違う（なりすまし）
     }
 
     public enum DestinationMode { FixedNode, FromEmployeeNormalTargets }
+
+    public enum EmploymentFilter { ActiveOnly, NotActive, Any }
 
     public enum ExpectedAction
     {
@@ -50,6 +54,10 @@ namespace NightShift.Data
         [Tooltip("VPN利用許可のない社員に限る")]
         public bool requireVpnDisabled;
         public bool requireLaptop;
+        [Tooltip("退勤している社員に限る（勤務状態のルール用）")]
+        public bool requireOffShift;
+        [Tooltip("在籍状態の条件（既定は在籍中のみ）")]
+        public EmploymentFilter employment = EmploymentFilter.ActiveOnly;
         [Tooltip("当日まだイベントに登場していない社員を優先")]
         public bool preferUnused = true;
     }
@@ -99,6 +107,9 @@ namespace NightShift.Data
         [Tooltip("LogEntry の場合のイベント種別・結果・詳細")]
         public string logEventType;
         public string logResult;
+
+        [Tooltip("備考欄に表示する文（AI向けの偽の指示 T15 など）")]
+        [TextArea] public string note;
 
         [Header("後続")]
         public EventDefinition followUp;

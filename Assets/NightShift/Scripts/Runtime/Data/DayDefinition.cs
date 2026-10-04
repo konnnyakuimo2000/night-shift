@@ -28,6 +28,14 @@ namespace NightShift.Data
         public bool requirePermission = true;
         [Tooltip("VPN利用許可が必要な接続")]
         public bool requireVpnPermission = true;
+        [Tooltip("接続元IPが社員の端末IPと一致すること（DAY9〜、なりすまし対策）")]
+        public bool requireSourceIpMatch;
+        [Tooltip("勤務中の社員だけ許可（DAY10〜）")]
+        public bool requireOnShift;
+        [Tooltip("在籍中の社員だけ許可（DAY12〜）")]
+        public bool requireActiveEmployment;
+        [Tooltip("運用担当者（自分）のIDからの接続要求は拒否（DAY14〜）")]
+        public bool blockOperatorAccount;
     }
 
     [CreateAssetMenu(menuName = "NightShift/Day Definition", fileName = "Day")]
@@ -73,6 +81,23 @@ namespace NightShift.Data
         [Tooltip("会社全体の背景通信の倍率")]
         public float backgroundActivityScale = 1f;
 
+        [Header("本番業務（DAY8〜）: ランダム生成")]
+        [Tooltip("接続要求・問い合わせをランダムに生成する")]
+        public bool randomEvents;
+        [Tooltip("1夜の接続要求の数")]
+        public int requestCount = 16;
+        [Tooltip("そのうちルール違反（拒否すべき）要求の割合")]
+        [Range(0f, 1f)] public float violationRatio = 0.3f;
+        [Tooltip("要求が同時に重なる確率（近い時刻にもう1件）")]
+        [Range(0f, 1f)] public float burstChance = 0.2f;
+        public List<EventDefinition> routinePool = new List<EventDefinition>();
+        public List<EventDefinition> violationPool = new List<EventDefinition>();
+        [Tooltip("1夜の問い合わせ（二択・リモート）の数")]
+        public int helpDeskCount = 2;
+        public List<HelpDeskDefinition> helpDeskPool = new List<HelpDeskDefinition>();
+        [Tooltip("週・山場の表示（例: 第2週）")]
+        public string weekLabel;
+
         [Header("チュートリアル進行")]
         [Tooltip("この時刻（ゲーム内分）より前に予定されたプレイヤー向けイベントは、前のタスクが片付くまで発生を待つ。0 で無効")]
         public float tutorialGateUntilMinute = 0f;
@@ -93,5 +118,9 @@ namespace NightShift.Data
         public List<string> unlockedFeatures = new List<string>();
 
         public bool IsUnlocked(string feature) => unlockedFeatures.Contains(feature);
+
+        /// <summary>業務時間の表示（例: 00:00 - 06:00）</summary>
+        public string ShiftHoursLabel => $"{Core.TimeManager.Format(startMinute)} - {Core.TimeManager.Format(endMinute)}";
+        public string EndLabel => Core.TimeManager.Format(endMinute);
     }
 }

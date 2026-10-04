@@ -12,6 +12,9 @@ namespace NightShift.Data
         [Min(0f)] public float weight = 1f;
     }
 
+    /// <summary>在籍状態（DAY12 から審査に使う）</summary>
+    public enum EmploymentStatus { Active, Leave, Retired }
+
     /// <summary>
     /// 社員の「普段の行動」。権限（Permissions）とは別概念。
     /// DAY2以降の「権限はあるが行動がおかしい」判定はここを基準にする。
@@ -53,6 +56,10 @@ namespace NightShift.Data
         [Tooltip("夜間帯に勤務中か（勤務状態の表示・イベント選択に使用）")]
         public bool onShift = true;
         public bool vpnEnabled;
+        [Tooltip("在籍状態（在籍・休職・退職）")]
+        public EmploymentStatus employment = EmploymentStatus.Active;
+        [Tooltip("氏名を伏せる（退職時に削除された記録など）")]
+        public bool nameRedacted;
 
         [Header("特性 (1-5)")]
         [Range(1, 5)] public int itLiteracy = 3;
@@ -83,6 +90,14 @@ namespace NightShift.Data
             if (string.IsNullOrEmpty(device)) return false;
             return device == deviceId || (!string.IsNullOrEmpty(laptopDeviceId) && device == laptopDeviceId);
         }
+
+        public bool IsActive => employment == EmploymentStatus.Active;
+
+        /// <summary>画面に表示する氏名（削除済みの記録は伏せる）</summary>
+        public string DisplayName => nameRedacted ? "(削除済み)" : fullName;
+
+        public static string EmploymentLabel(EmploymentStatus s) =>
+            s == EmploymentStatus.Active ? "在籍" : s == EmploymentStatus.Leave ? "休職" : "退職";
 
         /// <summary>ログイン名（社員番号から生成）</summary>
         public string LoginName => "nexus\\" + (employeeId ?? "").Replace("-", "").ToLowerInvariant();

@@ -9,10 +9,10 @@ namespace NightShift.Data
     /// ・ランタイム: アセットが存在しない場合のフォールバック。
     /// ゲームロジックはここで作られた「データ」だけを参照し、特定の社員名などをハードコードしない。
     /// </summary>
-    public static class DefaultDataFactory
+    public static partial class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 19;
+        public const int DataVersion = 20;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -768,6 +768,18 @@ namespace NightShift.Data
             Slot(day7, "routine-1", 60, 75, routine);
             Slot(day7, "routine-2", 120, 140, routine, routineVpn);
             Slot(day7, "routine-3", 170, 185, routine);
+
+            // ---------------- DAY8〜30（本番業務） ----------------
+            BuildMainDays(new MainContext
+            {
+                b = b, db = db, perms = perms,
+                web = web, mail = mail, file = file, app = app, auth = auth, admin = admin,
+                routine = routine, routineVpn = routineVpn, profile = profile,
+                manualSystem = manualSystem, manualServer = manualServer, manualTrouble = manualTrouble,
+                baseRules = new[] { rOwnDevice, rUnknown, rDevice, rPermission, rExternal },
+                features = allFeatures, scannerNoise = noise, webProbe = threat, scanThenAdmin = scanThenAdmin,
+                lastTutorialDate = new System.DateTime(1998, 5, 26)
+            });
 
             return b;
         }

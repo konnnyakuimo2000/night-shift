@@ -21,9 +21,28 @@ namespace NightShift.Systems
             var dest = e.Destination;
             bool external = e.Zone == SourceZone.External;
 
+            if (e.IsOperatorAccount && rules.blockOperatorAccount)
+            {
+                reason = "運用担当者（自分）のIDからの接続";
+                return ExpectedAction.Block;
+            }
+
             if (e.Employee == null)
             {
                 if (rules.blockUnknownUser) { reason = "利用者が社員として登録されていない"; return ExpectedAction.Block; }
+            }
+            else
+            {
+                if (rules.requireActiveEmployment && !e.Employee.IsActive)
+                {
+                    reason = "在籍していない社員（" + EmployeeData.EmploymentLabel(e.Employee.employment) + "）";
+                    return ExpectedAction.Block;
+                }
+                if (rules.requireOnShift && !e.Employee.onShift)
+                {
+                    reason = "退勤している社員";
+                    return ExpectedAction.Block;
+                }
             }
 
             if (dest != null && dest.isAdministrative && external && rules.blockExternalToAdministrative)
@@ -41,6 +60,14 @@ namespace NightShift.Systems
             if (!registered && dest != null && dest.isCritical && rules.blockUnregisteredToCritical)
             {
                 reason = "未登録端末から重要システム";
+                return ExpectedAction.Block;
+            }
+
+            // なりすまし: 社内の登録端末を名乗っているのに、接続元IPがその端末のIPと違う
+            if (rules.requireSourceIpMatch && registered && !external && e.Employee != null
+                && e.Device == e.Employee.deviceId && !string.IsNullOrEmpty(e.ExpectedDeviceIp) && e.SourceIp != e.ExpectedDeviceIp)
+            {
+                reason = "接続元IPが端末IPと違う";
                 return ExpectedAction.Block;
             }
 

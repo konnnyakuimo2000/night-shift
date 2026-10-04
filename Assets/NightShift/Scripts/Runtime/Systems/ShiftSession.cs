@@ -172,7 +172,7 @@ namespace NightShift.Systems
             GraceRemaining = Day.graceRealSeconds;
             ShiftEnded?.Invoke();
             if (Requests.Pending.Count > 0)
-                Notifications.Notify(NotificationType.ShiftNotice, "業務終了", $"04:00 になりました。保留中の要求 {Requests.Pending.Count} 件を処理してください。", Time.CurrentMinute, () => Ui?.OpenConnectionMonitor(null));
+                Notifications.Notify(NotificationType.ShiftNotice, "業務終了", $"{Day.EndLabel} になりました。保留中の要求 {Requests.Pending.Count} 件を処理してください。", Time.CurrentMinute, () => Ui?.OpenConnectionMonitor(null));
         }
 
         public void Complete()

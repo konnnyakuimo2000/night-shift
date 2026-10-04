@@ -37,7 +37,7 @@ namespace NightShift.Events
             if (!Enabled || deltaMinutes <= 0) return;
             float rate = 0f; // events per minute
             foreach (var e in _s.Employees.All)
-                if (e.onShift) rate += e.normalBehavior.activityPerHour / 60f;
+                if (e.onShift && e.IsActive) rate += e.normalBehavior.activityPerHour / 60f;
             rate *= _s.Day.backgroundActivityScale;
             _accumulator += rate * deltaMinutes;
             int guard = 0;
@@ -91,12 +91,12 @@ namespace NightShift.Events
         EmployeeData PickWeightedEmployee()
         {
             float total = 0;
-            foreach (var e in _s.Employees.All) if (e.onShift) total += e.normalBehavior.activityPerHour;
+            foreach (var e in _s.Employees.All) if (e.onShift && e.IsActive) total += e.normalBehavior.activityPerHour;
             if (total <= 0) return null;
             double r = _s.Rng.NextDouble() * total;
             foreach (var e in _s.Employees.All)
             {
-                if (!e.onShift) continue;
+                if (!e.onShift || !e.IsActive) continue;
                 r -= e.normalBehavior.activityPerHour;
                 if (r <= 0) return e;
             }
@@ -128,6 +128,7 @@ namespace NightShift.Events
 
         public void ScheduleDay(TimelineScheduler scheduler, DayDefinition day)
         {
+            if (day.randomEvents) PlanRandom(scheduler, day);
             foreach (var def in day.helpDesk)
             {
                 if (def == null || day.dayNumber < def.minimumDay || day.dayNumber > def.maximumDay) continue;
@@ -138,6 +139,52 @@ namespace NightShift.Events
                 else
                     scheduler.Add(t, "HELPDESK " + def.definitionId, () => Spawn(d));
             }
+        }
+
+        /// <summary>このプレイで、その日に出題できるか（解禁日・回数）</summary>
+        public static bool IsAvailable(HelpDeskDefinition def, int day)
+        {
+            var career = Core.CareerRecord.Current;
+            int min = def.randomUnlock ? career.RandomUnlockDay(def.definitionId, def.randomUnlockMin, def.randomUnlockMax) : def.minimumDay;
+            if (day < min || day > def.maximumDay) return false;
+            return career.HelpDeskCount(def.definitionId) < System.Math.Max(1, def.maxUses);
+        }
+
+        /// <summary>本番業務: プールから問い合わせを選ぶ（二択はおよそ4割が「はい」）</summary>
+        void PlanRandom(TimelineScheduler scheduler, DayDefinition day)
+        {
+            var picked = new List<HelpDeskDefinition>();
+            for (int i = 0; i < day.helpDeskCount; i++)
+            {
+                bool wantYes = _s.Rng.NextDouble() < 0.4;
+                var def = Pick(day, picked, d => d.type != HelpDeskType.Binary || d.correctIsYes == wantYes)
+                          ?? Pick(day, picked, d => true);
+                if (def == null) break;
+                picked.Add(def);
+                float t = Lerp(day.startMinute + 10f, day.endMinute - 45f, (float)_s.Rng.NextDouble());
+                var d2 = def;
+                scheduler.Add(t, "HELPDESK " + def.definitionId, () => Spawn(d2));
+            }
+        }
+
+        HelpDeskDefinition Pick(DayDefinition day, List<HelpDeskDefinition> exclude, System.Predicate<HelpDeskDefinition> filter)
+        {
+            float total = 0;
+            var cands = new List<HelpDeskDefinition>();
+            foreach (var d in day.helpDeskPool)
+            {
+                if (d == null || exclude.Contains(d) || !filter(d) || !IsAvailable(d, day.dayNumber)) continue;
+                cands.Add(d);
+                total += d.weight;
+            }
+            if (cands.Count == 0 || total <= 0) return null;
+            double r = _s.Rng.NextDouble() * total;
+            foreach (var d in cands)
+            {
+                r -= d.weight;
+                if (r <= 0) return d;
+            }
+            return cands[cands.Count - 1];
         }
 
         public Ticket Spawn(HelpDeskDefinition def)

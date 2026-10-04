@@ -35,6 +35,19 @@ namespace NightShift.Data
         public int maximumDay = 7;
         public Vector2 triggerWindow = new Vector2(0, 240);
         public EmployeeCondition requester = new EmployeeCondition();
+        [Min(0f)] public float weight = 1f;
+
+        [Header("本番業務（DAY8〜）のランダム出題")]
+        [Tooltip("「はい」が正解の二択か（毎晩 4割程度を「はい」にする）")]
+        public bool correctIsYes;
+        [Tooltip("解禁日をプレイごとにランダムに決める（randomUnlockMin〜Max）")]
+        public bool randomUnlock;
+        public int randomUnlockMin = 8;
+        public int randomUnlockMax = 25;
+        [Tooltip("30日間で出題できる回数")]
+        public int maxUses = 2;
+        [Tooltip("間違えた（失敗した）場合に立てるフラグ（後日の脅威・ウイルスのきっかけ）")]
+        public string flagOnWrong;
 
         [Header("問い合わせ ({name} {dept} {device} が置換される)")]
         public string subject;

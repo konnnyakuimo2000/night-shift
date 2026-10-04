@@ -37,6 +37,9 @@ namespace NightShift.Systems
         {
             if (c == null) return true;
             if (c.requireOnShift && !e.onShift) return false;
+            if (c.requireOffShift && e.onShift) return false;
+            if (c.employment == EmploymentFilter.ActiveOnly && !e.IsActive) return false;
+            if (c.employment == EmploymentFilter.NotActive && e.IsActive) return false;
             if (c.departments.Count > 0 && !c.departments.Contains(e.department)) return false;
             if (c.excludeDepartments.Contains(e.department)) return false;
             foreach (var p in c.requiredPermissions) if (p != null && !e.HasPermission(p.permissionId)) return false;
@@ -75,7 +78,7 @@ namespace NightShift.Systems
 
         public EmployeeData RandomOnShift()
         {
-            var list = _employees.Where(e => e.onShift).ToList();
+            var list = _employees.Where(e => e.onShift && e.IsActive).ToList();
             return list.Count == 0 ? null : list[_rng.Next(list.Count)];
         }
     }

@@ -352,7 +352,7 @@ namespace NightShift.UI.Screens
             t1.rectTransform.StretchH(300, 70);
             var t2 = UIFactory.Label(root.transform, $"— {day.title} —", 22, TextAnchor.MiddleCenter, new Color(0.75f, 0.8f, 0.9f), true);
             t2.rectTransform.StretchH(372, 30);
-            var t3 = UIFactory.Label(root.transform, $"{day.dateLabel}  00:00 - 04:00", 13, TextAnchor.MiddleCenter, new Color(0.5f, 0.5f, 0.55f), true);
+            var t3 = UIFactory.Label(root.transform, $"{day.dateLabel}  {day.ShiftHoursLabel}", 13, TextAnchor.MiddleCenter, new Color(0.5f, 0.5f, 0.55f), true);
             t3.rectTransform.StretchH(410, 20);
             var fade = root.gameObject.AddComponent<Fader>();
             fade.Group = cg;

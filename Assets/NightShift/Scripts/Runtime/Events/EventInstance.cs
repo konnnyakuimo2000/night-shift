@@ -48,6 +48,11 @@ namespace NightShift.Events
         public float ResponseTime;        // ゲーム内分
         public DecisionOutcome Outcome;
 
+        public bool IsOperatorAccount;    // 利用者が運用担当者（プレイヤー）自身のID
+        public string ExpectedDeviceIp;   // 社員の登録端末のIP（なりすましの判定用）
+        public bool AutoDecided;          // 自動審査ツール・遮断リストで自動処理された
+        public string Note;               // 備考（AI向けの偽の指示など）
+
         public object Owner;              // ThreatScenarioRun など
         public bool NotifyAsSecurityAlert;
 

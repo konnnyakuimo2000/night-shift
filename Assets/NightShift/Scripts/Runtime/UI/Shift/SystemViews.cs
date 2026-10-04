@@ -45,7 +45,7 @@ namespace NightShift.UI.Shift
             if (d.S.Phase == ShiftPhase.Running && d.S.Time.CurrentMinute < d.S.Day.endMinute)
             {
                 AudioFx.Error();
-                MessageBox.Show(d, "業務終了", "業務時間中は終了できません。\n業務終了時刻は 04:00 です。", "warning");
+                MessageBox.Show(d, "業務終了", $"業務時間中は終了できません。\n業務終了時刻は {d.S.Day.EndLabel} です。", "warning");
                 return;
             }
             if (d.S.Phase == ShiftPhase.Grace) d.S.Complete();

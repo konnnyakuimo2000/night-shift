@@ -116,7 +116,7 @@ namespace NightShift.UI.Shift
             UIFactory.Label(bar.transform, " 業務終了", 12, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
             var t = UIFactory.Label(box.transform, "SHIFT COMPLETE", 30, TextAnchor.MiddleCenter, RetroTheme.Navy, true);
             t.rectTransform.StretchH(34, 50);
-            UIFactory.Label(box.transform, "04:00  業務終了。お疲れさまでした。\n業務記録を集計しています...", 12, TextAnchor.MiddleCenter).rectTransform.StretchH(88, 44);
+            UIFactory.Label(box.transform, $"{S.Time.Now}  業務終了。お疲れさまでした。\n業務記録を集計しています...", 12, TextAnchor.MiddleCenter).rectTransform.StretchH(88, 44);
         }
 
         // ---------------- IShiftUi ----------------
@@ -154,7 +154,7 @@ namespace NightShift.UI.Shift
 
         void OnEndWarning() => ShowStatus("業務終了まで残り10分です。");
 
-        void OnShiftEnded() => ShowStatus("04:00 業務終了。新規の受付を停止しました。");
+        void OnShiftEnded() => ShowStatus($"{S.Day.EndLabel} 業務終了。新規の受付を停止しました。");
 
         // ---------------- Update ----------------
         public void Tick()

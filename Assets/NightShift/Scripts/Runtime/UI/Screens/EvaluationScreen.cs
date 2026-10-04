@@ -83,7 +83,7 @@ namespace NightShift.UI.Screens
             var title = UIFactory.Label(head.transform, "", 30, TextAnchor.MiddleLeft, Color.white, true);
             title.fontStyle = FontStyle.Bold;
             title.rectTransform.Stretch(18, 0, 300, 0);
-            var sub = UIFactory.Label(head.transform, $"{day.dateLabel}  00:00 - 04:00\n担当: {GameManager.Instance?.OperatorName}", 12, TextAnchor.MiddleRight, new Color(0.8f, 0.85f, 1f));
+            var sub = UIFactory.Label(head.transform, $"{day.dateLabel}  {day.ShiftHoursLabel}\n担当: {GameManager.Instance?.OperatorName}", 12, TextAnchor.MiddleRight, new Color(0.8f, 0.85f, 1f));
             sub.rectTransform.Stretch(0, 0, 16, 0);
             const string titleText = "SHIFT COMPLETE";
             int typed = -1;

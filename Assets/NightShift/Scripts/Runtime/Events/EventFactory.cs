@@ -67,6 +67,11 @@ namespace NightShift.Events
                     e.DisplayUser = "UNKNOWN";
                     e.DisplayEmployeeId = "-";
                     break;
+                case UserType.OperatorAccount:
+                    e.DisplayUser = _s.OperatorName;
+                    e.DisplayEmployeeId = "-";
+                    e.IsOperatorAccount = true;
+                    break;
                 case UserType.NamedAccount:
                     e.DisplayUser = string.IsNullOrEmpty(def.accountName) ? "admin" : def.accountName;
                     e.DisplayEmployeeId = string.IsNullOrEmpty(def.displayEmployeeId) ? "-" : def.displayEmployeeId;
@@ -78,7 +83,7 @@ namespace NightShift.Events
             switch (def.sourceType)
             {
                 case SourceType.RegisteredDevice:
-                    if (e.Employee == null) return null;
+                    if (e.Employee == null) { if (def.userType == UserType.OperatorAccount) break; return null; }
                     e.Device = e.Employee.deviceId;
                     e.SourceIp = _s.Employees.GetIp(e.Employee);
                     e.Zone = SourceZone.Internal;
@@ -125,6 +130,18 @@ namespace NightShift.Events
                     e.SourceIp = HomeIp();
                     e.Zone = SourceZone.External;
                     break;
+                case SourceType.SpoofedSource:
+                {
+                    if (e.Employee == null) return null;
+                    e.Device = e.Employee.deviceId;
+                    string real = _s.Employees.GetIp(e.Employee);
+                    string fake;
+                    int g = 0;
+                    do { fake = "10.10." + Rng.Next(2, 9) + "." + Rng.Next(30, 240); } while (fake == real && ++g < 10);
+                    e.SourceIp = fake;
+                    e.Zone = SourceZone.Internal;
+                    break;
+                }
                 case SourceType.AttackerSource:
                 case SourceType.AttackerRelatedSource:
                     e.Device = ExpandPattern(string.IsNullOrEmpty(def.deviceNamePattern) ? "UNKNOWN" : def.deviceNamePattern);
@@ -134,6 +151,16 @@ namespace NightShift.Events
                     e.Zone = SourceZone.External;
                     break;
             }
+
+            if (e.Employee != null) e.ExpectedDeviceIp = _s.Employees.GetIp(e.Employee);
+            if (def.userType == UserType.OperatorAccount && def.sourceType == SourceType.RegisteredDevice)
+            {
+                // 自分のIDだが、自分の席ではない社内の端末から
+                e.Device = ExpandPattern("PC-{hex}");
+                e.SourceIp = "10.10." + Rng.Next(2, 9) + "." + Rng.Next(30, 240);
+                e.Zone = SourceZone.Internal;
+            }
+            e.Note = def.note;
 
             // ---- destination ----
             if (def.destinationMode == DestinationMode.FromEmployeeNormalTargets && e.Employee != null)

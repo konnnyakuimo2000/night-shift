@@ -49,6 +49,7 @@ namespace NightShift.Events
                 if (def == null) continue;
                 ScheduleDefinition(def, slot.window, slot.label);
             }
+            if (day.randomEvents) PlanRandomRequests(day);
             HelpDeskGen.ScheduleDay(Scheduler, day);
             if (day.passwordChangeAtMinute >= 0)
             {
@@ -57,6 +58,32 @@ namespace NightShift.Events
                 else Scheduler.Add(t, "TASK PASSWORD", SpawnPasswordTask);
             }
             Threats.ScheduleDay(Scheduler, day);
+        }
+
+        /// <summary>
+        /// 本番業務（DAY8〜）: 接続要求をランダムに配置する。違反の割合と、同時に重なる確率は日ごとの設定で決まる。
+        /// </summary>
+        void PlanRandomRequests(DayDefinition day)
+        {
+            float from = day.startMinute + 4f, to = day.endMinute - 15f;
+            var times = new List<float>();
+            for (int i = 0; i < day.requestCount; i++)
+            {
+                float t = Rand(from, to);
+                times.Add(t);
+                // 同時発生: 近い時刻にもう1件（件数には含めない）
+                if (_s.Rng.NextDouble() < day.burstChance) times.Add(System.Math.Min(to, t + Rand(0.3f, 2.5f)));
+            }
+            times.Sort();
+            foreach (var t in times)
+            {
+                bool violation = day.violationPool.Count > 0 && _s.Rng.NextDouble() < day.violationRatio;
+                var def = PickWeighted(violation ? day.violationPool : day.routinePool, day.dayNumber)
+                          ?? PickWeighted(day.routinePool, day.dayNumber);
+                if (def == null) continue;
+                var d = def;
+                Scheduler.Add(t, (violation ? "VIOLATION " : "ROUTINE ") + def.eventId, () => Spawn(d));
+            }
         }
 
         void ScheduleDefinition(EventDefinition def, UnityEngine.Vector2 window, string label = null)
