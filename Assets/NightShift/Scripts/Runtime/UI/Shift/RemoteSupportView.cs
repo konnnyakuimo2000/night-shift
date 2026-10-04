@@ -46,7 +46,14 @@ namespace NightShift.UI.Shift
             _disconnect = UIFactory.Button(c, "切断(X)", 0, 0, 100, 24, Disconnect, "exit");
             _report = UIFactory.Button(c, "対応完了を報告(P)", 104, 0, 150, 24, Report, "check");
             UIFactory.Button(c, "問い合わせを表示", 258, 0, 130, 24, () => { if (_session != null) HelpDeskView.Open(_d, _session.Ticket); }, "helpdesk");
-            _kbd = UIFactory.Label(c, "", 400, 0, 460, 24, 11, TextAnchor.MiddleRight);
+            float kx = 400;
+            if (_d.Unlocked(Data.Features.ServerManagement))
+            {
+                // PC に問題がないときは、サーバー側の障害として引き継ぐ（R9）
+                UIFactory.Button(c, "サーバー側の障害として報告", 392, 0, 190, 24, ReportServerSide, "server");
+                kx = 586;
+            }
+            _kbd = UIFactory.Label(c, "", kx, 0, 860 - kx, 24, 11, TextAnchor.MiddleRight);
             _kbd.color = RetroTheme.Shadow;
 
             var frame = UIFactory.Image(c, RetroTheme.Field, Color.black, "Viewport");
@@ -121,6 +128,14 @@ namespace NightShift.UI.Shift
             _w.Closable = true;
             _w.CanClose = null;
             _w.Close();
+        }
+
+        void ReportServerSide()
+        {
+            if (_session == null || !_session.Ticket.IsOpen) return;
+            _session.Ticket.PC.ReportKind = "SERVER";
+            Report();
+            if (_session != null && _session.Ticket.IsOpen) _session.Ticket.PC.ReportKind = "PC";
         }
 
         void Report()

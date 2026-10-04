@@ -133,7 +133,8 @@ namespace NightShift.RemotePC
             bool isIp = System.Text.RegularExpressions.Regex.IsMatch(target, @"^\d{1,3}(\.\d{1,3}){3}$");
             if (!isIp && !loopback)
             {
-                if (!pc.InternetConnectivity || !KnownHosts.TryGetValue(target, out ip))
+                // DNS サーバーの設定が間違っていると、名前から IP アドレスを引けない
+                if (!pc.InternetConnectivity || !pc.DnsAuto || !KnownHosts.TryGetValue(target, out ip))
                     return $"ping 要求ではホスト {target} が見つかりませんでした。名前を確認してから再実行してください。";
             }
             if (loopback) ip = "127.0.0.1";
@@ -141,6 +142,7 @@ namespace NightShift.RemotePC
             sb.AppendLine();
             sb.AppendLine($"{target} [{ip}] に ping を送信しています 32 バイトのデータ:");
             bool reachable = loopback || (pc.InternetConnectivity && (ip == pc.Gateway || ip.StartsWith("10.") || ip.StartsWith("172.16.") || KnownHosts.ContainsValue(ip)));
+            if (ip == "10.10.0.30" && !pc.FileServerReachable) reachable = false; // ファイルサーバー側の障害
             if (!pc.InternetConnectivity && !loopback)
             {
                 for (int i = 0; i < 4; i++) sb.AppendLine("PING: 転送に失敗しました。一般エラーです。");

@@ -61,17 +61,32 @@ namespace NightShift.RemotePC
         public int DiskUsage;
         public readonly List<VirtualProcess> RunningProcesses = new List<VirtualProcess>();
         public readonly List<FileEntry> Files = new List<FileEntry>();
-        public string MalwareState = "None"; // DAY1では未使用（拡張点）
+        public string MalwareState = "None"; // 感染しているウイルス（V3 など）
+
+        // ---- 本番業務の問い合わせ（R3〜R11） ----
+        public bool DnsAuto = true;                 // DNS サーバーのアドレスを自動取得
+        public string StaticIp = "192.168.1.25";    // 手で入れられた固定アドレス（DHCP オフのとき）
+        public bool Rebooted;                       // 対応中に再起動した（痕跡が消える）
+        public int PendingPatches;                  // 未適用の修正プログラム
+        public bool ScreenLockEnabled;              // スクリーンセーバーのパスワード保護
+        public bool FakeAlertOpen;                  // 偽の警告画面が出ている
+        public bool UnknownToolInstalled;           // 偽の警告に出たツールを入れてしまった
+        public bool LogsSaved, LogsCleared;         // イベントログの保存・消去
+        public bool BackupDone;                     // MO にバックアップして取り外した
+        public bool FileServerReachable = true;     // ファイルサーバーの障害（R9）
+        public string ReportKind = "PC";            // 報告の種類（PC側で解決 / サーバー側の障害）
+        public const string BrowserProcess = "netvoyager.exe";
 
         public event Action Changed;
         int _nextPid = 400;
 
         // ---- derived ----
         public bool WifiConnected => NetworkAdapterEnabled && WiFiEnabled;
-        public string IPAddress => WifiConnected ? (DHCPEnabled ? DeviceIp : DeviceIp) : "";
+        public string IPAddress => WifiConnected ? (DHCPEnabled ? DeviceIp : StaticIp) : "";
         public string Gateway => WifiConnected ? DefaultGateway : "";
-        public string DNS => WifiConnected ? ProfileDns : "";
-        public bool InternetConnectivity => WifiConnected && !string.IsNullOrEmpty(IPAddress) && !string.IsNullOrEmpty(Gateway);
+        public string DNS => WifiConnected ? (DnsAuto ? ProfileDns : "10.10.99.99") : "";
+        /// <summary>手で入れた固定アドレスは社内のネットワークと合わないため、DHCP がオフだとつながらない</summary>
+        public bool InternetConnectivity => WifiConnected && DHCPEnabled && !string.IsNullOrEmpty(IPAddress) && !string.IsNullOrEmpty(Gateway);
         public bool CanPrint => PrinterOnline && !PrintQueuePaused && InternetConnectivity;
 
         public static VirtualPCState Create(VirtualPCProfile p, EmployeeData employee, string ip, Random rng)
@@ -121,6 +136,23 @@ namespace NightShift.RemotePC
         public void SetAdapter(bool on) { NetworkAdapterEnabled = on; NotifyChanged(); }
         public void SetQueuePaused(bool paused) { PrintQueuePaused = paused; NotifyChanged(); }
         public void SetPrinterOnline(bool online) { PrinterOnline = online; NotifyChanged(); }
+        public void SetDhcp(bool on) { DHCPEnabled = on; NotifyChanged(); }
+        public void SetDnsAuto(bool on) { DnsAuto = on; NotifyChanged(); }
+        public void SetScreenLock(bool on) { ScreenLockEnabled = on; NotifyChanged(); }
+        public void ApplyPatches() { PendingPatches = 0; NotifyChanged(); }
+        public void SaveLogs() { LogsSaved = true; NotifyChanged(); }
+        public void ClearLogs() { LogsCleared = true; NotifyChanged(); }
+        public void Backup() { BackupDone = true; NotifyChanged(); }
+        public void InstallUnknownTool() { UnknownToolInstalled = true; NotifyChanged(); }
+
+        /// <summary>再起動: 利用者のプログラムは終了し、メモリ上の痕跡も消える</summary>
+        public void Reboot()
+        {
+            Rebooted = true;
+            RunningProcesses.RemoveAll(p => !p.System && !p.Critical && p.Name != "explorer.exe");
+            FakeAlertOpen = false;
+            NotifyChanged();
+        }
 
         public void CancelJob(PrintJob j) { PrintQueue.Remove(j); NotifyChanged(); }
         public void CancelAllJobs() { PrintQueue.Clear(); NotifyChanged(); }
@@ -144,6 +176,7 @@ namespace NightShift.RemotePC
         {
             if (p.Critical) return false;
             RunningProcesses.Remove(p);
+            if (p.Name == BrowserProcess) FakeAlertOpen = false;
             NotifyChanged();
             return true;
         }
@@ -180,6 +213,17 @@ namespace NightShift.RemotePC
                 case "CanPrint": return B(CanPrint);
                 case "DiskUsage": return DiskUsage.ToString();
                 case "MalwareState": return MalwareState;
+                case "DnsAuto": return B(DnsAuto);
+                case "Rebooted": return B(Rebooted);
+                case "PendingPatches": return PendingPatches.ToString();
+                case "ScreenLockEnabled": return B(ScreenLockEnabled);
+                case "FakeAlertOpen": return B(FakeAlertOpen);
+                case "UnknownToolInstalled": return B(UnknownToolInstalled);
+                case "LogsSaved": return B(LogsSaved);
+                case "LogsCleared": return B(LogsCleared);
+                case "BackupDone": return B(BackupDone);
+                case "FileServerReachable": return B(FileServerReachable);
+                case "ReportKind": return ReportKind;
                 default: return null;
             }
         }
@@ -196,6 +240,15 @@ namespace NightShift.RemotePC
                 case "PrintQueuePaused": PrintQueuePaused = b; break;
                 case "DiskUsage": int.TryParse(value, out DiskUsage); break;
                 case "MalwareState": MalwareState = value; break;
+                case "DnsAuto": DnsAuto = b; break;
+                case "PendingPatches": int.TryParse(value, out PendingPatches); break;
+                case "ScreenLockEnabled": ScreenLockEnabled = b; break;
+                case "FakeAlertOpen":
+                    FakeAlertOpen = b;
+                    if (b && RunningProcesses.Find(x => x.Name == BrowserProcess) == null)
+                        RunningProcesses.Add(new VirtualProcess { Name = BrowserProcess, Pid = _nextPid += 8, MemoryKb = 24800, User = UserName.Replace("nexus\\", "") });
+                    break;
+                case "FileServerReachable": FileServerReachable = b; break;
                 default: return false;
             }
             NotifyChanged();

@@ -786,6 +786,83 @@ namespace NightShift.Data
                 h.randomUnlock = true; h.randomUnlockMin = 8; h.randomUnlockMax = 25;
                 return h;
             }
+
+            // ----- リモート操作（1画面・1〜2操作） -----
+            HelpDeskDefinition R(string id, int minDay, string subject, string message, string success, string failure,
+                string explanation, string source, string[] faults, params string[] resolution)
+            {
+                var h = b.Add(ScriptableObject.CreateInstance<HelpDeskDefinition>(), "MainHelpDesk", "HD_" + id);
+                h.definitionId = id; h.type = HelpDeskType.Remote; h.minimumDay = minDay; h.maximumDay = LastDay;
+                h.subject = subject; h.message = message;
+                h.pcProfile = c.profile;
+                if (faults != null && faults.Length > 0)
+                {
+                    var v = new FaultVariant { label = id };
+                    for (int i = 0; i + 1 < faults.Length; i += 2) v.faults.Add(new StateValue { key = faults[i], value = faults[i + 1] });
+                    h.faultVariants.Add(v);
+                }
+                for (int i = 0; i + 1 < resolution.Length; i += 2) h.resolutionConditions.Add(new StateValue { key = resolution[i], value = resolution[i + 1] });
+                h.successReply = success; h.failureReply = failure;
+                h.reminderMessage = "すみません、まだでしょうか…？";
+                h.explanation = explanation; h.sourceNote = source;
+                h.maxUses = 2;
+                list.Add(h);
+                return h;
+            }
+            R("R3_ISOLATE", 9, "PCの様子がおかしい",
+                "{dept}の{name}です。\nWebを見ていたら、ブラウザーが急に終了して、見たことのないファイルがデスクトップにできていました。見てもらえますか？（端末: {device}）",
+                "ネットワークから切り離したんですね。触らずに待ちます。", "まだネットにつながったままみたいです…。",
+                "感染が疑われるPCは、まずネットワークから切り離す。再起動するとメモリやログの痕跡が消えるので、しない。",
+                $"令和4年度 {IP} 問100、令和2年度 秋期 {IP} 問58（改変）", null,
+                "InternetConnectivity", "false", "Rebooted", "false").flagOnWrong = "WRONG_A3";
+            R("R4_FAKE_ALERT", 10, "警告の画面が消えない",
+                "{dept}の{name}です。\n「ウイルスに感染しています」という真っ赤な画面が出て、閉じられません。表示されたツールを入れたほうがいいですか？（端末: {device}）",
+                "消えました！ツールは入れていません。", "まだ警告が出ています…。",
+                "偽の警告（サポート詐欺）は指示に従わず、警告を出しているブラウザーを終了して閉じる。ツールは入れない。",
+                $"令和6年度 {SG} 科目B 問15（改変）", new[] { "FakeAlertOpen", "true" },
+                "FakeAlertOpen", "false", "UnknownToolInstalled", "false");
+            R("R5_PATCHES", 11, "修正プログラムの案内が出たまま",
+                "{dept}の{name}です。\n「修正プログラムがあります」とずっと出ています。よく分からないので放ってあるんですが、見てもらえますか？（端末: {device}）",
+                "最新の状態になりました。", "まだ案内が出ています。",
+                "修正プログラムはソフトの弱点をふさぐもの。すべて適用する。",
+                $"平成28年度 秋期 {IP} 問59（改変）", new[] { "PendingPatches", "3" },
+                "PendingPatches", "0");
+            R("R6_DHCP", 12, "Wi-Fi はつながっているのにネットが使えない",
+                "{dept}の{name}です。\nWi-Fi はオンなのに、インターネットにもメールにもつながりません。昼間に誰かがネットワークの設定をいじっていました。（端末: {device}）",
+                "つながりました！", "まだつながりません…。",
+                "IP アドレスなどの設定を自動で行う仕組みが DHCP。手で入れた固定のアドレスが社内と合っていないと通信できない。",
+                $"平成23年度 特別 {FE} 午前 問39（改変）", new[] { "DHCPEnabled", "false" },
+                "DHCPEnabled", "true", "InternetConnectivity", "true");
+            R("R7_DNS", 13, "社内ページの名前が開けない",
+                "{dept}の{name}です。\n社内ページ（intranet）が開けません。IP アドレスを直接入れると開けるんですが…。（端末: {device}）",
+                "名前で開けるようになりました。", "まだ intranet が開けません。",
+                "名前（ホスト名）と IP アドレスを対応付けるのが DNS。DNS サーバーの設定が間違っていると名前で開けない。",
+                $"平成16年度 春期 {FE} 午前 問40（改変）", new[] { "DnsAuto", "false" },
+                "DnsAuto", "true");
+            R("R8_SCREEN_LOCK", 14, "離席中に誰かがPCを触った気がする",
+                "{dept}の{name}です。\n席を外している間に、誰かが私のPCを触った気がします。何か設定しておけますか？（端末: {device}）",
+                "これで安心です。", "まだ誰でも触れる状態みたいです。",
+                "離席したら画面にパスワード付きのロックがかかるようにする（クリアスクリーン）。",
+                $"令和5年度 {IP} 問90（改変）", null,
+                "ScreenLockEnabled", "true");
+            R("R9_SERVER_DOWN", 15, "ファイルサーバーにつながらない",
+                "{dept}の{name}です。\n共有フォルダが開けません。インターネットは使えます。（端末: {device}）",
+                "サーバーの障害だったんですね。サーバー担当に引き継いでもらえて助かります。", "うーん、PC側の問題ではないような…。",
+                "ping で相手まで届くかを確かめる。PC に問題がなければ、サーバー側の障害として引き継ぐ。",
+                $"平成26年度 春期 {FE} 午前 問34（改変）", new[] { "FileServerReachable", "false" },
+                "ReportKind", "SERVER");
+            R("R10_SAVE_LOGS", 18, "（上長から）PCのログを残してほしい",
+                "{dept}の{name}です。\n部下のPCから、深夜にファイルが持ち出されている疑いがあります。調べる前に、PCの記録を残しておいてもらえますか？（端末: {device}）",
+                "保存してもらえて助かります。", "まだ記録が保存されていないようです。",
+                "不正の調査は、まず証拠を保全する（デジタルフォレンジックス）。ログは消さない・変えない。",
+                $"平成27年度 秋期 {AP} 午前 問43（改変）", null,
+                "LogsSaved", "true", "LogsCleared", "false");
+            R("R11_BACKUP", 19, "バックアップを取りたい",
+                "{dept}の{name}です。\n身代金ウイルスのニュースを見て心配になりました。私のPCのファイルのバックアップを取ってもらえますか？（端末: {device}）",
+                "ありがとうございます！", "まだバックアップされていないみたいです。",
+                "バックアップは外部の記録媒体に取り、ネットワークや PC から切り離して保管する。",
+                $"令和7年度 {IP} 問92、令和4年度 {IP} 問56（改変）", null,
+                "BackupDone", "true");
             Y("Y1_PATCH_NOW", "修正プログラムを今すぐ適用していい？",
                 "{dept}の{name}です。\n修正プログラムの案内が出ました。今すぐ適用していいですか？",
                 "はい。ウイルス感染の予防のため、すぐに適用してください。",

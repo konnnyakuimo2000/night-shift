@@ -32,8 +32,8 @@ namespace NightShift.UI.Remote
                 var c = w.Content;
                 var left = UIFactory.Image(c, RetroTheme.Field, Color.white, "Nav");
                 left.rectTransform.Place(0, 0, 150, 330);
-                string[] labels = { "ネットワーク", "プリンター", "システム" };
-                string[] icons = { "network", "printer", "pc" };
+                string[] labels = { "ネットワーク", "プリンター", "システム", "修正プログラム", "画面", "バックアップ", "イベントログ" };
+                string[] icons = { "network", "printer", "pc", "check", "pc", "drive", "log" };
                 for (int i = 0; i < labels.Length; i++)
                 {
                     int idx = i;
@@ -76,7 +76,52 @@ namespace NightShift.UI.Remote
                         UIFactory.ValueBox(g, 84, 52, 220, 20, string.IsNullOrEmpty(pc.IPAddress) ? "-" : pc.IPAddress);
                         UIFactory.Label(g, "インターネット:", 0, 78, 84, 20);
                         UIFactory.ValueBox(g, 84, 78, 220, 20, pc.InternetConnectivity ? "接続済み" : "接続なし");
-                        UIFactory.Button(_page, "アダプターのオプションを変更する...", 0, 170, 240, 24, () => NetworkConnections(_d), "network");
+                        var ipg = UIFactory.Group(_page, "IP アドレスの設定", 0, 166, 340, 80);
+                        var dhcp = UIFactory.Check(ipg, "IP アドレスを自動的に取得する", pc.DHCPEnabled, v => pc.SetDhcp(v), true);
+                        dhcp.GetComponent<RectTransform>().Place(0, 0, 320, 20);
+                        if (!pc.DHCPEnabled) UIFactory.Label(ipg, $"現在の設定: {pc.StaticIp}（手動）", 20, 20, 300, 16, 11).color = RetroTheme.Shadow;
+                        var dns = UIFactory.Check(ipg, "DNS サーバーのアドレスを自動的に取得する", pc.DnsAuto, v => pc.SetDnsAuto(v), true);
+                        dns.GetComponent<RectTransform>().Place(0, 38, 320, 20);
+                        UIFactory.Button(_page, "アダプターのオプションを変更する...", 0, 256, 240, 24, () => NetworkConnections(_d), "network");
+                        break;
+                    }
+                    case 3:
+                    {
+                        UIFactory.Label(_page, "修正プログラムの更新", 0, 0, 340, 22, 14).fontStyle = FontStyle.Bold;
+                        var g = UIFactory.Group(_page, "状態", 0, 28, 340, 110);
+                        UIFactory.Label(g, pc.PendingPatches > 0 ? $"適用されていない修正プログラムが {pc.PendingPatches} 件あります。" : "コンピューターは最新の状態です。", 0, 0, 330, 20);
+                        var apply = UIFactory.Button(g, "すべて適用", 0, 30, 120, 26, pc.ApplyPatches, "check");
+                        apply.Interactable = pc.PendingPatches > 0;
+                        UIFactory.Button(g, "後で", 126, 30, 80, 26, () => { });
+                        break;
+                    }
+                    case 4:
+                    {
+                        UIFactory.Label(_page, "画面のプロパティ", 0, 0, 340, 22, 14).fontStyle = FontStyle.Bold;
+                        var g = UIFactory.Group(_page, "スクリーン セーバー", 0, 28, 340, 90);
+                        UIFactory.Label(g, "スクリーン セーバー: 3D 迷路　　待ち時間: 10 分", 0, 0, 330, 20);
+                        var lck = UIFactory.Check(g, "パスワードで保護する", pc.ScreenLockEnabled, v => pc.SetScreenLock(v));
+                        lck.GetComponent<RectTransform>().Place(0, 28, 300, 20);
+                        break;
+                    }
+                    case 5:
+                    {
+                        UIFactory.Label(_page, "バックアップ", 0, 0, 340, 22, 14).fontStyle = FontStyle.Bold;
+                        var g = UIFactory.Group(_page, "マイ ドキュメント", 0, 28, 340, 100);
+                        UIFactory.Label(g, pc.BackupDone ? "バックアップ済み（MO は取り外されています）" : "最後のバックアップ: なし", 0, 0, 330, 20);
+                        var bk = UIFactory.Button(g, "MO にバックアップして取り外す", 0, 30, 220, 26, pc.Backup, "drive");
+                        bk.Interactable = !pc.BackupDone;
+                        break;
+                    }
+                    case 6:
+                    {
+                        UIFactory.Label(_page, "イベント ログ", 0, 0, 340, 22, 14).fontStyle = FontStyle.Bold;
+                        var g = UIFactory.Group(_page, "システム / アプリケーション / セキュリティ", 0, 28, 340, 110);
+                        UIFactory.Label(g, pc.LogsCleared ? "ログはありません。" : $"記録: 1,284 件{(pc.LogsSaved ? "（フロッピーに保存済み）" : "")}", 0, 0, 330, 20);
+                        var save = UIFactory.Button(g, "ログをフロッピーに保存", 0, 30, 170, 26, pc.SaveLogs, "drive");
+                        save.Interactable = !pc.LogsCleared && !pc.LogsSaved;
+                        var clr = UIFactory.Button(g, "ログを消去", 176, 30, 110, 26, pc.ClearLogs, "exit");
+                        clr.Interactable = !pc.LogsCleared;
                         break;
                     }
                     case 1:
@@ -293,7 +338,14 @@ namespace NightShift.UI.Remote
                 var bg = UIFactory.Solid(c, RetroTheme.Terminal, "Console");
                 bg.rectTransform.Stretch();
                 _scroll = UIFactory.Scroll(bg.transform, out _content, false);
-                ((RectTransform)_scroll.transform).Stretch(0, 0, 0, 22);
+                ((RectTransform)_scroll.transform).Stretch(0, 24, 0, 22);
+                // よく使う確認（コマンドを打たずにボタンで実行）
+                var tools = UIFactory.Solid(bg.transform, RetroTheme.Face, "QuickTools");
+                tools.rectTransform.StretchH(0, 24);
+                UIFactory.Label(tools.transform, " よく使う確認:", 0, 2, 90, 20, 11);
+                UIFactory.Button(tools.transform, "ipconfig", 92, 2, 80, 20, () => Exec("ipconfig"));
+                UIFactory.Button(tools.transform, "ping intranet", 176, 2, 100, 20, () => Exec("ping intranet"));
+                UIFactory.Button(tools.transform, "ping file-srv01", 280, 2, 110, 20, () => Exec("ping file-srv01"));
                 _scroll.GetComponent<Image>().color = RetroTheme.Terminal;
                 _out = UIFactory.Label(_content, "", 12, TextAnchor.UpperLeft, RetroTheme.TerminalText, true);
                 _out.supportRichText = false;
@@ -321,6 +373,12 @@ namespace NightShift.UI.Remote
             void OnSubmit(string line)
             {
                 if (!(Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter))) return;
+                Exec(line);
+            }
+
+            /// <summary>1行を実行（入力欄・ボタン共通）</summary>
+            void Exec(string line)
+            {
                 _buffer.AppendLine(line);
                 if (!string.IsNullOrWhiteSpace(line)) { _history.Add(line); _historyIndex = _history.Count; }
                 bool exit = false;
@@ -414,6 +472,28 @@ namespace NightShift.UI.Remote
             if (c.StartsWith("http://") || c.StartsWith("https://")) { Browser(d, cmd.Trim()); return true; }
             if (c.StartsWith("\\\\")) { Explorer(d, "ネットワーク"); return true; }
             return false;
+        }
+
+        // ============================================================ 偽の警告画面（R4・サポート詐欺）
+        /// <summary>
+        /// ブラウザーが出している偽の警告。閉じるボタンは効かない。タスク マネージャーでブラウザー（netvoyager.exe）を終了すると消える。
+        /// </summary>
+        public static void FakeAlert(RemoteDesktop d)
+        {
+            var w = d.Open(new WindowSpec { Id = "fakealert", Title = "!! セキュリティ警告 !!", Icon = "warning", Width = 460, Height = 300, Closable = false, Minimizable = false, Maximizable = false }, out bool created);
+            if (!created) return;
+            var c = w.Content;
+            var bg = UIFactory.Solid(c, new Color(0.75f, 0.05f, 0.05f), "Alert");
+            bg.rectTransform.Stretch();
+            UIFactory.Label(bg.transform, "警告: このコンピューターはウイルスに感染しています！", 10, 10, 430, 24, 15, TextAnchor.MiddleCenter, Color.white).fontStyle = FontStyle.Bold;
+            UIFactory.Label(bg.transform, "VACCINE 99 セキュリティ センター", 10, 40, 430, 20, 12, TextAnchor.MiddleCenter, Color.white);
+            UIFactory.Label(bg.transform, "個人情報が盗まれています。今すぐ下のツールをインストールするか、\nサポート窓口（0120-XXX-XXX）に電話してください。", 10, 70, 430, 50, 12, TextAnchor.MiddleCenter, Color.white);
+            UIFactory.Button(bg.transform, "駆除ツールをインストール", 130, 140, 200, 30, () => { d.PC.InstallUnknownTool(); AudioFx.Error(); });
+            UIFactory.Label(bg.transform, "※ このウィンドウを閉じないでください", 10, 190, 430, 18, 11, TextAnchor.MiddleCenter, new Color(1, 0.85f, 0.85f));
+            System.Action watch = null;
+            watch = () => { if (!d.PC.FakeAlertOpen && w != null) { d.PC.Changed -= watch; w.Close(); } };
+            d.PC.Changed += watch;
+            w.Closed += () => d.PC.Changed -= watch;
         }
 
         // ============================================================ Task Manager

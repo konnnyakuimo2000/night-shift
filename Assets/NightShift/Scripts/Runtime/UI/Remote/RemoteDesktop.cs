@@ -54,6 +54,7 @@ namespace NightShift.UI.Remote
             d.Windows.Changed += d.RebuildTaskButtons;
             pc.Changed += d.OnPcChanged;
             d.OnPcChanged();
+            if (pc.FakeAlertOpen) RemoteApps.FakeAlert(d);
             return d;
         }
 
@@ -173,7 +174,7 @@ namespace NightShift.UI.Remote
                 MenuItem.Sep(),
                 new MenuItem("ファイル名を指定して実行(R)...", () => RemoteApps.Run(this)) { Icon = "run" },
                 MenuItem.Sep(),
-                new MenuItem("シャットダウン(U)...", null, null, false) { Icon = "exit" },
+                new MenuItem("再起動(U)", () => { PC.Reboot(); Session.Logs.Add(Session.Time.CurrentMinute, PC.Hostname, "-", Session.OperatorName, "REMOTE", "REBOOT", "リモートで再起動"); }) { Icon = "exit" },
             };
             var corners = new Vector3[4];
             _start.Rect.GetWorldCorners(corners);
