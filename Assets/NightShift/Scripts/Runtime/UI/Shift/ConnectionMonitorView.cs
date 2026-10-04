@@ -180,9 +180,21 @@ namespace NightShift.UI.Shift
             _hint.color = string.IsNullOrEmpty(e.Note) ? RetroTheme.Shadow : RetroTheme.Text;
             if (_fwBtn != null) _fwBtn.Interactable = !_d.S.Security.IsBlocked(e.SourceIp);
             if (_reportBtn != null) _reportBtn.Interactable = true;
+            CheckClues(e);
         }
 
-        const string DefaultHint = "※ 利用者・端末・権限は「社員情報の検索・参照」で確認してください。";
+        /// <summary>前任者の手がかり（E-0004 の接続元・攻撃AIの通信元）</summary>
+        void CheckClues(EventInstance e)
+        {
+            if (e.DisplayEmployeeId == "E-0004" && _d.S.Day.dayNumber >= 12)
+                _d.OfferClue("C2", "退職者アカウント E-0004 の接続元",
+                    $"無効にされないまま残っていた退職者アカウント E-0004 からの接続。\n接続元は {e.SourceIp}。この範囲は覚えておいたほうがよさそうだ。");
+            if (e.Owner is ThreatScenarioRun run && run.Definition.scenarioId.StartsWith("T14"))
+                _d.OfferClue("C4", "攻撃AIの通信元",
+                    $"拒否するたびに経路を変えてくる攻撃の接続元 {e.SourceIp}。\nE-0004 が使っていた範囲と、同じ並びだ。");
+        }
+
+        const string DefaultHint ="※ 利用者・端末・権限は「社員情報の検索・参照」で確認してください。";
 
         void BlockSource()
         {

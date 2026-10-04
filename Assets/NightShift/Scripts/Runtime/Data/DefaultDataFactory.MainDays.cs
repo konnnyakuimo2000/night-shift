@@ -612,6 +612,21 @@ namespace NightShift.Data
             d23.fixedEvents.Add(vAiSpoof);
             d24.fixedEvents.Add(vAiOffShift);
             d28.fixedEvents.Add(vInjection);
+
+            // 前任者（E-0004）のアカウントからの接続。接続元は自律型攻撃AIと同じ範囲（手がかり2）
+            var vPredecessor = Ev("T6_PREDECESSOR_ACCOUNT", 12);
+            vPredecessor.category = EventCategory.Threat;
+            vPredecessor.severity = Severity.High;
+            vPredecessor.userType = UserType.NamedAccount;
+            vPredecessor.accountName = "(削除済み)";
+            vPredecessor.displayEmployeeId = "E-0004";
+            vPredecessor.sourceType = SourceType.AttackerSource;
+            vPredecessor.deviceNamePattern = "NB-{hex}";
+            vPredecessor.destination = c.auth; vPredecessor.accessType = "VPN接続";
+            vPredecessor.isMalicious = true;
+            d12.fixedEvents.Add(vPredecessor);
+            d19.fixedEvents.Add(vPredecessor);
+            d27.fixedEvents.Add(vPredecessor);
         }
 
         // ============================================================

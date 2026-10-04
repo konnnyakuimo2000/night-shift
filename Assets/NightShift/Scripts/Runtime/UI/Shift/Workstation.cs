@@ -59,6 +59,22 @@ namespace NightShift.UI.Shift
                 y += 72;
                 if (y > 520) { y = 10; x += 92; }
             }
+
+            // 前任者の付箋（ワークステーションの裏に貼られていた）— 手がかり1
+            if (Index == 1)
+            {
+                var note = UIFactory.Image(_icons, RetroTheme.White, new Color(1f, 0.93f, 0.45f), "PredecessorNote");
+                note.rectTransform.anchorMin = note.rectTransform.anchorMax = new Vector2(1, 1);
+                note.rectTransform.pivot = new Vector2(1, 1);
+                note.rectTransform.sizeDelta = new Vector2(130, 90);
+                note.rectTransform.anchoredPosition = new Vector2(-24, -20);
+                note.rectTransform.localRotation = Quaternion.Euler(0, 0, -4f);
+                var t = UIFactory.Label(note.transform, "夜は長い。\n全部を一度に\n見ようとしないこと", 12, TextAnchor.MiddleCenter, new Color(0.15f, 0.15f, 0.3f));
+                t.rectTransform.Stretch(6, 6, 6, 6);
+                var ch2 = note.gameObject.AddComponent<ClickHandler>();
+                ch2.OnClick = () => Desktop.ShowClue("C1",
+                    "ワークステーションの裏に貼られていた、前任者の付箋。\n「夜は長い。全部を一度に見ようとしないこと」\n「このPCのパスワードは付箋に書かないこと」\n— E-0004");
+            }
         }
 
         // ---------------- タスクバー ----------------

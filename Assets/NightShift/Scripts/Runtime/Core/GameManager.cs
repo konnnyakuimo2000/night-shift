@@ -172,6 +172,7 @@ namespace NightShift.Core
                 _careerSnapshot = CareerRecord.Current.Snapshot();
                 _walletSnapshot = Wallet.Snapshot();
                 _snapshotDay = CurrentDay;
+                SaveWeekSnapshot(CurrentDay);
             }
             else
             {
@@ -183,6 +184,7 @@ namespace NightShift.Core
             _desktop = ShiftDesktop.Build(ScreenLayer, this, Session);
             Session.Ui = _desktop;
             AddPayslipMail(day);
+            AddCareerMails(day);
             _screen = _desktop.gameObject;
             State = GameState.Briefing;
             _desktop.ShowBriefing(StartShift);
@@ -211,26 +213,97 @@ namespace NightShift.Core
             var day = Session.Day;
             ClearScreen();
             DisposeShift(keepSession: true);
-            SaveProgress(CurrentDay + 1);
             if (day.passwordChangeAtMinute >= 0 || Account.Changed)
                 result.Stats.Add(new System.Collections.Generic.KeyValuePair<string, string>("Operator Password",
                     Account.Changed ? $"変更済み（強度: {PasswordPolicy.StrengthLabel(Account.Strength)}{(Account.WrittenDown ? "・付箋あり" : "")}）" : "未変更（初期パスワード）"));
             var slip = Payroll.Compute(day.dayNumber, result, Session.Evaluation, Database.payroll);
             var previous = Wallet.Record(slip, out bool updated);
             NightClosing.Close(Session, result, slip);
+            _pendingGameOver = EndingResolver.CheckGameOver(CareerRecord.Current, Session);
+            _finalOutcome = EndingResolver.Outcome(Session);
+            if (_pendingGameOver == null) SaveProgress(CurrentDay + 1);
             SetScreen(EvaluationScreen.Build(ScreenLayer, day, result, slip, previous, updated, Wallet.Balance, GoToNextDay, RestartDay), GameState.Evaluation);
         }
 
         /// <summary>翌日へ。翌日の定義が無ければ COMING SOON。</summary>
         void GoToNextDay()
         {
+            if (_pendingGameOver != null) { ShowGameOver(_pendingGameOver); return; }
+            if (CurrentDay >= DefaultDataFactory.LastDay) { ShowEnding(); return; }
             int next = CurrentDay + 1;
             if (Database.FindDay(next) != null)
             {
                 CurrentDay = next;
-                ShowClockIn();
+                ShowDayStart();
             }
             else ShowComingSoon();
+        }
+
+        EndingResolver.GameOver _pendingGameOver;
+        FinalOutcome _finalOutcome;
+
+        /// <summary>1日の始まり: DAY8 からは朝のネットニュース → タイムカード</summary>
+        public void ShowDayStart()
+        {
+            var day = Database.GetDay(CurrentDay);
+            if (CurrentDay >= DefaultDataFactory.MainStartDay && day != null)
+                SetScreen(NewsScreen.Build(ScreenLayer, Database, day, ShowClockIn), GameState.ClockIn);
+            else ShowClockIn();
+        }
+
+        void ShowGameOver(EndingResolver.GameOver go)
+        {
+            var career = CareerRecord.Current;
+            if (!career.gameOversSeen.Contains(go.Id)) career.gameOversSeen.Add(go.Id);
+            career.Save();
+            _pendingGameOver = null;
+            int weekStart = WeekStart(CurrentDay);
+            bool hasWeek = PlayerPrefs.HasKey(WeekKey(weekStart));
+            SetScreen(GameOverScreen.Build(ScreenLayer, go, OperatorName,
+                () => RestartDay(),
+                hasWeek ? () => RetryWeek(weekStart) : (System.Action)null,
+                ShowTitle), GameState.Complete);
+        }
+
+        void ShowEnding()
+        {
+            var ending = EndingResolver.Resolve(CareerRecord.Current, _finalOutcome);
+            SetScreen(EndingScreen.Build(ScreenLayer, ending, _finalOutcome, OperatorName, Wallet, ShowTitle), GameState.Complete);
+        }
+
+        // ---------------- 週の初日のセーブ（ゲームオーバー後のやり直し用） ----------------
+        static readonly int[] WeekStarts = { 8, 15, 22, 28 };
+        static int WeekStart(int day)
+        {
+            int ws = DefaultDataFactory.MainStartDay;
+            foreach (var w in WeekStarts) if (day >= w) ws = w;
+            return ws;
+        }
+        static string WeekKey(int day) => "NightShift.Week." + day;
+        const string WeekSep = "#WALLET#";
+
+        void SaveWeekSnapshot(int day)
+        {
+            if (System.Array.IndexOf(WeekStarts, day) < 0) return;
+            try
+            {
+                PlayerPrefs.SetString(WeekKey(day), CareerRecord.Current.Snapshot() + WeekSep + Wallet.Snapshot());
+                PlayerPrefs.Save();
+            }
+            catch { }
+        }
+
+        void RetryWeek(int day)
+        {
+            try
+            {
+                var parts = PlayerPrefs.GetString(WeekKey(day), "").Split(new[] { WeekSep }, System.StringSplitOptions.None);
+                if (parts.Length == 2) { CareerRecord.Restore(parts[0]); Wallet.Restore(parts[1]); }
+            }
+            catch { }
+            CurrentDay = day;
+            _snapshotDay = -1;
+            ShowDayStart();
         }
 
         void ShowComingSoon() => SetScreen(ComingSoonScreen.Build(ScreenLayer, CurrentDay, CurrentDay + 1, RestartDay, ShowTitle), GameState.ComingSoon);
@@ -261,6 +334,48 @@ namespace NightShift.Core
                 PlayerPrefs.Save();
             }
             catch { }
+        }
+
+        /// <summary>30日間の記録に応じた業務メール（警告・週間評価）</summary>
+        void AddCareerMails(DayDefinition day)
+        {
+            var career = CareerRecord.Current;
+            int n = day.dayNumber;
+            if (n <= DefaultDataFactory.MainStartDay) return;
+            string date = (string.IsNullOrEmpty(day.clockInDateLabel) ? day.dateLabel : day.clockInDateLabel) + " 20:00";
+            void Mail(string id, string from, string subject, string body) => Session.Mail.Add(new MailMessage
+            {
+                MailId = id, From = MailManager.Sender(from), FromAddress = "morita@" + MailManager.CompanyDomain,
+                To = MailManager.Recipient(OperatorName), Subject = subject, DateLabel = date,
+                Body = $"{OperatorName} 様\n\n{body}\n" + MailManager.Signature(from), Day = n
+            }, false);
+
+            if (career.ConsecutiveRank("D", n - 1) == 2)
+                Mail("WARN-GO1-" + n, "情報システム部 課長 森田", "【最終警告】業務評価について",
+                    "2夜続けて、業務評価が最低でした。\n<b>次も同じ評価なら、契約は更新しません。</b>");
+            if (career.accountCompromised == 1 && !career.HasFlag("MAILED_GO3"))
+            {
+                career.SetFlag("MAILED_GO3");
+                Mail("WARN-GO3-" + n, "情報システム部 セキュリティ担当", "【警告】あなたのアカウントが不正に使われました",
+                    "あなたのIDが、攻撃に使われました。パスワードを直ちに変更してください。\n<b>次に同じことが起きた場合は、相応の処分を検討します。</b>\n付箋にパスワードを書いていないか、確認してください。");
+            }
+            if (career.ConsecutiveOvertime(n - 1) >= 5)
+                Mail("WARN-GO4-" + n, "カスタマーサポート部 中村", "大丈夫ですか？",
+                    "毎朝、夜勤明けのあなたを見かけますが、顔色が良くないです。\n無理しないでくださいね。缶コーヒーばかり飲んでいると、倒れちゃいますよ。");
+            if (n == 15 || n == 22 || n == 28)
+            {
+                int from = n == 15 ? 8 : n == 22 ? 15 : 22, cnt = 0, mal = 0, fines = 0;
+                float sum = 0;
+                foreach (var r in career.nights)
+                {
+                    if (r.day < from || r.day >= n) continue;
+                    cnt++; sum += CareerRecord.RankValue(r.rank); mal += r.maliciousAllowed; fines += r.fines;
+                }
+                string[] ranks = { "", "D", "C", "B", "A", "S" };
+                string avg = cnt == 0 ? "-" : ranks[Mathf.Clamp(Mathf.RoundToInt(sum / cnt), 1, 5)];
+                Mail("WEEKLY-" + n, "情報システム部 課長 森田", "【週間評価】先週の業務について",
+                    $"先週（DAY{from}〜{n - 1}）の評価をお知らせします。\n\n平均ランク: <b>{avg}</b>\n不正な接続の許可: {mal} 件\n罰金（業務改善協力金）: {OperatorWallet.Yen(fines)}\n\n引き続き、緊張感を持って業務にあたってください。");
+            }
         }
 
         /// <summary>前日の給与明細をメールで届ける</summary>
@@ -318,7 +433,7 @@ namespace NightShift.Core
             Account = OperatorAccount.Load();
             try { OperatorName = PlayerPrefs.GetString(NameKey, OperatorName); } catch { }
             if (string.IsNullOrEmpty(Account.UserId) || Account.UserId == DefaultOperatorName) Account.UserId = OperatorName;
-            ShowClockIn();
+            ShowDayStart();
         }
 
         void ContinueGame()
@@ -326,7 +441,7 @@ namespace NightShift.Core
             CurrentDay = ReachedDay;
             Account = OperatorAccount.Load();
             try { OperatorName = PlayerPrefs.GetString(NameKey, OperatorName); } catch { }
-            ShowClockIn();
+            ShowDayStart();
         }
 
         /// <summary>デバッグ用: 指定日を最初から開始</summary>

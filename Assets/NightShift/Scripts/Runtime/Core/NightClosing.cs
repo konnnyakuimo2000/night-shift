@@ -61,6 +61,14 @@ namespace NightShift.Core
                 career.AddTrust(delta);
             }
 
+            // 翌朝のネットニュースに載る出来事
+            career.ClearFlag("NEWS_DEFACED"); career.ClearFlag("NEWS_BLACKOUT");
+            foreach (var d in s.Damage)
+            {
+                if (d.Contains("GARBLE")) career.SetFlag("NEWS_DEFACED");
+                if (d.Contains("REDACT")) career.SetFlag("NEWS_BLACKOUT");
+            }
+
             career.RecordNight(n);
             career.Save();
             return n;

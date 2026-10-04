@@ -188,6 +188,9 @@ namespace NightShift.UI.Shift
             if (m == _shown && m != null) return;
             _shown = m;
             _d.SelectMail(m);
+            if (m != null && m.IsPhish && _d.S.Day.dayNumber >= 26)
+                _d.OfferClue("C3", "偽メールの言い回し",
+                    "偽メールの中の「夜は長いので」という一文。\n夜勤担当しか使わない言い回しだ。前任者の付箋にも、同じ言葉があった。");
             foreach (Transform t in _preview) Destroy(t.gameObject);
             if (m == null) return;
             _d.S.Mail.MarkRead(m);

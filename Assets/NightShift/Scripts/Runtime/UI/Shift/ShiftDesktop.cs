@@ -187,6 +187,28 @@ namespace NightShift.UI.Shift
             return null;
         }
 
+        // ---------------- 前任者の手がかり ----------------
+        readonly HashSet<string> _cluesOffered = new HashSet<string>();
+
+        /// <summary>手がかりを見つけた。個人フォルダに保存すると数えられる（END3 の条件）</summary>
+        public void OfferClue(string id, string title, string text)
+        {
+            var career = CareerRecord.Current;
+            if (career.clues.Contains(id) || _cluesOffered.Contains(id)) return;
+            _cluesOffered.Add(id);
+            S.Notifications.Notify(NotificationType.Info, "気になる記録", title, S.Time.CurrentMinute, () => ShowClue(id, text));
+        }
+
+        /// <summary>手がかりの内容を見せ、個人フォルダに保存するか尋ねる</summary>
+        public void ShowClue(string id, string text)
+        {
+            var career = CareerRecord.Current;
+            bool saved = career.clues.Contains(id);
+            MessageBox.Ask(this, "気になる記録", text + (saved ? "\n\n（個人フォルダに保存済み）" : "\n\n個人フォルダに保存しますか？"),
+                saved ? "閉じる" : "個人フォルダに保存", () => { if (!career.clues.Contains(id)) { career.clues.Add(id); career.Save(); ShowStatus("個人フォルダに保存しました。"); } },
+                saved ? "OK" : "保存しない", null, "doc");
+        }
+
         /// <summary>画面の端が一瞬だけ化ける演出（HorrorFx が受け取る）</summary>
         public event Action GlitchRequested;
         public void RequestGlitch() => GlitchRequested?.Invoke();
