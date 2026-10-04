@@ -187,6 +187,7 @@ namespace NightShift.UI.Shift
         {
             if (m == _shown && m != null) return;
             _shown = m;
+            _d.SelectMail(m);
             foreach (Transform t in _preview) Destroy(t.gameObject);
             if (m == null) return;
             _d.S.Mail.MarkRead(m);

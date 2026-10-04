@@ -47,7 +47,7 @@ namespace NightShift.Systems
         // ---- 本番業務の夜の記録（夜の終わりに CareerRecord へまとめる） ----
         /// <summary>この夜に出た被害（情報漏えい・改ざん・感染の拡大など）</summary>
         public readonly System.Collections.Generic.List<string> Damage = new System.Collections.Generic.List<string>();
-        public int CorrectReports, WrongReports, AiHandled, AutoAllowed;
+        public int CorrectReports, WrongReports, AiHandled, AutoAllowed, AiTokensUsed;
         public bool OperatorCompromised;
         public bool Overtime;
         /// <summary>業務終了時に「残業する／退勤する」を尋ねている（答えるまで猶予は進まない）</summary>

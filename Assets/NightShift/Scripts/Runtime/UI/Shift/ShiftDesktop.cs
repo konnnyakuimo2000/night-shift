@@ -46,6 +46,9 @@ namespace NightShift.UI.Shift
             d.Area = UIFactory.Rect("WindowArea", root.transform).Stretch(0, 0, 0, Taskbar.Height);
             d.Windows = WindowManager.Create(d.Area);
             d._taskbar = Taskbar.Build(root.transform, d);
+            d._monitorLayer = UIFactory.Rect("Monitors", root.transform).Stretch();
+            d.RebuildMonitors();
+            d.InventoryChanged += d.RebuildMonitors;
             d._toaster = NotificationToaster.Build(root.transform, d);
             d._modalLayer = UIFactory.Rect("Modal", root.transform).Stretch();
             d._overlay = DebugOverlay.Build(gm.DebugLayer, d);
@@ -119,6 +122,84 @@ namespace NightShift.UI.Shift
             UIFactory.Label(box.transform, $"{S.Time.Now}  業務終了。お疲れさまでした。\n業務記録を集計しています...", 12, TextAnchor.MiddleCenter).rectTransform.StretchH(88, 44);
         }
 
+        // ---------------- サブモニター ----------------
+        RectTransform _monitorLayer;
+        readonly List<WorkstationScreen> _stations = new List<WorkstationScreen>();
+        public int CurrentMonitor { get; private set; }
+        /// <summary>メインモニターに、見ていない間の通知がある</summary>
+        public bool MainHasUnseen { get; private set; }
+        public IReadOnlyList<WorkstationScreen> Stations => _stations;
+
+        public int MonitorCount
+        {
+            get
+            {
+                var c = CareerRecord.Current;
+                int n = 1;
+                if (c.Owns(Data.Items.Monitor1)) n++;
+                if (c.Owns(Data.Items.Monitor1) && c.Owns(Data.Items.Monitor2)) n++;
+                return n;
+            }
+        }
+
+        void RebuildMonitors()
+        {
+            int need = MonitorCount - 1;
+            while (_stations.Count < need)
+            {
+                var ws = WorkstationScreen.Build(_monitorLayer, this, _stations.Count + 1);
+                ws.gameObject.SetActive(false);
+                _stations.Add(ws);
+            }
+            foreach (var ws in _stations) { ws.RebuildIcons(); ws.RefreshSwitcher(); }
+            _taskbar?.RefreshMonitors();
+        }
+
+        /// <summary>見るモニターを切り替える（0 = メイン）</summary>
+        public void ShowMonitor(int index)
+        {
+            index = Mathf.Clamp(index, 0, MonitorCount - 1);
+            if (index == CurrentMonitor) return;
+            PopupMenu.CloseAll();
+            CurrentMonitor = index;
+            for (int i = 0; i < _stations.Count; i++) _stations[i].gameObject.SetActive(i + 1 == index);
+            if (index == 0) MainHasUnseen = false;
+            foreach (var ws in _stations) ws.RefreshSwitcher();
+            _taskbar?.RefreshMonitors();
+            AudioFx.Click();
+        }
+
+        /// <summary>ツールが起動しているか（効果があるのは起動中だけ）</summary>
+        public bool ToolRunning(string id)
+        {
+            if (!HasTool(id)) return false;
+            foreach (var ws in _stations) if (ws.Windows.Find("tool:" + id) != null) return true;
+            return false;
+        }
+
+        public T FindTool<T>(string id) where T : Component
+        {
+            foreach (var ws in _stations)
+            {
+                var w = ws.Windows.Find("tool:" + id);
+                if (w != null) return w.GetComponent<T>();
+            }
+            return null;
+        }
+
+        /// <summary>画面の端が一瞬だけ化ける演出（HorrorFx が受け取る）</summary>
+        public event Action GlitchRequested;
+        public void RequestGlitch() => GlitchRequested?.Invoke();
+
+        // ---- メインモニターで選んでいるもの（ツールが参照する） ----
+        public Events.EventInstance SelectedRequest { get; private set; }
+        public LogEntry SelectedLog { get; private set; }
+        public MailMessage SelectedMail { get; private set; }
+        public event Action SelectionChanged;
+        public void SelectRequest(Events.EventInstance e) { SelectedRequest = e; SelectionChanged?.Invoke(); }
+        public void SelectLog(LogEntry e) { SelectedLog = e; SelectionChanged?.Invoke(); }
+        public void SelectMail(MailMessage m) { SelectedMail = m; SelectionChanged?.Invoke(); }
+
         // ---------------- IShiftUi ----------------
         public void OpenConnectionMonitor(EventInstance focus) => ConnectionMonitorView.Open(this, focus);
         public void OpenHelpDesk(Ticket focus) => HelpDeskView.Open(this, focus);
@@ -141,6 +222,7 @@ namespace NightShift.UI.Shift
         // ---------------- Events ----------------
         void OnNotification(Notification n)
         {
+            if (CurrentMonitor != 0) { MainHasUnseen = true; foreach (var ws in _stations) ws.RefreshSwitcher(); }
             _toaster.Show(n);
             _taskbar.Flash();
             switch (n.Type)
@@ -194,6 +276,25 @@ namespace NightShift.UI.Shift
             if (remote != null && remote.HasKeyboard)
             {
                 remote.HandleShortcuts(keys);
+                return;
+            }
+
+            // モニターの切り替え（Ctrl+←/→、Ctrl+1〜3）
+            if (ShortcutInput.Ctrl && !ShortcutInput.TextFieldFocused && MonitorCount > 1)
+            {
+                if (Input.GetKeyDown(KeyCode.LeftArrow)) { ShowMonitor((CurrentMonitor + MonitorCount - 1) % MonitorCount); return; }
+                if (Input.GetKeyDown(KeyCode.RightArrow)) { ShowMonitor((CurrentMonitor + 1) % MonitorCount); return; }
+                for (int i = 0; i < MonitorCount; i++)
+                    if (Input.GetKeyDown(KeyCode.Alpha1 + i)) { ShowMonitor(i); return; }
+            }
+            if (CurrentMonitor != 0)
+            {
+                // サブモニターを見ている間は、そのモニターのウィンドウにキーを送る
+                var ws = _stations[CurrentMonitor - 1];
+                var wa = ws.Windows.Active;
+                if (wa != null && !PopupMenu.IsOpen)
+                    foreach (var kv in wa.Accelerators)
+                        if (Input.GetKeyDown(kv.Key) && !ShortcutInput.TextFieldFocused) { kv.Value?.Invoke(); break; }
                 return;
             }
 
@@ -407,7 +508,11 @@ namespace NightShift.UI.Shift
         }
 
         // ---------------- Helpers ----------------
-        public RetroWindow OpenWindow(WindowSpec spec, out bool created) => Windows.Open(spec, out created);
+        public RetroWindow OpenWindow(WindowSpec spec, out bool created)
+        {
+            ShowMonitor(0); // メインの業務画面はメインモニターに開く
+            return Windows.Open(spec, out created);
+        }
 
         public static List<KeyValuePair<string, List<MenuItem>>> StandardMenus(ShiftDesktop d, RetroWindow self = null, List<MenuItem> extraFile = null, List<MenuItem> view = null)
         {
@@ -477,7 +582,9 @@ namespace NightShift.UI.Shift
             tb._mail = mail;
             mail.Rect.Place(118, 3, 92, 24);
 
-            tb._buttons = UIFactory.Rect("Buttons", bg.transform).Stretch(216, 3, 330, 3);
+            tb._buttons = UIFactory.Rect("Buttons", bg.transform).Stretch(216, 3, 480, 3);
+            tb._monitors = UIFactory.Rect("Monitors", bg.transform);
+            tb._monitors.AnchorTopRight(328, 3, 140, 24);
 
             var tray = UIFactory.Image(bg.transform, RetroTheme.ThinSunken, Color.white, "Tray");
             tray.rectTransform.AnchorTopRight(3, 3, 320, 24);
@@ -525,6 +632,15 @@ namespace NightShift.UI.Shift
                 _map[w] = b;
                 x += 152;
             }
+        }
+
+        RectTransform _monitors;
+
+        public void RefreshMonitors()
+        {
+            if (_monitors == null) return;
+            foreach (Transform t in _monitors) Destroy(t.gameObject);
+            MonitorSwitcher.Build(_monitors, _d);
         }
 
         public void Flash() => _flash = 3f;

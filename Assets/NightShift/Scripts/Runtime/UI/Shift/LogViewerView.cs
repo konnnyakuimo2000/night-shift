@@ -154,6 +154,7 @@ namespace NightShift.UI.Shift
 
         void ShowDetail(LogEntry e)
         {
+            _d.SelectLog(e);
             _detail.text = e == null ? "" : $"[{TimeManager.FormatWithSeconds(e.Time)}] {e.Source} → {e.Destination}  利用者: {e.User}  種別: {e.EventType}  結果: {e.Result}\n{e.Detail}";
         }
 

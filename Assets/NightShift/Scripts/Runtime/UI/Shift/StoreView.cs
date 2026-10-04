@@ -132,6 +132,8 @@ namespace NightShift.UI.Shift
                 if (it.itemId == Data.Items.VaccineUpdate) career.vaccineDefinitionDay = _d.S.Day.dayNumber;
                 else if (it.itemId == Data.Items.TokenPack) career.extraTokensTonight += 20000;
                 else career.AddItem(it.itemId);
+                // 買った時点の定義ファイルが付いている
+                if (it.itemId == Data.Items.Vaccine) career.vaccineDefinitionDay = Mathf.Max(career.vaccineDefinitionDay, _d.S.Day.dayNumber);
                 career.Save();
                 AudioFx.Chime();
                 _w.SetStatus(0, $"「{it.displayName}」を注文しました。");

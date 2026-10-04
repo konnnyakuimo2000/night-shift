@@ -155,6 +155,7 @@ namespace NightShift.UI.Shift
         void RefreshDetail()
         {
             var e = _table.Selected as EventInstance;
+            if (e != _d.SelectedRequest) _d.SelectRequest(e);
             void Set(string k, string v) => _fields[k].text = v;
             if (e == null)
             {
