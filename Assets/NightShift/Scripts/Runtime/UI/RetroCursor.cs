@@ -13,9 +13,12 @@ namespace NightShift.UI
     {
         enum Kind { None, Arrow, Hand, Beam }
 
-        // 16x16 の絵を 1.25 倍（20x20）で表示
+        // 16x16 の絵を 1.25 倍（20x20）で描く。
+        // Windows のハードウェアカーソルは画像を標準サイズ（32x32）に合わせて拡大するため、
+        // 画像は 32x32 のまま、左上に 20x20 の絵を描いて残りを透明にする。
         const float Scale = 1.25f;
-        const int Size = 20;
+        const int Canvas = 32;
+        const int ArtSize = 20;
         static Texture2D _arrow, _hand, _beam;
         Kind _current = Kind.None;
         readonly List<RaycastResult> _hits = new List<RaycastResult>();
@@ -83,15 +86,15 @@ namespace NightShift.UI
 
         static Texture2D Make(string[] art)
         {
-            int n = Size;
+            int n = Canvas;
             var t = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
             t.hideFlags = HideFlags.DontSave;
-            var px = new Color[n * n];
+            var px = new Color[n * n]; // 既定は透明
             var navy = new Color(0.05f, 0.08f, 0.32f, 1f);
             var cyan = new Color(0.2f, 0.85f, 0.95f, 1f);
             var shadow = new Color(0f, 0f, 0f, 0.35f);
-            for (int ty = 0; ty < n; ty++)
-            for (int tx = 0; tx < n; tx++)
+            for (int ty = 0; ty < ArtSize; ty++)
+            for (int tx = 0; tx < ArtSize; tx++)
             {
                 int x = Mathf.Min(15, (int)(tx / Scale));
                 int y = Mathf.Min(15, (int)(ty / Scale)); // 上からの行
