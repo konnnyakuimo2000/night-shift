@@ -30,7 +30,8 @@ namespace NightShift.UI.Shift
                 M("4. ITサポート受付管理", () => HelpDeskView.Open(d, null), "helpdesk", Data.Features.HelpDesk),
                 M("5. セキュリティ情報", () => SecurityInfoView.Open(d), "shield", Data.Features.SecurityInfo),
                 M("   ネットワークマップ", () => NetworkMonitorView.Open(d), "globe", Data.Features.NetworkMap),
-                M("   サーバー運用管理", null, "server", Data.Features.ServerManagement),
+                M("   サーバー運用管理", () => ServerManagementView.Open(d), "server", Data.Features.ServerManagement),
+                M("   ユーザー管理", () => UserManagementView.Open(d), "people", Data.Features.UserManagement),
                 MenuItem.Sep(),
                 new MenuItem("   メール（業務連絡・マニュアル）", () => MailboxView.Open(d)) { Icon = "mail" },
                 new MenuItem("   パスワードの変更", () => PasswordChangeView.Open(d)) { Icon = "lock" },
@@ -128,8 +129,9 @@ namespace NightShift.UI.Shift
 
             UIFactory.Button(c, "メールを見る(B)", 304, 232, 136, 26, () => MailboxView.Open(_d), "mail");
             _w.Accelerators[KeyCode.B] = () => MailboxView.Open(_d);
-            var lockBtn = UIFactory.Button(c, "サーバー運用管理", 446, 232, 136, 26, null, "lock");
-            lockBtn.Interactable = _d.Unlocked(Data.Features.ServerManagement);
+            bool srvOk = _d.Unlocked(Data.Features.ServerManagement);
+            var lockBtn = UIFactory.Button(c, "サーバー運用管理", 446, 232, 136, 26, () => ServerManagementView.Open(_d), srvOk ? "server" : "lock");
+            lockBtn.Interactable = srvOk;
 
             var ng = UIFactory.Group(c, "お知らせ", 300, 266, 286, 134);
             _notice = UIFactory.Label(ng, "", 12, TextAnchor.UpperLeft);
@@ -306,6 +308,25 @@ namespace NightShift.UI.Shift
             var ok = UIFactory.Button(c, "OK", 120, 80, 90, 24, w.Close);
             w.Accelerators[KeyCode.Return] = w.Close;
             w.Accelerators[KeyCode.O] = w.Close;
+        }
+
+        /// <summary>はい／いいえの確認</summary>
+        public static void Confirm(ShiftDesktop d, string title, string message, System.Action onYes, string icon = "warning")
+        {
+            var w = d.OpenWindow(new WindowSpec
+            {
+                Id = "confirm:" + title, Title = title, Icon = icon, Width = 380, Height = 160, Minimizable = false, Maximizable = false,
+                Position = new Vector2(450, 270), ShowInTaskbar = false
+            }, out bool created);
+            if (!created) return;
+            var c = w.Content;
+            var ic = UIFactory.Image(c, RetroTheme.BigIcon(icon), Color.white, "Icon");
+            ic.rectTransform.Place(8, 10, 32, 32);
+            UIFactory.Label(c, message, 52, 6, 310, 70, 12, TextAnchor.MiddleLeft);
+            UIFactory.Button(c, "はい(Y)", 90, 88, 90, 24, () => { w.Close(); onYes?.Invoke(); });
+            UIFactory.Button(c, "いいえ(N)", 190, 88, 90, 24, w.Close);
+            w.Accelerators[KeyCode.Y] = () => { w.Close(); onYes?.Invoke(); };
+            w.Accelerators[KeyCode.N] = w.Close;
         }
     }
 }

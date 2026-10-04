@@ -256,7 +256,7 @@ namespace NightShift.Data
                 "認証サーバーへのログイン失敗が同じ接続元から連続 → 同じ接続元から正規の社員を名乗る VPN接続要求。拒否して接続元を遮断する。");
             t3.steps.Add(new ThreatStep { label = "ログイン失敗", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = c.auth, eventType = "AUTH", result = "FAIL", detail = "LOGIN FAIL (VPN)", repeat = 9, repeatIntervalMinutes = 0.35f });
             t3.steps.Add(new ThreatStep { label = "VPN接続要求", offsetMinutes = 5, kind = ThreatStepKind.ConnectionRequest, destination = c.auth, request = t3Req });
-            t3.steps.Add(new ThreatStep { label = "ログイン失敗（再開）", offsetMinutes = 12, kind = ThreatStepKind.LogEntry, destination = c.auth, eventType = "AUTH", result = "FAIL", detail = "LOGIN FAIL (VPN)", repeat = 6, repeatIntervalMinutes = 0.4f });
+            t3.steps.Add(new ThreatStep { label = "ログイン失敗（再開）", offsetMinutes = 14, kind = ThreatStepKind.LogEntry, compromiseUnlessBlocked = true, destination = c.auth, eventType = "AUTH", result = "FAIL", detail = "LOGIN FAIL (VPN)", repeat = 6, repeatIntervalMinutes = 0.4f });
             t3.stopOnBlock = false; // 拒否しても、遮断しない限り続く
             t3.compromiseLog = "VPN ログイン成功（総当たりで突破）";
 

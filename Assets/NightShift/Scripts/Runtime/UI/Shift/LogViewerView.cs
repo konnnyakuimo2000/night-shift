@@ -56,7 +56,11 @@ namespace NightShift.UI.Shift
 
             var dg = UIFactory.Group(c, "選択行", 0, 378, 800, 52);
             _detail = UIFactory.Label(dg, "", 12, TextAnchor.MiddleLeft);
-            _detail.rectTransform.Stretch();
+            _detail.rectTransform.Stretch(0, 0, 330, 0);
+            float bx = 470;
+            if (_d.Unlocked(Data.Features.FirewallBlock)) { UIFactory.Button(dg, "接続元を遮断", bx, 4, 104, 24, BlockSelected, "lock"); bx += 108; }
+            if (_d.Unlocked(Data.Features.Isolation)) { UIFactory.Button(dg, "端末を隔離", bx, 4, 104, 24, IsolateSelected, "pc"); bx += 108; }
+            if (_d.Unlocked(Data.Features.Report)) UIFactory.Button(dg, "報告", bx, 4, 104, 24, ReportSelected, "warning");
 
             _w.Accelerators[KeyCode.F] = Apply;
             _w.Accelerators[KeyCode.Return] = Apply;
@@ -113,6 +117,39 @@ namespace NightShift.UI.Shift
             _w.SetStatus(1, $"表示 {_filtered.Count} / 全 {_d.S.Logs.Entries.Count} 件");
             _seenCount = _d.S.Logs.Entries.Count;
             _dirty = false;
+        }
+
+        LogEntry SelectedEntry => _table.Selected as LogEntry;
+
+        void BlockSelected()
+        {
+            var e = SelectedEntry;
+            if (e == null) { AudioFx.Error(); return; }
+            _w.SetStatus(0, _d.S.Security.Block(e.Source));
+        }
+
+        /// <summary>選択行の接続元IPから、社員の登録端末を探して隔離する</summary>
+        void IsolateSelected()
+        {
+            var e = SelectedEntry;
+            Data.EmployeeData emp = null;
+            if (e != null) foreach (var x in _d.S.Employees.All) if (_d.S.Employees.GetIp(x) == e.Source) emp = x;
+            if (emp == null) { AudioFx.Error(); _w.SetStatus(0, "選択行の接続元は社員の端末ではありません。"); return; }
+            _w.SetStatus(0, _d.S.Security.Isolate(emp.deviceId));
+        }
+
+        void ReportSelected()
+        {
+            var e = SelectedEntry;
+            if (e == null) { AudioFx.Error(); return; }
+            bool suspicious = _d.S.Security.IsHostile(e.Source) || IsInfectedSource(e.Source) || e.Result == "SUSPICIOUS";
+            _w.SetStatus(0, _d.S.Security.Report($"不審なログ（{e.Source} / {e.EventType} {e.Result}）", suspicious));
+        }
+
+        bool IsInfectedSource(string ip)
+        {
+            foreach (var x in _d.S.Employees.All) if (_d.S.Employees.GetIp(x) == ip && _d.S.Security.IsInfected(x.deviceId)) return true;
+            return false;
         }
 
         void ShowDetail(LogEntry e)

@@ -26,6 +26,8 @@ namespace NightShift.Data
         public string detail;
         [Min(1)] public int repeat = 1;
         public float repeatIntervalMinutes = 0.5f;
+        [Tooltip("この時点で攻撃元が遮断されていなければ、攻撃が成功（被害）")]
+        public bool compromiseUnlessBlocked;
         [Tooltip("ConnectionRequest の場合の定義")]
         public EventDefinition request;
     }

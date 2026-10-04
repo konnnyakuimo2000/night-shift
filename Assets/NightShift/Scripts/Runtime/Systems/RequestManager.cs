@@ -32,6 +32,20 @@ namespace NightShift.Systems
             e.ExpectedReason = reason;
             _s.Evaluation.RegisterRequest(e);
             _pending.Add(e);
+            if (e.IsMalicious) _s.Security.MarkHostile(e.SourceIp);
+
+            // 遮断中の接続元・停止中のアカウント・隔離した端末からの要求は自動的に拒否（通知しない）
+            string auto = _s.Security.IsBlocked(e.SourceIp) ? "遮断中の接続元"
+                : e.Employee != null && _s.Security.IsSuspended(e.Employee.employeeId) ? "停止中のアカウント"
+                : _s.Security.IsIsolated(e.Device) ? "隔離中の端末" : null;
+            if (auto != null)
+            {
+                _s.Logs.Add(e.GeneratedTime, e.SourceIp, e.DestinationLabel, UserLabel(e), "FW", "DENY", $"{e.RequestId} 自動拒否（{auto}）");
+                e.AutoDecided = true;
+                Created?.Invoke(e);
+                Decide(e, PlayerAction.Block);
+                return;
+            }
 
             _s.Logs.Add(e.GeneratedTime, e.SourceIp, e.DestinationLabel, UserLabel(e), "CONN-REQ", "PENDING", $"{e.RequestId} {e.AccessType} / {e.Device}");
             _s.Network.Emit(e.Zone == SourceZone.External, e.Destination, TrafficResult.Pending, e.RequestId);

@@ -249,6 +249,8 @@ namespace NightShift.Events
                 RelatedIp = def.sourceIpPrefix + (last + _s.Rng.Next(1, 4))
             };
             _runs.Add(run);
+            _s.Security.MarkHostile(run.AttackerIp);
+            _s.Security.MarkHostile(run.RelatedIp);
             foreach (var step in def.steps)
             {
                 for (int i = 0; i < System.Math.Max(1, step.repeat); i++)
@@ -272,6 +274,18 @@ namespace NightShift.Events
             if (run.Stopped) return;
             string src = step.useRelatedSource ? run.RelatedIp : run.AttackerIp;
             float now = _s.Time.CurrentMinute;
+            bool fw = _s.Security.IsBlocked(src);
+            if (step.compromiseUnlessBlocked && index == 0 && !fw && !run.Compromised)
+            {
+                run.Compromised = true;
+                _s.AddDamage(run.Definition.compromiseLog);
+            }
+            if (fw && step.kind != ThreatStepKind.ConnectionRequest)
+            {
+                _s.Network.Emit(true, step.destination, TrafficResult.Denied);
+                _s.Logs.Add(now, src, step.destination != null ? step.destination.nodeId : "-", "-", "FW", "DENY", "遮断中の接続元");
+                return;
+            }
             switch (step.kind)
             {
                 case ThreatStepKind.Traffic:

@@ -28,6 +28,8 @@ namespace NightShift.Systems
         public int HelpDeskCorrect, HelpDeskIncorrect, RemoteResolved, RemoteFailed, Unresolved;
         public int TicketsTotal;
         public int RemoteReportsWrong;
+        // 本番業務: 遮断・隔離・停止・報告の正誤、被害の数
+        public int SecurityActionsCorrect, SecurityActionsWrong, DamageCount;
         readonly List<float> _requestResponseTimes = new List<float>();
         readonly List<float> _ticketResponseTimes = new List<float>();
 
@@ -102,6 +104,7 @@ namespace NightShift.Systems
             int blockSeen = CorrectBlock + MaliciousAllow + PolicyViolation + ExpiredBlock;
             float security = blockSeen == 0 ? 100 : 100f * (CorrectBlock + ExpiredBlock * 0.4f) / blockSeen;
             security -= MaliciousAllow * 20 + PolicyViolation * 8;
+            security += SecurityActionsCorrect * 4 - SecurityActionsWrong * 8 - DamageCount * 25;
 
             // ACCURACY: すべての判断の正確さ（期限切れは不正解扱い）
             int decided = CorrectAllow + CorrectBlock + FalsePositive + MaliciousAllow + PolicyViolation + ExpiredLegit + ExpiredBlock;
@@ -144,11 +147,14 @@ namespace NightShift.Systems
             S("Remote Tickets Failed", RemoteFailed);
             S("Unresolved Tickets", Unresolved);
             S("Average Response Time", $"{avg:0.0} min");
+            if (SecurityActionsCorrect + SecurityActionsWrong > 0) S("Security Actions (OK / NG)", $"{SecurityActionsCorrect} / {SecurityActionsWrong}");
+            if (DamageCount > 0) S("Incidents", DamageCount);
             return r;
         }
 
         string SecurityComment()
         {
+            if (DamageCount > 0) return $"被害が {DamageCount} 件発生";
             if (MaliciousAllow > 0) return $"不正な接続を {MaliciousAllow} 件許可";
             if (PolicyViolation > 0) return $"ルール違反の接続を {PolicyViolation} 件許可";
             if (ExpiredBlock > 0) return $"不審な要求の放置 {ExpiredBlock} 件";

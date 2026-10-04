@@ -18,7 +18,8 @@ namespace NightShift.UI.Shift
         RetroWindow _w;
         TableView _table;
         bool _showProcessed;
-        RetroButton _tabPending, _tabProcessed, _allow, _block;
+        RetroButton _tabPending, _tabProcessed, _allow, _block, _fwBtn, _reportBtn;
+        Text _hint;
         readonly Dictionary<string, Text> _fields = new Dictionary<string, Text>();
         bool _dirty = true;
 
@@ -69,8 +70,8 @@ namespace NightShift.UI.Shift
             F("dest", "接続先:", 0, 160); F("access", "利用システム:", 270, 180); y += 26;
             F("perm", "必要な権限:", 0, 160); F("state", "状態:", 270, 180); y += 26;
             F("decided", "処理時刻:", 0, 160); y += 30;
-            var hint = UIFactory.Label(dg, "※ 利用者・端末・権限は「社員情報の検索・参照」で確認してください。", 0, y, 540, 18, 11);
-            hint.color = RetroTheme.Shadow;
+            _hint = UIFactory.Label(dg, DefaultHint, 0, y, 540, 36, 11, TextAnchor.UpperLeft);
+            _hint.color = RetroTheme.Shadow;
 
             var ag = UIFactory.Group(c, "処理", 566, 236, 214, 196);
             _allow = UIFactory.Button(ag, $"接続を許可 [{Core.GameSettings.KeyLabel(Core.GameSettings.Allow)}]", 0, 0, 196, 32, () => Decide(PlayerAction.Allow), "check");
@@ -78,6 +79,10 @@ namespace NightShift.UI.Shift
             UIFactory.Separator(ag, 0, 80, 196);
             UIFactory.Button(ag, $"社員情報を参照 [{Core.GameSettings.KeyLabel(Core.GameSettings.Lookup)}]", 0, 90, 196, 26, LookupEmployee, "people");
             UIFactory.Button(ag, "閉じる(C)", 0, 122, 196, 26, _w.RequestClose, "exit");
+            if (_d.Unlocked(Data.Features.FirewallBlock))
+                _fwBtn = UIFactory.Button(ag, "接続元を遮断", 0, 154, 96, 24, BlockSource, "lock");
+            if (_d.Unlocked(Data.Features.Report))
+                _reportBtn = UIFactory.Button(ag, "報告", 100, 154, 96, 24, ReportSelected, "warning");
 
             if (_d.Unlocked(Data.Features.NetworkMap)) _w.Accelerators[KeyCode.M] = () => NetworkMonitorView.Open(_d);
             if (_d.Unlocked(Data.Features.SystemLog)) _w.Accelerators[KeyCode.L] = () => LogViewerView.Open(_d, null);
@@ -123,8 +128,8 @@ namespace NightShift.UI.Shift
             switch (e.State)
             {
                 case EventState.Pending: return "保留";
-                case EventState.Allowed: return "許可";
-                case EventState.Blocked: return "拒否";
+                case EventState.Allowed: return e.AutoDecided ? "自動許可" : "許可";
+                case EventState.Blocked: return e.AutoDecided ? "自動拒否" : "拒否";
                 case EventState.Expired: return "期限切れ";
                 default: return "-";
             }
@@ -170,6 +175,26 @@ namespace NightShift.UI.Shift
             Set("decided", e.State == EventState.Pending ? "-" : TimeManager.Format(e.DecidedTime > 0 ? e.DecidedTime : e.GeneratedTime + e.ResponseTime));
             bool pending = e.State == EventState.Pending;
             _allow.Interactable = _block.Interactable = pending;
+            _hint.text = string.IsNullOrEmpty(e.Note) ? (e.AutoDecided ? "※ この要求は自動的に処理されました。" : DefaultHint) : "備考: " + e.Note;
+            _hint.color = string.IsNullOrEmpty(e.Note) ? RetroTheme.Shadow : RetroTheme.Text;
+            if (_fwBtn != null) _fwBtn.Interactable = !_d.S.Security.IsBlocked(e.SourceIp);
+            if (_reportBtn != null) _reportBtn.Interactable = true;
+        }
+
+        const string DefaultHint = "※ 利用者・端末・権限は「社員情報の検索・参照」で確認してください。";
+
+        void BlockSource()
+        {
+            if (!(_table.Selected is EventInstance e)) { AudioFx.Error(); return; }
+            _w.SetStatus(0, _d.S.Security.Block(e.SourceIp));
+            _dirty = true;
+        }
+
+        void ReportSelected()
+        {
+            if (!(_table.Selected is EventInstance e)) { AudioFx.Error(); return; }
+            _w.SetStatus(0, _d.S.Security.Report($"不審な接続要求 {e.RequestId}（{e.SourceIp} / {e.DisplayUser}）", e.IsMalicious));
+            if (_reportBtn != null) _reportBtn.Interactable = false;
         }
 
         /// <summary>

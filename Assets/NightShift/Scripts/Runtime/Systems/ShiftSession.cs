@@ -39,6 +39,8 @@ namespace NightShift.Systems
         public EventFactory Factory { get; }
         public EventDirector Director { get; }
         public MailManager Mail { get; }
+        public SecurityOps Security { get; }
+        public ServerOps Servers { get; }
 
         public IShiftUi Ui { get; set; }
 
@@ -55,6 +57,7 @@ namespace NightShift.Systems
         public void AddDamage(string what, bool fatal = false)
         {
             Damage.Add(what);
+            Evaluation.DamageCount++;
             if (fatal && string.IsNullOrEmpty(FatalIncident)) FatalIncident = what;
             Logs.Add(Time.CurrentMinute, "SECURITY", "-", "-", "INCIDENT", fatal ? "CRITICAL" : "DAMAGE", what);
             Notifications.Notify(NotificationType.SecurityAlert, fatal ? "重大インシデント" : "被害の発生", what, Time.CurrentMinute);
@@ -127,6 +130,8 @@ namespace NightShift.Systems
             Factory = new EventFactory(this);
             Director = new EventDirector(this);
             Mail = new MailManager();
+            Security = new SecurityOps(this);
+            Servers = new ServerOps(this);
             // 受信トレイ: これまでの業務連絡（既読）と今日の業務連絡（未読）
             for (int n = 1; n <= day.dayNumber; n++)
             {
@@ -157,6 +162,7 @@ namespace NightShift.Systems
                         Director.Tick(now, delta);
                         Requests.Tick(now);
                         HelpDesk.Tick(now, delta);
+                        Servers.Tick(now);
                     }
                     if (!EndWarningIssued && now >= Day.endWarningMinute)
                     {
