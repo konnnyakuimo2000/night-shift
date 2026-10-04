@@ -353,11 +353,14 @@ namespace NightShift.Core
             if (career.ConsecutiveRank("D", n - 1) == 2)
                 Mail("WARN-GO1-" + n, "情報システム部 課長 森田", "【最終警告】業務評価について",
                     "2夜続けて、業務評価が最低でした。\n<b>次も同じ評価なら、契約は更新しません。</b>");
-            if (career.accountCompromised == 1 && !career.HasFlag("MAILED_GO3"))
+            if (career.accountCompromised >= 1 && !career.HasFlag("MAILED_GO3_" + career.accountCompromised))
             {
-                career.SetFlag("MAILED_GO3");
-                Mail("WARN-GO3-" + n, "情報システム部 セキュリティ担当", "【警告】あなたのアカウントが不正に使われました",
-                    "あなたのIDが、攻撃に使われました。パスワードを直ちに変更してください。\n<b>次に同じことが起きた場合は、相応の処分を検討します。</b>\n付箋にパスワードを書いていないか、確認してください。");
+                career.SetFlag("MAILED_GO3_" + career.accountCompromised);
+                bool last = career.accountCompromised >= 2;
+                Mail("WARN-GO3-" + n, "情報システム部 セキュリティ担当", last ? "【最終警告】あなたのアカウントが再び不正に使われました" : "【警告】あなたのアカウントが不正に使われました",
+                    "あなたのIDが、攻撃に使われました。パスワードを直ちに変更してください。\n" +
+                    (last ? "<b>次に同じことが起きた場合は、契約を解除し、警察に相談します。</b>" : "<b>同じことが続く場合は、相応の処分を検討します。</b>") +
+                    "\n付箋にパスワードを書いていないか、確認してください。");
             }
             if (career.ConsecutiveOvertime(n - 1) >= 5)
                 Mail("WARN-GO4-" + n, "カスタマーサポート部 中村", "大丈夫ですか？",

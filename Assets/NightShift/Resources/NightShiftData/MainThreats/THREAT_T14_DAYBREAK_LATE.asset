@@ -37,5 +37,5 @@ MonoBehaviour:
   stopOnBlock: 1
   chance: 1
   adaptive: 1
-  maxAttempts: 6
+  maxAttempts: 4
   fatalIfAllowed: 0

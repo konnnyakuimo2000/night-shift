@@ -43,7 +43,7 @@ MonoBehaviour:
   accessType: "\u7BA1\u7406\u30ED\u30B0\u30A4\u30F3"
   isMalicious: 1
   expectedAction: 0
-  timeoutMinutes: 22
+  timeoutMinutes: 28
   preferWhileRemoteActive: 0
   notifyAsSecurityAlert: 1
   logEventType: 

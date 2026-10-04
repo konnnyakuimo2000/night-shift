@@ -135,6 +135,7 @@ namespace NightShift.Events
             else if (e.State == EventState.Allowed && e.IsMalicious)
             {
                 run.Compromised = true;
+                run.RequestAllowed = true;
                 _s.Logs.Add(_s.Time.CurrentMinute + 0.2f, e.SourceIp, e.DestinationLabel, e.DisplayUser, "AUTH", "SUCCESS", def.compromiseLog);
                 if (def.fatalIfAllowed) _s.AddDamage(def.compromiseLog, true);
                 else if (def.adaptive) _s.AddDamage(def.compromiseLog);

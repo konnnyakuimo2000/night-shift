@@ -18,7 +18,7 @@ MonoBehaviour:
   clockInDateLabel: "1998/06/22 (\u6708)"
   startMinute: 0
   endMinute: 360
-  realSecondsPerGameMinute: 1.5
+  realSecondsPerGameMinute: 1.8
   endWarningMinute: 350
   graceRealSeconds: 25
   requestsExpire: 1
@@ -78,9 +78,9 @@ MonoBehaviour:
   backgroundLogChance: 0.25
   backgroundActivityScale: 1
   randomEvents: 1
-  requestCount: 24
+  requestCount: 22
   violationRatio: 0.4
-  burstChance: 0.3
+  burstChance: 0.22
   routinePool:
   - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
   - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}

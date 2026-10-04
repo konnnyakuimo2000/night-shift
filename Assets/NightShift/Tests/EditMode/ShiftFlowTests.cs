@@ -96,6 +96,37 @@ namespace NightShift.Tests
         }
 
         [Test]
+        public void AdminTakeover_IsFatalOnlyIfAllowedAndNotSuspended()
+        {
+            var def = TestData.FindThreat(TestData.Day(19), "T10_ADMIN_TAKEOVER");
+
+            // 拒否した（停電は起きうるが、致命的ではない）
+            var s1 = TestData.Session(19);
+            s1.Director.Threats.Schedule(s1.Director.Scheduler, def, 0);
+            AdvanceTo(s1, 1);
+            s1.Requests.Decide(s1.Requests.Pending[0], PlayerAction.Block);
+            AdvanceTo(s1, 65);
+            Assert.IsNull(s1.FatalIncident, "拒否していれば致命的にはならない");
+
+            // 許可して、アカウントを止めなかった → 致命的
+            var s2 = TestData.Session(19);
+            s2.Director.Threats.Schedule(s2.Director.Scheduler, def, 0);
+            AdvanceTo(s2, 1);
+            s2.Requests.Decide(s2.Requests.Pending[0], PlayerAction.Allow);
+            AdvanceTo(s2, 65);
+            Assert.IsNotNull(s2.FatalIncident);
+
+            // 許可しても、アカウントを止めれば防げる
+            var s3 = TestData.Session(19);
+            var run = s3.Director.Threats.Schedule(s3.Director.Scheduler, def, 0);
+            AdvanceTo(s3, 1);
+            s3.Requests.Decide(s3.Requests.Pending[0], PlayerAction.Allow);
+            s3.Security.Suspend(run.Victim);
+            AdvanceTo(s3, 65);
+            Assert.IsNull(s3.FatalIncident);
+        }
+
+        [Test]
         public void WebDefacement_PreventedByKillingTheProcess()
         {
             var def = TestData.FindThreat(TestData.Day(17), "T9_WEB_DEFACE");

@@ -43,7 +43,7 @@ MonoBehaviour:
   accessType: "VPN\u63A5\u7D9A"
   isMalicious: 0
   expectedAction: 0
-  timeoutMinutes: 22
+  timeoutMinutes: 28
   preferWhileRemoteActive: 0
   notifyAsSecurityAlert: 0
   logEventType: 

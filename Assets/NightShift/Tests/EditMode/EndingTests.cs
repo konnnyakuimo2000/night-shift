@@ -91,20 +91,22 @@ namespace NightShift.Tests
         }
 
         [Test]
-        public void GameOver_ThreeMaliciousAllowsInOneNight_IsGo2()
+        public void GameOver_TooManyMaliciousAllowsInOneNight_IsGo2()
         {
             var s = TestData.Session(20);
-            s.Evaluation.MaliciousAllow = 3;
+            s.Evaluation.MaliciousAllow = EndingResolver.MaliciousLimit - 1;
+            Assert.IsNull(EndingResolver.CheckGameOver(new CareerRecord(), s));
+            s.Evaluation.MaliciousAllow = EndingResolver.MaliciousLimit;
             Assert.AreEqual("GO2", EndingResolver.CheckGameOver(new CareerRecord(), s).Id);
         }
 
         [Test]
-        public void GameOver_SecondAccountCompromise_IsGo3()
+        public void GameOver_ThirdAccountCompromise_IsGo3()
         {
-            var c = new CareerRecord { accountCompromised = 2 };
+            var c = new CareerRecord { accountCompromised = 3 };
             Assert.AreEqual("GO3", EndingResolver.CheckGameOver(c, TestData.Session(20)).Id);
-            c.accountCompromised = 1;
-            Assert.IsNull(EndingResolver.CheckGameOver(c, TestData.Session(20)), "1回目は警告だけ");
+            c.accountCompromised = 2;
+            Assert.IsNull(EndingResolver.CheckGameOver(c, TestData.Session(20)), "2回目までは警告だけ");
         }
 
         [Test]

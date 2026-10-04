@@ -65,7 +65,7 @@ MonoBehaviour:
     helpDesk: {fileID: 0}
   compromiseLog: "VPN \u30ED\u30B0\u30A4\u30F3\u6210\u529F\uFF08\u7DCF\u5F53\u305F\u308A\u3067\u7A81\u7834\uFF09"
   stopOnBlock: 0
-  chance: 1
+  chance: 0.6
   adaptive: 0
   maxAttempts: 4
   fatalIfAllowed: 0

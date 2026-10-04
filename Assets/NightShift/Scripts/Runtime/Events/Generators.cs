@@ -214,6 +214,7 @@ namespace NightShift.Events
         public EmployeeData Victim;     // 被害を受ける社員（感染PC・乗っ取り・持ち出しなど）
         public int Attempts;            // 自律型: 経路を変えた回数
         public string C2Ip;             // 感染PCの通信先
+        public bool RequestAllowed;     // シナリオの悪意ある要求を、プレイヤーが許可した
     }
 
     /// <summary>

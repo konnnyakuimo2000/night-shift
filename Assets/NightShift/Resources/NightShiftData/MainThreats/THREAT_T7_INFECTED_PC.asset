@@ -92,7 +92,7 @@ MonoBehaviour:
     helpDesk: {fileID: 0}
   compromiseLog: "\u7BA1\u7406\u30B3\u30F3\u30BD\u30FC\u30EB\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u306B\u6210\u529F"
   stopOnBlock: 1
-  chance: 0.6
+  chance: 0.4
   adaptive: 0
   maxAttempts: 4
   fatalIfAllowed: 0

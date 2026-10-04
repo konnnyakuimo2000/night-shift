@@ -50,13 +50,14 @@ namespace NightShift.Core
             // 会社の信用（本番業務のみ）
             if (day.dayNumber >= DefaultDataFactory.MainStartDay)
             {
+                // 1夜の増減は -15〜+8 程度に収める（上級者は信用を保てる、平均的なら横ばい、ミスが多いと倒産へ）
                 int delta = 0;
-                delta -= 3 * ev.MaliciousAllow;
-                delta -= ev.ExpiredLegit + ev.FalsePositive + ev.Unresolved;
-                delta -= 8 * s.Damage.Count;
+                delta -= 2 * ev.MaliciousAllow;
+                delta -= (ev.ExpiredLegit + ev.FalsePositive + ev.Unresolved + 2) / 4;
+                delta -= 2 * System.Math.Min(3, s.Damage.Count);
                 if (!n.damaged) delta += 2;
-                if (result.Rank == "S") delta += 2;
-                delta += s.CorrectReports;
+                delta += result.Rank == "S" ? 3 : result.Rank == "A" ? 2 : result.Rank == "B" ? 1 : result.Rank == "D" ? -1 : 0;
+                delta += System.Math.Min(3, s.CorrectReports);
                 n.trustDelta = delta;
                 career.AddTrust(delta);
             }

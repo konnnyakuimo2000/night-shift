@@ -15,21 +15,24 @@ namespace NightShift.Core
             public string Reason;
         }
 
+        /// <summary>1夜でこれだけ不正な接続を許可すると重大インシデント（GO2）</summary>
+        public const int MaliciousLimit = 4;
+
         public static GameOver CheckGameOver(CareerRecord career, ShiftSession s)
         {
             int day = s.Day.dayNumber;
             if (day < Data.DefaultDataFactory.MainStartDay || day >= Data.DefaultDataFactory.LastDay) return null;
-            if (!string.IsNullOrEmpty(s.FatalIncident) || s.Evaluation.MaliciousAllow >= 3)
+            if (!string.IsNullOrEmpty(s.FatalIncident) || s.Evaluation.MaliciousAllow >= MaliciousLimit)
                 return new GameOver
                 {
                     Id = "GO2", Title = "重大インシデント",
                     Reason = !string.IsNullOrEmpty(s.FatalIncident) ? $"DAY{day}: {s.FatalIncident}。" : $"DAY{day}: 一晩で不正な接続を {s.Evaluation.MaliciousAllow} 件許可し、社内システムが攻撃者に乗っ取られた。"
                 };
-            if (career.accountCompromised >= 2)
+            if (career.accountCompromised >= 3)
                 return new GameOver
                 {
                     Id = "GO3", Title = "踏み台",
-                    Reason = $"DAY{day}: 自分のIDが2度にわたって攻撃に使われた。" + (GameManager.Instance != null && GameManager.Instance.Account.WrittenDown ? "モニターに貼った付箋が証拠として押収された。" : "")
+                    Reason = $"DAY{day}: 自分のIDが3度にわたって攻撃に使われた。" + (GameManager.Instance != null && GameManager.Instance.Account.WrittenDown ? "モニターに貼った付箋が証拠として押収された。" : "")
                 };
             if (career.ConsecutiveRank("D", day) >= 3)
                 return new GameOver { Id = "GO1", Title = "契約打ち切り", Reason = $"DAY{day}: 総合評価 D が3夜続いた。「明日から来なくていい」。" };

@@ -83,7 +83,7 @@ namespace NightShift.Data
                 var e = b.Add(ScriptableObject.CreateInstance<EventDefinition>(), "MainEvents", "EVT_" + id);
                 e.eventId = id; e.minimumDay = minDay; e.maximumDay = LastDay;
                 e.triggerWindow = new Vector2(0, 360);
-                e.timeoutMinutes = 22;
+                e.timeoutMinutes = 28;
                 return e;
             }
             EventDefinition routine = c.routine, routineVpn = c.routineVpn;
@@ -258,6 +258,7 @@ namespace NightShift.Data
             t3.steps.Add(new ThreatStep { label = "VPN接続要求", offsetMinutes = 5, kind = ThreatStepKind.ConnectionRequest, destination = c.auth, request = t3Req });
             t3.steps.Add(new ThreatStep { label = "ログイン失敗（再開）", offsetMinutes = 14, kind = ThreatStepKind.LogEntry, compromiseUnlessBlocked = true, destination = c.auth, eventType = "AUTH", result = "FAIL", detail = "LOGIN FAIL (VPN)", repeat = 6, repeatIntervalMinutes = 0.4f });
             t3.stopOnBlock = false; // 拒否しても、遮断しない限り続く
+            t3.chance = 0.6f;
             t3.compromiseLog = "VPN ログイン成功（総当たりで突破）";
 
             ThreatStep Script(string label, float offset, string script, int repeat = 1, float interval = 1f, HelpDeskDefinition hd = null) =>
@@ -265,13 +266,13 @@ namespace NightShift.Data
 
             // T5 担当者宛ての偽メール（DAY13〜）
             var t5 = Threat("T5_PHISHING", 13, 25, new Vector2(30, 280), "198.51.100.", "情報システム部を名乗る偽メール。差出人のアドレスが社内と違う。報告すれば正解、入力すれば自分のパスワードが盗まれる。");
-            t5.chance = 0.5f;
+            t5.chance = 0.35f;
             t5.steps.Add(Script("偽メール", 0, "PHISH_MAIL"));
             var t5att = Threat("T5_ATTACHMENT", 13, LastDay, new Vector2(30, 300), "198.51.100.", "総務部を名乗る偽メール。添付 給与明細.txt.exe を開くとワークステーションが感染してブルースクリーン（V4 BLUESTONE）。");
-            t5att.chance = 0.35f;
+            t5att.chance = 0.2f;
             t5att.steps.Add(Script("添付付きの偽メール", 0, "PHISH_MAIL:ATTACH"));
             var t5ai = Threat("T5_AI_PHISHING", 26, LastDay, new Vector2(30, 280), "198.51.100.", "攻撃支援AIが作る、自然な文面の偽メール。アドレスが紛らわしい（exarnple）。");
-            t5ai.chance = 0.7f;
+            t5ai.chance = 0.4f;
             t5ai.steps.Add(Script("偽メール（AI）", 0, "PHISH_MAIL:AI"));
 
             // T7 感染した社員PC（DAY16〜）: 定期通信 → 「PCが重い」の問い合わせ → 30分で周りに広がる
@@ -287,7 +288,7 @@ namespace NightShift.Data
             hdInfected.explanation = "感染が疑われるPCは、まずネットワークから切り離す（Wi-Fi を切る・隔離する）。再起動はしない。";
             hdInfected.sourceNote = "令和4年度 ITパスポート試験 問100（改変）";
             var t7 = Threat("T7_INFECTED_PC", 16, LastDay, new Vector2(30, 250), "203.0.113.", "社員PCが感染し、社外の指令サーバーと定期通信。30分以内に隔離しないと周りのPCに広がる（V3 NIGHTCRY）。");
-            t7.chance = 0.6f;
+            t7.chance = 0.4f;
             t7.steps.Add(Script("被害者", 0, "PICK_VICTIM"));
             t7.steps.Add(Script("感染", 0.1f, "INFECT:V3"));
             t7.steps.Add(Script("定期通信", 1, "BEACON", 10, 3f));
@@ -296,14 +297,14 @@ namespace NightShift.Data
 
             // T8 内部からの大量持ち出し（DAY18〜）: 報告すれば防げる
             var t8 = Threat("T8_EXFILTRATION", 18, LastDay, new Vector2(40, 260), "10.10.", "権限も端末も正しい社員が、深夜に共有ファイルを大量に読む。ログを報告（または停止・隔離）すれば防げる。");
-            t8.chance = 0.5f;
+            t8.chance = 0.35f;
             t8.steps.Add(Script("被害者", 0, "PICK_VICTIM:FILE"));
             t8.steps.Add(Script("大量の読み込み", 0.5f, "FILE_READ", 14, 0.5f));
             t8.steps.Add(Script("持ち出し", 22, "EXFIL_CHECK"));
 
             // T9 公開Webの改ざん（DAY17〜）: 不審なプロセスを止めれば防げる
             var t9 = Threat("T9_WEB_DEFACE", 17, LastDay, new Vector2(40, 260), "192.0.2.", "公開Webの探索 → 不審なファイルの書き込み → 25分後にページが書き換えられる（V2 GARBLE）。");
-            t9.chance = 0.5f;
+            t9.chance = 0.35f;
             t9.steps.Add(new ThreatStep { label = "探索", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = c.web, eventType = "HTTP", result = "404", detail = "GET /cgi-bin/upload.cgi|GET /admin/upload/|GET /htdocs/", repeat = 3, repeatIntervalMinutes = 0.5f });
             t9.steps.Add(Script("不審なプロセス", 4, "WEB_IMPLANT"));
             t9.steps.Add(Script("改ざん", 29, "WEB_DEFACE_CHECK"));
@@ -322,7 +323,7 @@ namespace NightShift.Data
             t10Req.isMalicious = true;
             t10Req.timeoutMinutes = 30;
             var t10 = Threat("T10_ADMIN_TAKEOVER", 19, LastDay, new Vector2(40, 240), "10.10.", "退勤しているはずの管理者のIDで管理ログイン。許可したうえにアカウントを止めないと致命的（GO2）。UPS の設定変更は停電（V5 REDACT）の兆候。");
-            t10.chance = 0.45f;
+            t10.chance = 0.3f;
             t10.stopOnBlock = false;
             t10.compromiseLog = "管理者アカウントが乗っ取られた";
             t10.steps.Add(new ThreatStep { label = "管理ログイン要求", offsetMinutes = 0, kind = ThreatStepKind.ConnectionRequest, destination = c.admin, request = t10Req });
@@ -332,7 +333,7 @@ namespace NightShift.Data
 
             // T11 身代金ウイルス（DAY20〜）: FILE WRITE の連続。30分以内に隔離しないと致命的（GO2）
             var t11 = Threat("T11_RANSOMWARE", 20, LastDay, new Vector2(40, 280), "203.0.113.", "1台の端末からファイルの書き換え（.briar）が連続。30分以内に隔離しないと全社のファイルが暗号化される（V6 BRIAR ROSE・致命的）。");
-            t11.chance = 0.4f;
+            t11.chance = 0.25f;
             t11.steps.Add(Script("被害者", 0, "PICK_VICTIM"));
             t11.steps.Add(Script("感染", 0.1f, "INFECT:V6"));
             t11.steps.Add(Script("書き換え", 1, "RANSOM_WRITE", 30, 1f));
@@ -340,7 +341,7 @@ namespace NightShift.Data
 
             // T13 陽動（DAY25〜）: 問い合わせを一斉に出し、その間に管理サーバーへの要求
             var t13 = Threat("T13_DIVERSION", 25, LastDay, new Vector2(60, 260), "192.0.2.", "問い合わせが一斉に届き、その隙に社外から管理サーバーへの要求。セキュリティ警告を先に。");
-            t13.chance = 0.6f;
+            t13.chance = 0.4f;
             t13.steps.Add(Script("問い合わせの殺到", 0, "DIVERSION"));
             t13.steps.Add(new ThreatStep { label = "本命の要求", offsetMinutes = 1.5f, kind = ThreatStepKind.ConnectionRequest, destination = c.admin, request = vExtAdmin });
 
@@ -358,13 +359,13 @@ namespace NightShift.Data
             t14Req.timeoutMinutes = 25;
             var t14 = Threat("T14_DAYBREAK", 28, LastDay, new Vector2(20, 60), "198.51.100.", "自律型攻撃AI DAYBREAK。拒否されると数分後に別の範囲から再挑戦。範囲ごと遮断すれば止まる。");
             t14.adaptive = true;
-            t14.maxAttempts = 6;
+            t14.maxAttempts = 4;
             t14.compromiseLog = "自律型攻撃AIに侵入された（DAYBREAK）";
             t14.steps.Add(new ThreatStep { label = "探索", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = c.auth, eventType = "AUTH", result = "FAIL", detail = "LOGIN FAIL (VPN)", repeat = 4, repeatIntervalMinutes = 0.3f });
             t14.steps.Add(new ThreatStep { label = "侵入の試み", offsetMinutes = 2, kind = ThreatStepKind.ConnectionRequest, destination = c.auth, request = t14Req });
             var t14b = Threat("T14_DAYBREAK_LATE", 28, LastDay, new Vector2(200, 260), "203.0.113.", "夜の後半、もう一度別の経路から。");
             t14b.adaptive = true;
-            t14b.maxAttempts = 6;
+            t14b.maxAttempts = 4;
             t14b.compromiseLog = t14.compromiseLog;
             var t14AdminReq = Ev("T14_AUTONOMOUS_ADMIN", 28);
             t14AdminReq.category = EventCategory.Threat;
@@ -450,7 +451,7 @@ namespace NightShift.Data
                 d.dayNumber = n; d.title = title; d.weekLabel = week;
                 d.dateLabel = DateLabel(date); d.clockInDateLabel = DateLabel(date.AddDays(-1));
                 d.startMinute = 0; d.endMinute = 360; d.endWarningMinute = 350;
-                d.realSecondsPerGameMinute = 1.5f;
+                d.realSecondsPerGameMinute = 1.8f; // 1夜 約11分
                 d.graceRealSeconds = 25f;
                 d.requestsExpire = true;
                 d.tutorialGateUntilMinute = 0;
@@ -491,7 +492,7 @@ namespace NightShift.Data
             string all = $"・{B("接続要求の審査")}　・{B("IT問い合わせ")}への対応　・{B("ログ・ネットワークの監視")}";
 
             // ===== 第2週: 人間の攻撃者（巧妙化） =====
-            var d8 = Main(8, "GRAVEYARD SHIFT", "第2週", 15, 0.3f, 0.15f, 2,
+            var d8 = Main(8, "GRAVEYARD SHIFT", "第2週", 14, 0.3f, 0.12f, 2,
                 "研修お疲れさまでした。本日から本番です。\n" +
                 $"業務時間は {B("00:00〜06:00")} に延長します（深夜手当は日当に含まれています）。\n" +
                 $"仕事は {B("1件ずつではなく、いつ・いくつ届くか分かりません")}。接続要求には {Col("期限", Deny)} があり、期限切れは罰金の対象です。\n" +
@@ -500,38 +501,38 @@ namespace NightShift.Data
                 $"本番業務の注意点は、操作マニュアルの {Col("「本番業務の心得」", Check)} を読んでおくこと。\n" +
                 "なお、前任者が残したものは自由に使ってかまいません。",
                 null, new[] { Features.Store, Features.News });
-            var d9 = Main(9, "FALSE FACES", "第2週", 16, 0.3f, 0.15f, 2,
+            var d9 = Main(9, "FALSE FACES", "第2週", 15, 0.3f, 0.12f, 2,
                 $"最近、{B("社員の端末名を名乗る不正な接続")} が他社で報告されています。\n" +
                 $"本日から、社内の登録端末からの要求は {Col("接続元のIPアドレス", Check)} を、社員情報の {B("「端末IP」")} と照合してください。\n\n" +
                 Tasks(all),
                 "名前も端末名も本物でも、IPアドレスまでは偽りきれません。",
                 new[] { rIp }, new[] { Features.IpCheck }, p => p.requireSourceIpMatch = true);
-            var d10 = Main(10, "AFTER HOURS", "第2週", 16, 0.32f, 0.18f, 2,
+            var d10 = Main(10, "AFTER HOURS", "第2週", 15, 0.32f, 0.14f, 2,
                 $"本日から社員情報の {Col("「勤務状態」", Check)} も審査に使います。\n" +
                 $"{B("退勤した社員のIDで接続が来ることがあります。")} 本人が会社にいないのに接続がある＝パスワードが盗まれている可能性があります。\n\n" +
                 Tasks(all),
                 "勤務状態は社員情報の検索結果と詳細表示で確認できます。",
                 new[] { rShift }, new[] { Features.WorkStatus }, p => p.requireOnShift = true);
-            var d11 = Main(11, "KNOCKING", "第2週", 17, 0.32f, 0.18f, 2,
+            var d11 = Main(11, "KNOCKING", "第2週", 16, 0.32f, 0.14f, 2,
                 $"昨夜、認証サーバーで {B("ログイン失敗が数百回")} 記録されていました（パスワードの総当たり）。\n" +
                 $"本日から {Col("[接続元を遮断]", Check)} が使えます。ログイン失敗が続く接続元からの要求は、拒否したうえで接続元ごと遮断してください。\n\n" +
                 Tasks(all, $"・{B("総当たりの接続元の遮断")}"),
                 "システムログで AUTH / FAIL が同じ接続元から続いていないか確認すること。",
                 null, new[] { Features.FirewallBlock });
-            var d12 = Main(12, "GHOST ACCOUNTS", "第2週", 17, 0.33f, 0.2f, 2,
+            var d12 = Main(12, "GHOST ACCOUNTS", "第2週", 16, 0.33f, 0.15f, 2,
                 $"人事部から、{B("退職・休職した社員のIDが無効にされていない")} との連絡がありました。\n" +
                 $"本日から社員情報に {Col("「在籍状態」", Check)} が表示されます。在籍していない社員からの接続は拒否してください。\n\n" +
                 Tasks(all),
                 "退職者は社員の検索で見つかることがあります。見つかっても「在籍」でなければ拒否です。",
                 new[] { rEmploy }, new[] { Features.EmploymentStatus }, p => p.requireActiveEmployment = true);
-            var d13 = Main(13, "BAIT", "第2週", 18, 0.33f, 0.2f, 3,
+            var d13 = Main(13, "BAIT", "第2週", 17, 0.33f, 0.15f, 3,
                 $"「情報システム部」を名乗る {B("偽のメール")} が、社内で確認されています。\n" +
                 $"本日からメールの {Col("差出人アドレス", Check)} が表示されます。社内のアドレスは {B("@nexus-corp.example")} です。\n" +
                 $"怪しいメールは開かず、{Col("[報告]", Check)} してください。{B("パスワードの入力を求めるメールには絶対に入力しないこと。")}\n\n" +
                 Tasks(all, $"・{B("不審なメールの報告")}"),
                 "あなた宛てのメールも狙われます。",
                 null, new[] { Features.Report, Features.MailSender });
-            var d14 = Main(14, "MIRROR", "第2週", 20, 0.35f, 0.22f, 3,
+            var d14 = Main(14, "MIRROR", "第2週", 18, 0.35f, 0.16f, 3,
                 $"今週のまとめです。{B("あなた自身のID")} が狙われる可能性があります。\n" +
                 $"利用者が自分のIDの要求が来たら、拒否してすぐにパスワードを変更してください。\n\n" +
                 Tasks(all),
@@ -539,70 +540,70 @@ namespace NightShift.Data
                 new[] { rSelf }, null, p => p.blockOperatorAccount = true);
 
             // ===== 第3週: 侵入後の兆候・サーバー運用管理 =====
-            var d15 = Main(15, "SERVER ROOM", "第3週", 18, 0.33f, 0.22f, 3,
+            var d15 = Main(15, "SERVER ROOM", "第3週", 17, 0.33f, 0.16f, 3,
                 $"本日から {Col("サーバー運用管理", Check)}（サービスの状態・プロセス・バックアップ）も担当していただきます。\n" +
                 "サーバーの異常は、接続要求より先に被害につながることがあります。毎晩見回ってください。\n\n" +
                 Tasks(all, $"・{B("サーバーの見回り")}（サーバー運用管理）"),
                 "サーバーを止めると業務が止まります。止める前に、本当に必要か確かめること。",
                 null, new[] { Features.ServerManagement });
-            var d16 = Main(16, "INFECTION", "第3週", 19, 0.33f, 0.22f, 3,
+            var d16 = Main(16, "INFECTION", "第3週", 18, 0.33f, 0.17f, 3,
                 $"社内のPCから {B("社外への定期的な通信")} が見つかる事例が増えています（ウイルス感染）。\n" +
                 $"本日から {Col("[端末を隔離]", Check)} が使えます。感染が疑われるPCは、まずネットワークから切り離してください。\n\n" +
                 Tasks(all, $"・{B("感染が疑われる端末の隔離")}"),
                 "最初の1台を切り離せば広がりません。駆除はその後です。",
                 null, new[] { Features.Isolation });
-            var d17 = Main(17, "DEFACED", "第3週", 19, 0.34f, 0.24f, 3,
+            var d17 = Main(17, "DEFACED", "第3週", 18, 0.34f, 0.17f, 3,
                 $"公開Webサーバーの {B("改ざん")} が他社で相次いでいます。\n" +
                 "公開Webサーバーに見慣れないプロセスがないか、サーバー運用管理で確認してください。\n\n" + Tasks(all),
                 "改ざんされたら、不審なプロセスを止めてバックアップから戻します。");
-            var d18 = Main(18, "LEAK", "第3週", 20, 0.34f, 0.24f, 3,
+            var d18 = Main(18, "LEAK", "第3週", 19, 0.34f, 0.18f, 3,
                 $"{B("権限も端末も正しい社員")} が、深夜に大量のファイルを持ち出す事件が他社でありました。\n" +
                 $"同じ利用者のファイルの読み込みが短時間に大量に続く場合は {Col("[報告]", Check)} してください。\n\n" + Tasks(all),
                 "ルール上は許可でも、おかしいと思ったら報告。");
-            var d19 = Main(19, "SUPERUSER", "第3週", 20, 0.35f, 0.25f, 3,
+            var d19 = Main(19, "SUPERUSER", "第3週", 19, 0.35f, 0.18f, 3,
                 $"本日から {Col("ユーザー管理", Check)}（アカウントの一時停止）が使えます。\n" +
                 $"{B("退勤しているはずの管理者")} のIDで管理サーバーへの操作が来た場合は、拒否してアカウントを一時停止してください。\n\n" + Tasks(all),
                 $"{Col("管理者のIDを乗っ取られると、会社のシステムがすべて止まります。", Deny)}",
                 null, new[] { Features.UserManagement });
-            var d20 = Main(20, "SLEEPING BEAUTY", "第3週", 21, 0.35f, 0.25f, 3,
+            var d20 = Main(20, "SLEEPING BEAUTY", "第3週", 19, 0.35f, 0.18f, 3,
                 $"{Col("身代金ウイルス（ファイルを暗号化するウイルス）", Deny)} の被害が国内でも出始めています。\n" +
                 $"1台の端末から {B("ファイルの書き換え（FILE WRITE）が続いたら、30分以内にその端末を隔離")} してください。{B("最優先です。")}\n\n" + Tasks(all),
                 "遅れると全社のファイルが開けなくなります。");
-            var d21 = Main(21, "COMPOUND", "第3週", 22, 0.36f, 0.26f, 3,
+            var d21 = Main(21, "COMPOUND", "第3週", 20, 0.36f, 0.2f, 3,
                 "第3週のまとめです。これまでの手口が組み合わさって来ます。落ち着いて、警告の大きいものから対処してください。\n\n" + Tasks(all),
                 "一つ一つは、これまでに見た手口です。");
 
             // ===== 第4週: 攻撃支援AI =====
-            var d22 = Main(22, "SYNTHETIC", "第4週", 20, 0.36f, 0.26f, 3,
+            var d22 = Main(22, "SYNTHETIC", "第4週", 19, 0.36f, 0.18f, 3,
                 $"「攻撃の文面を自動で作る人工知能」が使われ始めている、とのニュースがありました。\n" +
                 $"{B("見た目では見分けられない要求")} が増えます。照合を一つも省かないでください。\n\n" + Tasks(all),
                 "道具に頼るほど、道具の穴も狙われます。");
-            var d23 = Main(23, "ONE FLAW", "第4週", 21, 0.37f, 0.27f, 3,
+            var d23 = Main(23, "ONE FLAW", "第4週", 20, 0.37f, 0.2f, 3,
                 $"本物そっくりの要求で、{B("合わない項目が1つだけ")} のものが増えています。\n\n" + Tasks(all),
                 "端末・IP・勤務状態・在籍状態。全部確かめる習慣を。");
-            var d24 = Main(24, "HABITS", "第4週", 22, 0.37f, 0.27f, 3,
+            var d24 = Main(24, "HABITS", "第4週", 20, 0.37f, 0.2f, 3,
                 $"社員の {B("普段使うシステム・普段の時間帯")} まで真似る攻撃が確認されています。\n\n" + Tasks(all),
                 "普段どおりに見えても、ルールの照合は変わりません。");
-            var d25 = Main(25, "DIVERSION", "第4週", 22, 0.38f, 0.3f, 4,
+            var d25 = Main(25, "DIVERSION", "第4週", 20, 0.38f, 0.2f, 4,
                 $"問い合わせを殺到させ、その隙に侵入する {B("陽動")} の手口に注意してください。\n" +
                 $"忙しいときほど、{Col("セキュリティ警告を先に", Check)}。\n\n" + Tasks(all),
                 "社内購買システムに新しい商品が入ったそうです。");
-            var d26 = Main(26, "PERFECT LIES", "第4週", 23, 0.38f, 0.3f, 4,
+            var d26 = Main(26, "PERFECT LIES", "第4週", 21, 0.38f, 0.21f, 4,
                 $"{B("自然すぎる偽メール")} が増えています。文面が自然でも、差出人と依頼の中身を確かめてください。\n\n" + Tasks(all),
                 "社内の言い回しまで真似てくることがあります。");
-            var d27 = Main(27, "CONVERGENCE", "第4週", 24, 0.4f, 0.3f, 4,
+            var d27 = Main(27, "CONVERGENCE", "第4週", 22, 0.4f, 0.22f, 4,
                 "第4週のまとめです。これまでの手口を人工知能が組み合わせてきます。\n\n" + Tasks(all),
                 "来週から、さらに厳しくなる見込みです。");
 
             // ===== 最終局面: 自律型攻撃AI =====
-            var d28 = Main(28, "DAYBREAK", "最終局面", 25, 0.4f, 0.32f, 4,
+            var d28 = Main(28, "DAYBREAK", "最終局面", 22, 0.4f, 0.22f, 4,
                 $"拒否されると {B("経路を変えて続く攻撃")} が確認されました。自ら学習する攻撃プログラムと見られます。\n" +
                 $"同じ攻撃者からの要求は、{Col("接続元をまとめて遮断", Check)} してください。\n\n" + Tasks(all),
                 "防御用のAIに偽の指示を読ませる手口もあるそうです。");
-            var d29 = Main(29, "ORIGIN", "最終局面", 27, 0.42f, 0.33f, 4,
+            var d29 = Main(29, "ORIGIN", "最終局面", 23, 0.42f, 0.23f, 4,
                 $"攻撃は日に日に強まっています。{B("全社の業務を守れるのは夜間の担当だけです。")}\n\n" + Tasks(all),
                 "明日の夜が山場になると見込まれます。");
-            var d30 = Main(30, "LAST NIGHT", "最終局面", 30, 0.45f, 0.35f, 4,
+            var d30 = Main(30, "LAST NIGHT", "最終局面", 24, 0.45f, 0.25f, 4,
                 $"{Col("今夜、大規模な攻撃が来る恐れがあります。", Deny)}\n" +
                 "これまでの手口がすべて来ると思って備えてください。夜明けまでが勝負です。\n\n" + Tasks(all),
                 "健闘を祈ります。");
