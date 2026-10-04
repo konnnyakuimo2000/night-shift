@@ -33,17 +33,6 @@ namespace NightShift.UI.Shift
             return v;
         }
 
-        /// <summary>他画面から検索条件を指定して開く（社員番号・端末番号のみ。結果の判断は表示しない）</summary>
-        public static void OpenWith(ShiftDesktop d, string employeeId, string device)
-        {
-            var v = Open(d);
-            if (v == null) return;
-            v.Clear(false);
-            if (!string.IsNullOrEmpty(employeeId) && employeeId != "-") v._id.text = employeeId;
-            else if (!string.IsNullOrEmpty(device) && d.Unlocked(Features.DeviceCheck)) v._device.text = device;
-            v.Search();
-        }
-
         void Build()
         {
             var c = _w.Content;

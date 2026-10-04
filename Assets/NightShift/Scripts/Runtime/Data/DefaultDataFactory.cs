@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 16;
+        public const int DataVersion = 17;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -471,7 +471,7 @@ namespace NightShift.Data
                 "{FIG:UI_CONNECTION}",
                 $"・{B("①")} 一覧から要求を1件選びます。",
                 $"・{B("②")} 要求内容の {B("利用者・社員番号")} を確認します。",
-                $"・{B("③")} [社員情報を参照] で、利用者を社員情報で検索できます。",
+                $"・{B("③")} [社員情報を参照] で社員情報の画面が開きます。{B("社員番号や氏名を自分で入力して検索")}してください。",
                 $"・{B("④")} 確認できたら {Col("接続を許可", Allow)} か {Col("接続を拒否", Deny)} を押します。{B("処理後の取り消しはできません。")}",
                 $"・本番の業務では、要求に {B("受付からの期限")} があります（{B("研修期間中は期限切れになりません")}）。");
             Page(manualSystem, "社員の検索", Features.EmployeeDirectory,

@@ -202,12 +202,8 @@ namespace NightShift.UI.Shift
             if (_table.Count > 0) _table.Select(Mathf.Min(idx, _table.Count - 1));
         }
 
-        void LookupEmployee()
-        {
-            var e = _table.Selected as EventInstance;
-            if (e == null) { EmployeeDirectoryView.Open(_d); return; }
-            EmployeeDirectoryView.OpenWith(_d, e.DisplayEmployeeId, _d.Unlocked(Data.Features.DeviceCheck) ? e.Device : null);
-        }
+        /// <summary>社員情報の画面を開くだけ（検索はプレイヤー自身が行う。答えの行をいきなり出さない）</summary>
+        void LookupEmployee() => EmployeeDirectoryView.Open(_d);
 
         void Update()
         {
