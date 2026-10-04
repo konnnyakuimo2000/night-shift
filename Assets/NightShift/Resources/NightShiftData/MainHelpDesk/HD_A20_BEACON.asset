@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7ff486a4cef94b44a4c4e9472ab0422, type: 3}
+  m_Name: HD_A20_BEACON
+  m_EditorClassIdentifier: 
+  definitionId: A20_BEACON
+  type: 0
+  minimumDay: 16
+  maximumDay: 30
+  triggerWindow: {x: 0, y: 240}
+  requester:
+    departments: []
+    excludeDepartments: []
+    requiredPermissions: []
+    excludedPermissions: []
+    requiredNormalTargets: []
+    requireOnShift: 1
+    requireVpnEnabled: 0
+    requireVpnDisabled: 0
+    requireLaptop: 0
+    requireOffShift: 0
+    employment: 0
+    preferUnused: 1
+  weight: 1
+  correctIsYes: 0
+  randomUnlock: 0
+  randomUnlockMin: 8
+  randomUnlockMax: 25
+  maxUses: 2
+  flagOnWrong: WRONG_A20
+  subject: "PC\u304C\u591C\u4E2D\u3082\u793E\u5916\u3068\u901A\u4FE1\u3057\u3066\u3044\u308B"
+  message: "{dept}\u306E{name}\u3067\u3059\u3002\n\u79C1\u306EPC\u304C\u591C\u4E2D\u3082\u793E\u5916\u306E\u30B5\u30FC\u30D0\u30FC\u3068\u5B9A\u671F\u7684\u306B\u901A\u4FE1\u3057\u3066\u3044\u308B\u3089\u3057\u3044\u3067\u3059\u3002\u30A6\u30A4\u30EB\u30B9\u5BFE\u7B56\u30BD\u30D5\u30C8\u3067\u306F\u4F55\u3082\u51FA\u306A\u3044\u306E\u3067\u554F\u984C\u306A\u3044\u3067\u3059\u3088\u306D\uFF1F"
+  reminderMessage: "\u3059\u307F\u307E\u305B\u3093\u3001\u5148\u307B\u3069\u306E\u4EF6\u3001\u3069\u3046\u3057\u305F\u3089\u3044\u3044\u3067\u3057\u3087\u3046\u304B\u2026\uFF1F"
+  reminderAfterMinutes: 25
+  correctOption: "\u3044\u3044\u3048\u3002\u4E57\u3063\u53D6\u3063\u305FPC\u306B\u5916\u304B\u3089\u547D\u4EE4\u3092\u51FA\u3059\u30B5\u30FC\u30D0\u30FC\u3068\u306E\u901A\u4FE1\u306E\u53EF\u80FD\u6027\u304C\u3042\u308A\u307E\u3059\u3002PC\u3092\u5207\u308A\u96E2\u3057\u3066\u8ABF\u3079\u307E\u3059\u3002"
+  incorrectOption: "\u306F\u3044\u3002\u30A6\u30A4\u30EB\u30B9\u5BFE\u7B56\u30BD\u30D5\u30C8\u3067\u4F55\u3082\u51FA\u306A\u3051\u308C\u3070\u554F\u984C\u3042\u308A\u307E\u305B\u3093\u3002"
+  replyAfterAnswer: "\u308F\u304B\u308A\u307E\u3057\u305F\u3001\u5207\u308A\u96E2\u3057\u307E\u3059\u3002"
+  pcProfile: {fileID: 0}
+  faultVariants: []
+  resolutionConditions: []
+  successReply: "\u76F4\u308A\u307E\u3057\u305F\uFF01\u3042\u308A\u304C\u3068\u3046\u3054\u3056\u3044\u307E\u3059\u3002"
+  failureReply: "\u3059\u307F\u307E\u305B\u3093\u3001\u307E\u3060\u76F4\u3063\u3066\u3044\u306A\u3044\u3088\u3046\u3067\u3059\u2026"
+  maxReports: 2
+  explanation: "\u4E57\u3063\u53D6\u3063\u305FPC\u306F\u3001\u5916\u90E8\u306E\u6307\u4EE4\u30B5\u30FC\u30D0\u30FC\uFF08C&C\u30B5\u30FC\u30D0\u30FC\uFF09\u306B\u5B9A\u671F\u7684\u306B\u554F\u3044\u5408\u308F\u305B\u3066\u547D\u4EE4\u3092\u53D7\u3051\u53D6\u308B\u3002\u691C\u51FA\u3055\u308C\u306A\u3044\u3053\u3068\u3082\u3042\u308B\u3002"
+  sourceNote: "\u4EE4\u548C2\u5E74\u5EA6 \u79CB\u671F \u5FDC\u7528\u60C5\u5831\u6280\u8853\u8005\u8A66\u9A13
+    \u5348\u524D \u554F43\uFF08\u6539\u5909\uFF09"

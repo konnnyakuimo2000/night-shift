@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a62edd6c1e4f726439a7d85a52522454, type: 3}
+  m_Name: EVT_V_NOT_AN_EMPLOYEE
+  m_EditorClassIdentifier: 
+  eventId: V_NOT_AN_EMPLOYEE
+  category: 0
+  kind: 1
+  minimumDay: 8
+  maximumDay: 30
+  triggerWindow: {x: 0, y: 360}
+  weight: 0.6
+  severity: 2
+  userType: 2
+  employeeConditions:
+    departments: []
+    excludeDepartments: []
+    requiredPermissions: []
+    excludedPermissions: []
+    requiredNormalTargets: []
+    requireOnShift: 1
+    requireVpnEnabled: 0
+    requireVpnDisabled: 0
+    requireLaptop: 0
+    requireOffShift: 0
+    employment: 0
+    preferUnused: 1
+  accountName: test01
+  displayEmployeeId: 
+  sourceType: 2
+  deviceNamePattern: PC-{hex}
+  destinationMode: 0
+  destination: {fileID: 11400000, guid: ac4d108d5a938e0499b1d0aad2134cc0, type: 2}
+  accessType: "\u5171\u6709\u30D5\u30A1\u30A4\u30EB\uFF08\u95B2\u89A7\uFF09"
+  isMalicious: 0
+  expectedAction: 0
+  timeoutMinutes: 22
+  preferWhileRemoteActive: 0
+  notifyAsSecurityAlert: 0
+  logEventType: 
+  logResult: 
+  note: 
+  followUp: {fileID: 0}
+  followUpDelayMinutes: 5

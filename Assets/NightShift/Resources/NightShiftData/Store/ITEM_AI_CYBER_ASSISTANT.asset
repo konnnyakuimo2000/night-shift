@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc3142bf85602f469f7ce0a9d5e0fe9, type: 3}
+  m_Name: ITEM_AI_CYBER_ASSISTANT
+  m_EditorClassIdentifier: 
+  itemId: AI_CYBER_ASSISTANT
+  displayName: "\u30B5\u30A4\u30D0\u30FC\u9632\u5FA1AI\u300CSOC-AI\u300D"
+  category: 3
+  price: 49800
+  description: "\u6301\u3063\u3066\u3044\u308B\u30C4\u30FC\u30EB\u3092\u30D7\u30E9\u30B0\u30A4\u30F3\u3068\u3057\u3066\u4F7F\u3044\u3001\u8ABF\u67FB\u30FB\u8A31\u53EF/\u62D2\u5426\u306E\u63D0\u6848\u3092\u884C\u3044\u307E\u3059\u30021\u591C
+    30,000 \u30C8\u30FC\u30AF\u30F3\u307E\u3067\u3002AI \u3082\u9593\u9055\u3048\u307E\u3059\u3002"
+  unlockDay: 25
+  prerequisite: HW_MONITOR_2
+  grantsFeature: AI_CYBER_ASSISTANT
+  consumable: 0
+  maxStock: 1
+  icon: debug
+  adCopy: "\u591C\u52E4\u306E\u76F8\u68D2\u3001SOC-AI \u767A\u58F2"

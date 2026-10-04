@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc3142bf85602f469f7ce0a9d5e0fe9, type: 3}
+  m_Name: ITEM_TOOL_PROFILE_PANEL
+  m_EditorClassIdentifier: 
+  itemId: TOOL_PROFILE_PANEL
+  displayName: "\u793E\u54E1\u60C5\u5831\u30D1\u30CD\u30EB"
+  category: 1
+  price: 12800
+  description: "\u63A5\u7D9A\u8981\u6C42\u3092\u9078\u3076\u3068\u3001\u305D\u306E\u793E\u54E1\u306E\u60C5\u5831\uFF08\u7AEF\u672B\u30FB\u7AEF\u672BIP\u30FB\u52E4\u52D9\u72B6\u614B\u30FB\u5728\u7C4D\u72B6\u614B\u30FBVPN\u30FB\u6A29\u9650\uFF09\u3092\u30B5\u30D6\u30E2\u30CB\u30BF\u30FC\u306B\u8868\u793A\u3057\u307E\u3059\u3002\u898B\u6BD4\u3079\u308B\u306E\u306F\u3042\u306A\u305F\u3067\u3059\u3002"
+  unlockDay: 8
+  prerequisite: HW_MONITOR_2
+  grantsFeature: TOOL_PROFILE_PANEL
+  consumable: 0
+  maxStock: 1
+  icon: people
+  adCopy: 

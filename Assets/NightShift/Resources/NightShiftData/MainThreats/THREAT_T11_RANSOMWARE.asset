@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T11_RANSOMWARE
+  m_EditorClassIdentifier: 
+  scenarioId: T11_RANSOMWARE
+  designNote: "1\u53F0\u306E\u7AEF\u672B\u304B\u3089\u30D5\u30A1\u30A4\u30EB\u306E\u66F8\u304D\u63DB\u3048\uFF08.briar\uFF09\u304C\u9023\u7D9A\u300230\u5206\u4EE5\u5185\u306B\u9694\u96E2\u3057\u306A\u3044\u3068\u5168\u793E\u306E\u30D5\u30A1\u30A4\u30EB\u304C\u6697\u53F7\u5316\u3055\u308C\u308B\uFF08V6
+    BRIAR ROSE\u30FB\u81F4\u547D\u7684\uFF09\u3002"
+  minimumDay: 20
+  maximumDay: 30
+  startWindow: {x: 40, y: 280}
+  sourceIpPrefix: 203.0.113.
+  steps:
+  - label: "\u88AB\u5BB3\u8005"
+    offsetMinutes: 0
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: PICK_VICTIM
+    helpDesk: {fileID: 0}
+  - label: "\u611F\u67D3"
+    offsetMinutes: 0.1
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: INFECT:V6
+    helpDesk: {fileID: 0}
+  - label: "\u66F8\u304D\u63DB\u3048"
+    offsetMinutes: 1
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 30
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: RANSOM_WRITE
+    helpDesk: {fileID: 0}
+  - label: "\u6697\u53F7\u5316\u306E\u5224\u5B9A"
+    offsetMinutes: 31
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: RANSOM_CHECK
+    helpDesk: {fileID: 0}
+  compromiseLog: "\u7BA1\u7406\u30B3\u30F3\u30BD\u30FC\u30EB\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u306B\u6210\u529F"
+  stopOnBlock: 1
+  chance: 0.4
+  adaptive: 0
+  maxAttempts: 4
+  fatalIfAllowed: 0

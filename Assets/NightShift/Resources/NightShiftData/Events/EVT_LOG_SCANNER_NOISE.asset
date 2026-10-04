@@ -31,6 +31,8 @@ MonoBehaviour:
     requireVpnEnabled: 0
     requireVpnDisabled: 0
     requireLaptop: 0
+    requireOffShift: 0
+    employment: 0
     preferUnused: 1
   accountName: 
   displayEmployeeId: 
@@ -46,5 +48,6 @@ MonoBehaviour:
   notifyAsSecurityAlert: 0
   logEventType: FW
   logResult: DENY
+  note: 
   followUp: {fileID: 0}
   followUpDelayMinutes: 5

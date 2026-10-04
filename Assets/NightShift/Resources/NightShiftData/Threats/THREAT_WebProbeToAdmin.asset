@@ -15,7 +15,7 @@ MonoBehaviour:
   scenarioId: THREAT_WEB_PROBE
   designNote: "\u5916\u90E8\u306E\u653B\u6483\u8005\uFF08\u81EA\u52D5\u30B9\u30AF\u30EA\u30D7\u30C8\uFF0B\u624B\u52D5\u64CD\u4F5C\uFF09\u304C\u516C\u958BWeb\u3092\u63A2\u7D22\u3057\u3001\u7BA1\u7406\u30B5\u30FC\u30D0\u30FC\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u3092\u8A66\u307F\u308B\u3002\u30ED\u30B0\u3092\u898B\u308C\u3070\u540C\u4E00\u30EC\u30F3\u30B8\u306EIP\u3068\u6C17\u4ED8\u3051\u308B\u3002"
   minimumDay: 7
-  maximumDay: 7
+  maximumDay: 30
   startWindow: {x: 90, y: 97}
   sourceIpPrefix: 198.51.100.
   steps:
@@ -29,7 +29,10 @@ MonoBehaviour:
     detail: GET / (python-urllib/2.0)
     repeat: 1
     repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
     request: {fileID: 0}
+    script: 
+    helpDesk: {fileID: 0}
   - label: "\u7BA1\u7406\u30DA\u30FC\u30B8\u63A2\u7D22"
     offsetMinutes: 4
     kind: 1
@@ -40,7 +43,10 @@ MonoBehaviour:
     detail: GET /admin/|GET /manager/html|GET /login.cgi|GET /cgi-bin/admin.pl
     repeat: 4
     repeatIntervalMinutes: 0.6
+    compromiseUnlessBlocked: 0
     request: {fileID: 0}
+    script: 
+    helpDesk: {fileID: 0}
   - label: "\u518D\u30A2\u30AF\u30BB\u30B9"
     offsetMinutes: 9
     kind: 1
@@ -51,7 +57,10 @@ MonoBehaviour:
     detail: GET /about/staff.html
     repeat: 1
     repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
     request: {fileID: 0}
+    script: 
+    helpDesk: {fileID: 0}
   - label: "\u7BA1\u7406\u30B5\u30FC\u30D0\u30FC\u306E\u30DD\u30FC\u30C8\u63A2\u7D22"
     offsetMinutes: 12
     kind: 1
@@ -62,7 +71,10 @@ MonoBehaviour:
     detail: TCP 23|TCP 3389|TCP 22
     repeat: 3
     repeatIntervalMinutes: 0.4
+    compromiseUnlessBlocked: 0
     request: {fileID: 0}
+    script: 
+    helpDesk: {fileID: 0}
   - label: "\u7BA1\u7406\u30B5\u30FC\u30D0\u30FC\u3078\u306E\u63A5\u7D9A\u8981\u6C42"
     offsetMinutes: 16
     kind: 2
@@ -73,6 +85,13 @@ MonoBehaviour:
     detail: 
     repeat: 1
     repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
     request: {fileID: 11400000, guid: 039f2e07c249e2d459014d4a8d443b1b, type: 2}
+    script: 
+    helpDesk: {fileID: 0}
   compromiseLog: "\u7BA1\u7406\u30B3\u30F3\u30BD\u30FC\u30EB\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u306B\u6210\u529F"
   stopOnBlock: 1
+  chance: 1
+  adaptive: 0
+  maxAttempts: 4
+  fatalIfAllowed: 0

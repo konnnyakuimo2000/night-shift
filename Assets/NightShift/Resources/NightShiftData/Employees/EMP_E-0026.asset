@@ -25,6 +25,8 @@ MonoBehaviour:
   workHours: "09:00-18:00 (\u6D77\u5916\u5BFE\u5FDC)"
   onShift: 1
   vpnEnabled: 1
+  employment: 0
+  nameRedacted: 0
   itLiteracy: 3
   securityAwareness: 2
   normalAccessTargets:

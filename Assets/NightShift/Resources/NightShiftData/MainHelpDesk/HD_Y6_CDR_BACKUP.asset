@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7ff486a4cef94b44a4c4e9472ab0422, type: 3}
+  m_Name: HD_Y6_CDR_BACKUP
+  m_EditorClassIdentifier: 
+  definitionId: Y6_CDR_BACKUP
+  type: 0
+  minimumDay: 8
+  maximumDay: 30
+  triggerWindow: {x: 0, y: 240}
+  requester:
+    departments: []
+    excludeDepartments: []
+    requiredPermissions: []
+    excludedPermissions: []
+    requiredNormalTargets: []
+    requireOnShift: 1
+    requireVpnEnabled: 0
+    requireVpnDisabled: 0
+    requireLaptop: 0
+    requireOffShift: 0
+    employment: 0
+    preferUnused: 1
+  weight: 1
+  correctIsYes: 1
+  randomUnlock: 1
+  randomUnlockMin: 8
+  randomUnlockMax: 25
+  maxUses: 2
+  flagOnWrong: WRONG_BACKUP
+  subject: "\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3092CD-R\u306B\u713C\u3044\u3066\u3044\u3044\uFF1F"
+  message: "{dept}\u306E{name}\u3067\u3059\u3002\n\u5927\u4E8B\u306A\u30D5\u30A1\u30A4\u30EB\u306E\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3092CD-R\u306B\u713C\u3044\u3066\u4FDD\u7BA1\u3057\u3066\u3044\u3044\u3067\u3059\u304B\uFF1F"
+  reminderMessage: "\u3059\u307F\u307E\u305B\u3093\u3001\u5148\u307B\u3069\u306E\u4EF6\u3001\u3069\u3046\u3057\u305F\u3089\u3044\u3044\u3067\u3057\u3087\u3046\u304B\u2026\uFF1F"
+  reminderAfterMinutes: 25
+  correctOption: "\u306F\u3044\u3002\u66F8\u304D\u63DB\u3048\u3067\u304D\u306A\u3044\u5A92\u4F53\u306A\u3089\u3001\u8EAB\u4EE3\u91D1\u30A6\u30A4\u30EB\u30B9\u306B\u6697\u53F7\u5316\u3055\u308C\u307E\u305B\u3093\u3002"
+  incorrectOption: "\u3044\u3044\u3048\u3002\u5171\u6709\u30D5\u30A9\u30EB\u30C0\u306B\u7F6E\u3051\u3070\u5341\u5206\u3067\u3059\u3002"
+  replyAfterAnswer: "\u713C\u3044\u3066\u304A\u304D\u307E\u3059\u3002"
+  pcProfile: {fileID: 0}
+  faultVariants: []
+  resolutionConditions: []
+  successReply: "\u76F4\u308A\u307E\u3057\u305F\uFF01\u3042\u308A\u304C\u3068\u3046\u3054\u3056\u3044\u307E\u3059\u3002"
+  failureReply: "\u3059\u307F\u307E\u305B\u3093\u3001\u307E\u3060\u76F4\u3063\u3066\u3044\u306A\u3044\u3088\u3046\u3067\u3059\u2026"
+  maxReports: 2
+  explanation: "\u4E00\u5EA6\u66F8\u304D\u8FBC\u3080\u3068\u66F8\u304D\u63DB\u3048\u3089\u308C\u306A\u3044\u5A92\u4F53\uFF08CD-R
+    \u306A\u3069\uFF09\u306F\u3001\u8EAB\u4EE3\u91D1\u30A6\u30A4\u30EB\u30B9\u5BFE\u7B56\u306B\u6709\u52B9\u3002"
+  sourceNote: "\u4EE4\u548C5\u5E74\u5EA6 \u79CB\u671F \u5FDC\u7528\u60C5\u5831\u6280\u8853\u8005\u8A66\u9A13
+    \u5348\u524D \u554F43\uFF08\u6539\u5909\uFF09"

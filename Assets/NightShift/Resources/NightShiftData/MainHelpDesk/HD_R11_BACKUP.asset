@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7ff486a4cef94b44a4c4e9472ab0422, type: 3}
+  m_Name: HD_R11_BACKUP
+  m_EditorClassIdentifier: 
+  definitionId: R11_BACKUP
+  type: 1
+  minimumDay: 19
+  maximumDay: 30
+  triggerWindow: {x: 0, y: 240}
+  requester:
+    departments: []
+    excludeDepartments: []
+    requiredPermissions: []
+    excludedPermissions: []
+    requiredNormalTargets: []
+    requireOnShift: 1
+    requireVpnEnabled: 0
+    requireVpnDisabled: 0
+    requireLaptop: 0
+    requireOffShift: 0
+    employment: 0
+    preferUnused: 1
+  weight: 1
+  correctIsYes: 0
+  randomUnlock: 0
+  randomUnlockMin: 8
+  randomUnlockMax: 25
+  maxUses: 2
+  flagOnWrong: 
+  subject: "\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3092\u53D6\u308A\u305F\u3044"
+  message: "{dept}\u306E{name}\u3067\u3059\u3002\n\u8EAB\u4EE3\u91D1\u30A6\u30A4\u30EB\u30B9\u306E\u30CB\u30E5\u30FC\u30B9\u3092\u898B\u3066\u5FC3\u914D\u306B\u306A\u308A\u307E\u3057\u305F\u3002\u79C1\u306EPC\u306E\u30D5\u30A1\u30A4\u30EB\u306E\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3092\u53D6\u3063\u3066\u3082\u3089\u3048\u307E\u3059\u304B\uFF1F\uFF08\u7AEF\u672B:
+    {device}\uFF09"
+  reminderMessage: "\u3059\u307F\u307E\u305B\u3093\u3001\u307E\u3060\u3067\u3057\u3087\u3046\u304B\u2026\uFF1F"
+  reminderAfterMinutes: 25
+  correctOption: 
+  incorrectOption: 
+  replyAfterAnswer: "\u3042\u308A\u304C\u3068\u3046\u3054\u3056\u3044\u307E\u3059\u3002\u305D\u306E\u3088\u3046\u306B\u3057\u307E\u3059\u3002"
+  pcProfile: {fileID: 11400000, guid: a98479df998e72747ad7888eddc03478, type: 2}
+  faultVariants: []
+  resolutionConditions:
+  - key: BackupDone
+    value: true
+  successReply: "\u3042\u308A\u304C\u3068\u3046\u3054\u3056\u3044\u307E\u3059\uFF01"
+  failureReply: "\u307E\u3060\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3055\u308C\u3066\u3044\u306A\u3044\u307F\u305F\u3044\u3067\u3059\u3002"
+  maxReports: 2
+  explanation: "\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u306F\u5916\u90E8\u306E\u8A18\u9332\u5A92\u4F53\u306B\u53D6\u308A\u3001\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u3084
+    PC \u304B\u3089\u5207\u308A\u96E2\u3057\u3066\u4FDD\u7BA1\u3059\u308B\u3002"
+  sourceNote: "\u4EE4\u548C7\u5E74\u5EA6 IT\u30D1\u30B9\u30DD\u30FC\u30C8\u8A66\u9A13
+    \u554F92\u3001\u4EE4\u548C4\u5E74\u5EA6 IT\u30D1\u30B9\u30DD\u30FC\u30C8\u8A66\u9A13
+    \u554F56\uFF08\u6539\u5909\uFF09"

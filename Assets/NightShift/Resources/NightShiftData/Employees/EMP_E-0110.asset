@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3989493d4e343b2449f430f803612d42, type: 3}
+  m_Name: EMP_E-0110
+  m_EditorClassIdentifier: 
+  employeeId: E-0110
+  fullName: "\u77F3\u4E95 \u4FEE"
+  kana: "\u30A4\u30B7\u30A4 \u30AA\u30B5\u30E0"
+  age: 56
+  department: "\u7DCF\u52D9\u90E8"
+  position: "\u8AB2\u9577"
+  portrait: {fileID: 0}
+  deviceId: GA-PC03
+  deviceIp: 10.10.6.13
+  laptopDeviceId: 
+  workHours: 09:00-18:00
+  onShift: 0
+  vpnEnabled: 0
+  employment: 0
+  nameRedacted: 0
+  itLiteracy: 1
+  securityAwareness: 2
+  normalAccessTargets:
+  - MAIL
+  - FILE
+  normalBehavior:
+    activityPerHour: 5
+    serviceWeights:
+    - serviceId: MAIL
+      weight: 3
+    - serviceId: FILE
+      weight: 1.5
+    usesVpn: 0
+  permissions:
+  - {fileID: 11400000, guid: b919be391b48d014f9b2d40ee80a49b0, type: 2}
+  - {fileID: 11400000, guid: fe8f316bbe4d4df4db8d066b92ec3ec7, type: 2}

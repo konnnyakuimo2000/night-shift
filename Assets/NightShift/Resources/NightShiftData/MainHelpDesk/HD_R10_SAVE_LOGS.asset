@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7ff486a4cef94b44a4c4e9472ab0422, type: 3}
+  m_Name: HD_R10_SAVE_LOGS
+  m_EditorClassIdentifier: 
+  definitionId: R10_SAVE_LOGS
+  type: 1
+  minimumDay: 18
+  maximumDay: 30
+  triggerWindow: {x: 0, y: 240}
+  requester:
+    departments: []
+    excludeDepartments: []
+    requiredPermissions: []
+    excludedPermissions: []
+    requiredNormalTargets: []
+    requireOnShift: 1
+    requireVpnEnabled: 0
+    requireVpnDisabled: 0
+    requireLaptop: 0
+    requireOffShift: 0
+    employment: 0
+    preferUnused: 1
+  weight: 1
+  correctIsYes: 0
+  randomUnlock: 0
+  randomUnlockMin: 8
+  randomUnlockMax: 25
+  maxUses: 2
+  flagOnWrong: 
+  subject: "\uFF08\u4E0A\u9577\u304B\u3089\uFF09PC\u306E\u30ED\u30B0\u3092\u6B8B\u3057\u3066\u307B\u3057\u3044"
+  message: "{dept}\u306E{name}\u3067\u3059\u3002\n\u90E8\u4E0B\u306EPC\u304B\u3089\u3001\u6DF1\u591C\u306B\u30D5\u30A1\u30A4\u30EB\u304C\u6301\u3061\u51FA\u3055\u308C\u3066\u3044\u308B\u7591\u3044\u304C\u3042\u308A\u307E\u3059\u3002\u8ABF\u3079\u308B\u524D\u306B\u3001PC\u306E\u8A18\u9332\u3092\u6B8B\u3057\u3066\u304A\u3044\u3066\u3082\u3089\u3048\u307E\u3059\u304B\uFF1F\uFF08\u7AEF\u672B:
+    {device}\uFF09"
+  reminderMessage: "\u3059\u307F\u307E\u305B\u3093\u3001\u307E\u3060\u3067\u3057\u3087\u3046\u304B\u2026\uFF1F"
+  reminderAfterMinutes: 25
+  correctOption: 
+  incorrectOption: 
+  replyAfterAnswer: "\u3042\u308A\u304C\u3068\u3046\u3054\u3056\u3044\u307E\u3059\u3002\u305D\u306E\u3088\u3046\u306B\u3057\u307E\u3059\u3002"
+  pcProfile: {fileID: 11400000, guid: a98479df998e72747ad7888eddc03478, type: 2}
+  faultVariants: []
+  resolutionConditions:
+  - key: LogsSaved
+    value: true
+  - key: LogsCleared
+    value: false
+  successReply: "\u4FDD\u5B58\u3057\u3066\u3082\u3089\u3048\u3066\u52A9\u304B\u308A\u307E\u3059\u3002"
+  failureReply: "\u307E\u3060\u8A18\u9332\u304C\u4FDD\u5B58\u3055\u308C\u3066\u3044\u306A\u3044\u3088\u3046\u3067\u3059\u3002"
+  maxReports: 2
+  explanation: "\u4E0D\u6B63\u306E\u8ABF\u67FB\u306F\u3001\u307E\u305A\u8A3C\u62E0\u3092\u4FDD\u5168\u3059\u308B\uFF08\u30C7\u30B8\u30BF\u30EB\u30D5\u30A9\u30EC\u30F3\u30B8\u30C3\u30AF\u30B9\uFF09\u3002\u30ED\u30B0\u306F\u6D88\u3055\u306A\u3044\u30FB\u5909\u3048\u306A\u3044\u3002"
+  sourceNote: "\u5E73\u621027\u5E74\u5EA6 \u79CB\u671F \u5FDC\u7528\u60C5\u5831\u6280\u8853\u8005\u8A66\u9A13
+    \u5348\u524D \u554F43\uFF08\u6539\u5909\uFF09"

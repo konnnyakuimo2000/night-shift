@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T14_DAYBREAK
+  m_EditorClassIdentifier: 
+  scenarioId: T14_DAYBREAK
+  designNote: "\u81EA\u5F8B\u578B\u653B\u6483AI DAYBREAK\u3002\u62D2\u5426\u3055\u308C\u308B\u3068\u6570\u5206\u5F8C\u306B\u5225\u306E\u7BC4\u56F2\u304B\u3089\u518D\u6311\u6226\u3002\u7BC4\u56F2\u3054\u3068\u906E\u65AD\u3059\u308C\u3070\u6B62\u307E\u308B\u3002"
+  minimumDay: 28
+  maximumDay: 30
+  startWindow: {x: 20, y: 60}
+  sourceIpPrefix: 198.51.100.
+  steps:
+  - label: "\u63A2\u7D22"
+    offsetMinutes: 0
+    kind: 1
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: 9dc40c3646e4a5446860183d2d50211f, type: 2}
+    eventType: AUTH
+    result: FAIL
+    detail: LOGIN FAIL (VPN)
+    repeat: 4
+    repeatIntervalMinutes: 0.3
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: 
+    helpDesk: {fileID: 0}
+  - label: "\u4FB5\u5165\u306E\u8A66\u307F"
+    offsetMinutes: 2
+    kind: 2
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: 9dc40c3646e4a5446860183d2d50211f, type: 2}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
+    request: {fileID: 11400000, guid: 270369560196db74ca41bd196a772f0e, type: 2}
+    script: 
+    helpDesk: {fileID: 0}
+  compromiseLog: "\u81EA\u5F8B\u578B\u653B\u6483AI\u306B\u4FB5\u5165\u3055\u308C\u305F\uFF08DAYBREAK\uFF09"
+  stopOnBlock: 1
+  chance: 1
+  adaptive: 1
+  maxAttempts: 6
+  fatalIfAllowed: 0

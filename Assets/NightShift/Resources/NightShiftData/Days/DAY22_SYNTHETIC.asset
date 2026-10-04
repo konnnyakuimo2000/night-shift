@@ -1,0 +1,189 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f31fe98f238094b9b3677ba6515054, type: 3}
+  m_Name: DAY22_SYNTHETIC
+  m_EditorClassIdentifier: 
+  dayNumber: 22
+  title: SYNTHETIC
+  dateLabel: "1998/06/16 (\u706B)"
+  clockInDateLabel: "1998/06/15 (\u6708)"
+  startMinute: 0
+  endMinute: 360
+  realSecondsPerGameMinute: 1.5
+  endWarningMinute: 350
+  graceRealSeconds: 25
+  requestsExpire: 1
+  briefingFrom: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u90E8 \u8AB2\u9577 \u68EE\u7530"
+  briefingBody: "\u300C\u653B\u6483\u306E\u6587\u9762\u3092\u81EA\u52D5\u3067\u4F5C\u308B\u4EBA\u5DE5\u77E5\u80FD\u300D\u304C\u4F7F\u308F\u308C\u59CB\u3081\u3066\u3044\u308B\u3001\u3068\u306E\u30CB\u30E5\u30FC\u30B9\u304C\u3042\u308A\u307E\u3057\u305F\u3002\n<b>\u898B\u305F\u76EE\u3067\u306F\u898B\u5206\u3051\u3089\u308C\u306A\u3044\u8981\u6C42</b>
+    \u304C\u5897\u3048\u307E\u3059\u3002\u7167\u5408\u3092\u4E00\u3064\u3082\u7701\u304B\u306A\u3044\u3067\u304F\u3060\u3055\u3044\u3002\n\n\u25A0
+    \u672C\u65E5\u306E\u696D\u52D9\n\u30FB<b>\u63A5\u7D9A\u8981\u6C42\u306E\u5BE9\u67FB</b>\u3000\u30FB<b>IT\u554F\u3044\u5408\u308F\u305B</b>\u3078\u306E\u5BFE\u5FDC\u3000\u30FB<b>\u30ED\u30B0\u30FB\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u306E\u76E3\u8996</b>\n\n\u25A0
+    \u63A5\u7D9A\u5BE9\u67FB\u306E\u30EB\u30FC\u30EB"
+  rules:
+  - "<b>\u793E\u54E1</b>\u304C<b>\u81EA\u5206\u306E\u767B\u9332\u7AEF\u672B</b>\u304B\u3089\u63A5\u7D9A\u3059\u308B\u5834\u5408\u306F
+    <color=#0030A0><b>\u8A31\u53EF</b></color> \u3059\u308B\u3002"
+  - "<b>\u793E\u54E1\u3068\u3057\u3066\u767B\u9332\u3055\u308C\u3066\u3044\u306A\u3044\u5229\u7528\u8005</b>\u304B\u3089\u306E\u63A5\u7D9A\u306F
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002\uFF08\u793E\u54E1\u756A\u53F7\u30FB\u6C0F\u540D\u3067\u691C\u7D22\u3057\u3066\u78BA\u8A8D\uFF09"
+  - "<b>\u305D\u306E\u793E\u54E1\u306E\u767B\u9332\u7AEF\u672B\u3067\u306F\u306A\u3044\u7AEF\u672B</b>\u304B\u3089\u306E\u63A5\u7D9A\u306F\u3001\u793E\u54E1\u672C\u4EBA\u3067\u3082
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  - "\u63A5\u7D9A\u8981\u6C42\u306E <color=#8A4B00><b>\u300C\u5FC5\u8981\u306A\u6A29\u9650\u300D</b></color>
+    \u304C\u3001\u793E\u54E1\u60C5\u5831\u306E\u6A29\u9650\u6B04\u3067 \xD7 \u306A\u3089
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  - "\u63A5\u7D9A\u5143\u304C <b>\u793E\u5916</b> \u306E\u5834\u5408\u306F <color=#8A4B00><b>\u300CVPN\u63A5\u7D9A\u300D\u3060\u3051</b></color>\u3002\u793E\u54E1\u306E
+    <b>VPN\u5229\u7528\u304C\u300C\u8A31\u53EF\u300D</b> \u3067\u3001<b>VPN\u7AEF\u672B</b>
+    \u304B\u3089\u306A\u3089 <color=#0030A0><b>\u8A31\u53EF</b></color>\u3002\u305D\u308C\u4EE5\u5916\u306F
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  - "<b>\u793E\u5185\u306E\u767B\u9332\u7AEF\u672B</b>\u304B\u3089\u306E\u63A5\u7D9A\u306F\u3001\u63A5\u7D9A\u5143\u306E
+    <color=#8A4B00><b>IP\u30A2\u30C9\u30EC\u30B9</b></color> \u304C\u793E\u54E1\u60C5\u5831\u306E
+    <b>\u300C\u7AEF\u672BIP\u300D</b> \u3068\u540C\u3058\u304B\u78BA\u8A8D\u3059\u308B\u3002<color=#B00000><b>\u9055\u3048\u3070\u62D2\u5426</b></color>\uFF08\u306A\u308A\u3059\u307E\u3057\uFF09\u3002"
+  - "<b>\u52E4\u52D9\u72B6\u614B\u304C\u300C\u9000\u52E4\u300D</b>\u306E\u793E\u54E1\u304B\u3089\u306E\u63A5\u7D9A\u306F
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  - "<b>\u5728\u7C4D\u72B6\u614B\u304C\u300C\u5728\u7C4D\u300D\u3067\u306A\u3044</b>\u793E\u54E1\uFF08\u4F11\u8077\u30FB\u9000\u8077\uFF09\u304B\u3089\u306E\u63A5\u7D9A\u306F
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  - "\u5229\u7528\u8005\u304C <b>\u81EA\u5206\uFF08\u904B\u7528\u62C5\u5F53\u8005\uFF09\u306EID</b>
+    \u306E\u8981\u6C42\u306F <color=#B00000><b>\u62D2\u5426</b></color> \u3057\u3001\u3059\u3050\u306B\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5909\u66F4\u3059\u308B\u3002"
+  newRuleStartIndex: -1
+  changedRuleIndices: 
+  briefingFooter: "\u9053\u5177\u306B\u983C\u308B\u307B\u3069\u3001\u9053\u5177\u306E\u7A74\u3082\u72D9\u308F\u308C\u307E\u3059\u3002\n\u203B
+    \u64CD\u4F5C\u65B9\u6CD5\u306F\u6DFB\u4ED8\u306E\u30DE\u30CB\u30E5\u30A2\u30EB\u3092\u53C2\u7167\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  attachments:
+  - {fileID: 11400000, guid: 1bff7a1e20937204eb4983f6b3674a89, type: 2}
+  - {fileID: 11400000, guid: 0906b99c5869d874d8c23df8ff2623b4, type: 2}
+  - {fileID: 11400000, guid: 0c1849e2d856559499e44f1577441c16, type: 2}
+  fixedEvents: []
+  randomSlots: []
+  helpDesk: []
+  threats:
+  - {fileID: 11400000, guid: 9405a2b6c2f606d4b8681180ca3cee3d, type: 2}
+  - {fileID: 11400000, guid: 14f574eeaa294254a80a3e2ea2e0590f, type: 2}
+  - {fileID: 11400000, guid: 416a29c0991140a4ea11fd45e3dd1ca2, type: 2}
+  - {fileID: 11400000, guid: d69455dc0821a2a44b11037f1d9c1132, type: 2}
+  - {fileID: 11400000, guid: 1b298415e0c0af7498b0b05ed89213fe, type: 2}
+  - {fileID: 11400000, guid: ef2087437c6f3ec43a8fa5d1532b8c0a, type: 2}
+  - {fileID: 11400000, guid: f30289156c22e6c47bccdbd694296a3c, type: 2}
+  - {fileID: 11400000, guid: 980ff4fd2342c834e891a1e9e0637767, type: 2}
+  - {fileID: 11400000, guid: 0e7a688782271b14b9b869b599b8eab0, type: 2}
+  - {fileID: 11400000, guid: 1e88146394b0a20439f8075a9e3918f9, type: 2}
+  - {fileID: 11400000, guid: 6d3e2024c7ad7f3408ffbe61f82c600d, type: 2}
+  backgroundTrafficTemplate: {fileID: 0}
+  backgroundLogChance: 0.25
+  backgroundActivityScale: 1
+  randomEvents: 1
+  requestCount: 20
+  violationRatio: 0.36
+  burstChance: 0.26
+  routinePool:
+  - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
+  - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
+  - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
+  - {fileID: 11400000, guid: 1a5b672491c2bc74ca0ff49619f7e1cb, type: 2}
+  violationPool:
+  - {fileID: 11400000, guid: a2d89710d19e9814d8f34f81142ca93a, type: 2}
+  - {fileID: 11400000, guid: 1595cc59eafba054bbc6e9c5d8d8c48f, type: 2}
+  - {fileID: 11400000, guid: 98f50d94471f3d14f9334b3ac661a447, type: 2}
+  - {fileID: 11400000, guid: 65aafe03062ae494099f5e3d782b8c13, type: 2}
+  - {fileID: 11400000, guid: 73f71e9b250a8f6489c79e208b857e64, type: 2}
+  - {fileID: 11400000, guid: c7cdf2b8c7a74684daff07c38da54a9a, type: 2}
+  - {fileID: 11400000, guid: 11a1a399e4eed474c85f72196b5490ae, type: 2}
+  - {fileID: 11400000, guid: df165a01df9c65e408748a1bbc35b327, type: 2}
+  - {fileID: 11400000, guid: b1dd75bc871f3a54baf699bfabe74104, type: 2}
+  - {fileID: 11400000, guid: 228ef3c0ae1f44b4c940c1a942d2cd68, type: 2}
+  - {fileID: 11400000, guid: e836db68648869249b5a169b77b0eb3f, type: 2}
+  - {fileID: 11400000, guid: b6050446252b2f147a070e52e470d360, type: 2}
+  - {fileID: 11400000, guid: eb84ac04c53ed9346ab6f8ebe03d9591, type: 2}
+  - {fileID: 11400000, guid: 05df81875cfb3284e9b1cf1a0f4d87fc, type: 2}
+  - {fileID: 11400000, guid: 857b704c080434840b9a4bcf51d7c53a, type: 2}
+  - {fileID: 11400000, guid: 234b2f5dc307db34cae597580f26cbd8, type: 2}
+  - {fileID: 11400000, guid: e8735ca06a1b2c247b2002b9e78738e8, type: 2}
+  helpDeskCount: 3
+  helpDeskPool:
+  - {fileID: 11400000, guid: ae15b14c0621be24eaadaf97b32c8846, type: 2}
+  - {fileID: 11400000, guid: 0defa9150ba81e24dba3d2db5b4905e5, type: 2}
+  - {fileID: 11400000, guid: d573f31573641a343bd0d23acc7e02a6, type: 2}
+  - {fileID: 11400000, guid: 21ab7bdbd4bde3643b1628b2c84df0ab, type: 2}
+  - {fileID: 11400000, guid: e14c6104b1554534cb5507aae2ca7266, type: 2}
+  - {fileID: 11400000, guid: e4279db0bf3a8c446a74f281bb514c2b, type: 2}
+  - {fileID: 11400000, guid: 3a071e38d755b4e45a20f69b242bada8, type: 2}
+  - {fileID: 11400000, guid: ccc9ae3141d2957409c19747d0c428ab, type: 2}
+  - {fileID: 11400000, guid: 9cc1e4b14fe99db4182c002a2254a9fb, type: 2}
+  - {fileID: 11400000, guid: 43fdc8ce05121a540aece15615d2ece6, type: 2}
+  - {fileID: 11400000, guid: a54d9b251cff8a9499d643e4cc7d1c47, type: 2}
+  - {fileID: 11400000, guid: aad533c944675d045a1b4049d4c9c1b9, type: 2}
+  - {fileID: 11400000, guid: ae580e00d9ccdf04d8ae956f17440bb1, type: 2}
+  - {fileID: 11400000, guid: 8f9d96769ed222941825c4ffbd955a3f, type: 2}
+  - {fileID: 11400000, guid: df744441f019c814982351d31cb43a81, type: 2}
+  - {fileID: 11400000, guid: c7aec0e09c99dbe498c9d3654d6af549, type: 2}
+  - {fileID: 11400000, guid: 84bffc4f09556f3479ccf625c68606e8, type: 2}
+  - {fileID: 11400000, guid: ca4069b10d7905946a519d410fbbb7c6, type: 2}
+  - {fileID: 11400000, guid: 31b9cb8bd9f177c4a82d2e1bf6123f9f, type: 2}
+  - {fileID: 11400000, guid: 464a96d765e6cce4087b17a5d18dcf7d, type: 2}
+  - {fileID: 11400000, guid: 707296297f76952489299f0eae6e0954, type: 2}
+  - {fileID: 11400000, guid: 393f08f80f29b6440b83aa1e87b8b347, type: 2}
+  - {fileID: 11400000, guid: de9ebfa20b2e13b479ac337ff7945cb4, type: 2}
+  - {fileID: 11400000, guid: 880eb0698faf14d42a6f8bb7acc99494, type: 2}
+  - {fileID: 11400000, guid: d5b11501573fb6d41bd1e28bc03c18a6, type: 2}
+  - {fileID: 11400000, guid: 821fd9212281bab4a84c47ae12c1492e, type: 2}
+  - {fileID: 11400000, guid: b9b98dbda4cadec49b45384b390fe671, type: 2}
+  - {fileID: 11400000, guid: f1a83555b034d42468e07f9fa59290c0, type: 2}
+  - {fileID: 11400000, guid: 058dbf5fbeb6ceb46ae9a1cf52c23eb3, type: 2}
+  - {fileID: 11400000, guid: 511a3418d5e843d41a1966d0121e317d, type: 2}
+  - {fileID: 11400000, guid: d5191eba771de6a4681d3f505ecdcf72, type: 2}
+  - {fileID: 11400000, guid: 0a90b90ba0b50944caef03e541ba8deb, type: 2}
+  - {fileID: 11400000, guid: 2d3d0bf4f0496c8488b563d5f759decd, type: 2}
+  - {fileID: 11400000, guid: 848b4d6ec9dea724db20aa79d139a697, type: 2}
+  - {fileID: 11400000, guid: 16ff430b8d2e6874fa20f2e4bc3a7a5d, type: 2}
+  - {fileID: 11400000, guid: 279af92ab729e374d916a228c54eb330, type: 2}
+  - {fileID: 11400000, guid: 29f6e7b0e7dc51c499504dce2f2565a7, type: 2}
+  - {fileID: 11400000, guid: ce3c581733750e545af95f8fe199d4c0, type: 2}
+  - {fileID: 11400000, guid: 995161c47f62c4246a5f3c0705e8a8d1, type: 2}
+  - {fileID: 11400000, guid: b81d2afcc377cff42a8e8f08fa92c233, type: 2}
+  - {fileID: 11400000, guid: b90f9f588d7025049a6091e6b01d904b, type: 2}
+  weekLabel: "\u7B2C4\u9031"
+  tutorialGateUntilMinute: 0
+  tutorialGateBreathMinutes: 2
+  tutorialGateMaxDelayMinutes: 30
+  passwordChangeAtMinute: -1
+  policy:
+    blockExternalToAdministrative: 1
+    blockUnregisteredDevice: 1
+    blockUnregisteredToCritical: 1
+    blockUnknownUser: 1
+    requirePermission: 1
+    requireVpnPermission: 1
+    requireSourceIpMatch: 1
+    requireOnShift: 1
+    requireActiveEmployment: 1
+    blockOperatorAccount: 1
+  unlockedFeatures:
+  - CONNECTION_MONITOR
+  - EMPLOYEE_DIRECTORY
+  - DEVICE_CHECK
+  - EMPLOYEE_DETAIL
+  - EMPLOYEE_PERMISSIONS
+  - PERMISSION_HINT
+  - SERVER_GUIDE
+  - ADMIN_PERMISSIONS
+  - HELPDESK
+  - REMOTE_SUPPORT
+  - SYSTEM_LOG
+  - NETWORK_MAP
+  - SECURITY_INFO
+  - STORE
+  - NEWS
+  - IP_CHECK
+  - WORK_STATUS
+  - FIREWALL_BLOCK
+  - EMPLOYMENT_STATUS
+  - REPORT
+  - MAIL_SENDER
+  - SERVER_MANAGEMENT
+  - ISOLATION
+  - USER_MANAGEMENT

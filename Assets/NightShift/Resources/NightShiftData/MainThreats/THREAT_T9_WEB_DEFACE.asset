@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T9_WEB_DEFACE
+  m_EditorClassIdentifier: 
+  scenarioId: T9_WEB_DEFACE
+  designNote: "\u516C\u958BWeb\u306E\u63A2\u7D22 \u2192 \u4E0D\u5BE9\u306A\u30D5\u30A1\u30A4\u30EB\u306E\u66F8\u304D\u8FBC\u307F
+    \u2192 25\u5206\u5F8C\u306B\u30DA\u30FC\u30B8\u304C\u66F8\u304D\u63DB\u3048\u3089\u308C\u308B\uFF08V2
+    GARBLE\uFF09\u3002"
+  minimumDay: 17
+  maximumDay: 30
+  startWindow: {x: 40, y: 260}
+  sourceIpPrefix: 192.0.2.
+  steps:
+  - label: "\u63A2\u7D22"
+    offsetMinutes: 0
+    kind: 1
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: 298d983054f874042b0b9a9ca0b7cade, type: 2}
+    eventType: HTTP
+    result: 404
+    detail: GET /cgi-bin/upload.cgi|GET /admin/upload/|GET /htdocs/
+    repeat: 3
+    repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: 
+    helpDesk: {fileID: 0}
+  - label: "\u4E0D\u5BE9\u306A\u30D7\u30ED\u30BB\u30B9"
+    offsetMinutes: 4
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: WEB_IMPLANT
+    helpDesk: {fileID: 0}
+  - label: "\u6539\u3056\u3093"
+    offsetMinutes: 29
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: WEB_DEFACE_CHECK
+    helpDesk: {fileID: 0}
+  compromiseLog: "\u7BA1\u7406\u30B3\u30F3\u30BD\u30FC\u30EB\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u306B\u6210\u529F"
+  stopOnBlock: 0
+  chance: 0.5
+  adaptive: 0
+  maxAttempts: 4
+  fatalIfAllowed: 0

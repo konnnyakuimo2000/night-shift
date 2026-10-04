@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T8_EXFILTRATION
+  m_EditorClassIdentifier: 
+  scenarioId: T8_EXFILTRATION
+  designNote: "\u6A29\u9650\u3082\u7AEF\u672B\u3082\u6B63\u3057\u3044\u793E\u54E1\u304C\u3001\u6DF1\u591C\u306B\u5171\u6709\u30D5\u30A1\u30A4\u30EB\u3092\u5927\u91CF\u306B\u8AAD\u3080\u3002\u30ED\u30B0\u3092\u5831\u544A\uFF08\u307E\u305F\u306F\u505C\u6B62\u30FB\u9694\u96E2\uFF09\u3059\u308C\u3070\u9632\u3052\u308B\u3002"
+  minimumDay: 18
+  maximumDay: 30
+  startWindow: {x: 40, y: 260}
+  sourceIpPrefix: 10.10.
+  steps:
+  - label: "\u88AB\u5BB3\u8005"
+    offsetMinutes: 0
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: PICK_VICTIM:FILE
+    helpDesk: {fileID: 0}
+  - label: "\u5927\u91CF\u306E\u8AAD\u307F\u8FBC\u307F"
+    offsetMinutes: 0.5
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 14
+    repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: FILE_READ
+    helpDesk: {fileID: 0}
+  - label: "\u6301\u3061\u51FA\u3057"
+    offsetMinutes: 22
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: EXFIL_CHECK
+    helpDesk: {fileID: 0}
+  compromiseLog: "\u7BA1\u7406\u30B3\u30F3\u30BD\u30FC\u30EB\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u306B\u6210\u529F"
+  stopOnBlock: 1
+  chance: 0.5
+  adaptive: 0
+  maxAttempts: 4
+  fatalIfAllowed: 0

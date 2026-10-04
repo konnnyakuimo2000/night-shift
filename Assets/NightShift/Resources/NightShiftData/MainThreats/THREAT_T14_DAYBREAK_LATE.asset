@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T14_DAYBREAK_LATE
+  m_EditorClassIdentifier: 
+  scenarioId: T14_DAYBREAK_LATE
+  designNote: "\u591C\u306E\u5F8C\u534A\u3001\u3082\u3046\u4E00\u5EA6\u5225\u306E\u7D4C\u8DEF\u304B\u3089\u3002"
+  minimumDay: 28
+  maximumDay: 30
+  startWindow: {x: 200, y: 260}
+  sourceIpPrefix: 203.0.113.
+  steps:
+  - label: "\u4FB5\u5165\u306E\u8A66\u307F"
+    offsetMinutes: 0
+    kind: 2
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: eccb02d823086c94ba187b0ed4bcf88e, type: 2}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
+    request: {fileID: 11400000, guid: 4d607eaf0f4e5b64dbad51a4ea05dab6, type: 2}
+    script: 
+    helpDesk: {fileID: 0}
+  compromiseLog: "\u81EA\u5F8B\u578B\u653B\u6483AI\u306B\u4FB5\u5165\u3055\u308C\u305F\uFF08DAYBREAK\uFF09"
+  stopOnBlock: 1
+  chance: 1
+  adaptive: 1
+  maxAttempts: 6
+  fatalIfAllowed: 0

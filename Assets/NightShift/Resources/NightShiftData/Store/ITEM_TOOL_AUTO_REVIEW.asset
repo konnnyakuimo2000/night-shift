@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc3142bf85602f469f7ce0a9d5e0fe9, type: 3}
+  m_Name: ITEM_TOOL_AUTO_REVIEW
+  m_EditorClassIdentifier: 
+  itemId: TOOL_AUTO_REVIEW
+  displayName: "\u81EA\u52D5\u5BE9\u67FB\u30C4\u30FC\u30EB"
+  category: 1
+  price: 24800
+  description: "\u8981\u6C42\u3092\u4E26\u3079\u66FF\u3048\u30FB\u7D5E\u308A\u8FBC\u307F\u3001\u671F\u9650\u307E\u3067\u306E\u6B8B\u308A\u6642\u9593\u3092\u8868\u793A\u3002\u8A2D\u5B9A\u3057\u305F\u6761\u4EF6\u3092\u3059\u3079\u3066\u6E80\u305F\u3059\u7C21\u5358\u306A\u8981\u6C42\u3092\u81EA\u52D5\u3067\u8A31\u53EF\u3057\u307E\u3059\uFF08\u62D2\u5426\u306F\u81EA\u52D5\u3067\u306F\u3057\u307E\u305B\u3093\uFF09\u3002\u81EA\u52D5\u8A31\u53EF\u306E\u8CAC\u4EFB\u306F\u3042\u306A\u305F\u306B\u3042\u308A\u307E\u3059\u3002"
+  unlockDay: 10
+  prerequisite: HW_MONITOR_2
+  grantsFeature: TOOL_AUTO_REVIEW
+  consumable: 0
+  maxStock: 1
+  icon: check
+  adCopy: "\u5BE9\u67FB\u304C\u306F\u304B\u3069\u308B\uFF01 \u81EA\u52D5\u5BE9\u67FB\u30C4\u30FC\u30EB"

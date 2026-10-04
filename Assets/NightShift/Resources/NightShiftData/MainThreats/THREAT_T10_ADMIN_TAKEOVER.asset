@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T10_ADMIN_TAKEOVER
+  m_EditorClassIdentifier: 
+  scenarioId: T10_ADMIN_TAKEOVER
+  designNote: "\u9000\u52E4\u3057\u3066\u3044\u308B\u306F\u305A\u306E\u7BA1\u7406\u8005\u306EID\u3067\u7BA1\u7406\u30ED\u30B0\u30A4\u30F3\u3002\u8A31\u53EF\u3057\u305F\u3046\u3048\u306B\u30A2\u30AB\u30A6\u30F3\u30C8\u3092\u6B62\u3081\u306A\u3044\u3068\u81F4\u547D\u7684\uFF08GO2\uFF09\u3002UPS
+    \u306E\u8A2D\u5B9A\u5909\u66F4\u306F\u505C\u96FB\uFF08V5 REDACT\uFF09\u306E\u5146\u5019\u3002"
+  minimumDay: 19
+  maximumDay: 30
+  startWindow: {x: 40, y: 240}
+  sourceIpPrefix: 10.10.
+  steps:
+  - label: "\u7BA1\u7406\u30ED\u30B0\u30A4\u30F3\u8981\u6C42"
+    offsetMinutes: 0
+    kind: 2
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: eccb02d823086c94ba187b0ed4bcf88e, type: 2}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
+    request: {fileID: 11400000, guid: 8781f33c11afdc84f8d8757e4a1661ee, type: 2}
+    script: 
+    helpDesk: {fileID: 0}
+  - label: "UPS \u8A2D\u5B9A\u5909\u66F4"
+    offsetMinutes: 6
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: UPS_CHANGE
+    helpDesk: {fileID: 0}
+  - label: "\u505C\u96FB\u306E\u5224\u5B9A"
+    offsetMinutes: 20
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: BLACKOUT_CHECK
+    helpDesk: {fileID: 0}
+  - label: "\u4E57\u3063\u53D6\u308A\u306E\u5224\u5B9A"
+    offsetMinutes: 60
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: ADMIN_FATAL_CHECK
+    helpDesk: {fileID: 0}
+  compromiseLog: "\u7BA1\u7406\u8005\u30A2\u30AB\u30A6\u30F3\u30C8\u304C\u4E57\u3063\u53D6\u3089\u308C\u305F"
+  stopOnBlock: 0
+  chance: 0.45
+  adaptive: 0
+  maxAttempts: 4
+  fatalIfAllowed: 0

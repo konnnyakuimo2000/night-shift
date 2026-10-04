@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3989493d4e343b2449f430f803612d42, type: 3}
+  m_Name: EMP_E-0057
+  m_EditorClassIdentifier: 
+  employeeId: E-0057
+  fullName: "\u85E4\u7530 \u525B"
+  kana: "\u30D5\u30B8\u30BF \u30C4\u30E8\u30B7"
+  age: 42
+  department: "\u958B\u767A\u90E8"
+  position: "\u30B7\u30CB\u30A2\u30A8\u30F3\u30B8\u30CB\u30A2"
+  portrait: {fileID: 0}
+  deviceId: DEV-PC05
+  deviceIp: 10.10.3.25
+  laptopDeviceId: NB-DEV05
+  workHours: "\u30D5\u30EC\u30C3\u30AF\u30B9"
+  onShift: 0
+  vpnEnabled: 1
+  employment: 2
+  nameRedacted: 0
+  itLiteracy: 5
+  securityAwareness: 3
+  normalAccessTargets:
+  - WEB
+  - MAIL
+  - FILE
+  - DEV
+  normalBehavior:
+    activityPerHour: 9
+    serviceWeights:
+    - serviceId: WEB
+      weight: 3
+    - serviceId: MAIL
+      weight: 3
+    - serviceId: FILE
+      weight: 1.5
+    - serviceId: DEV
+      weight: 1.5
+    usesVpn: 1
+  permissions:
+  - {fileID: 11400000, guid: b919be391b48d014f9b2d40ee80a49b0, type: 2}
+  - {fileID: 11400000, guid: fe8f316bbe4d4df4db8d066b92ec3ec7, type: 2}
+  - {fileID: 11400000, guid: 6f4979c46aa4001408a768f445a149f4, type: 2}
+  - {fileID: 11400000, guid: 08c50d0c41061a04e8953e735f227c8a, type: 2}

@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T13_DIVERSION
+  m_EditorClassIdentifier: 
+  scenarioId: T13_DIVERSION
+  designNote: "\u554F\u3044\u5408\u308F\u305B\u304C\u4E00\u6589\u306B\u5C4A\u304D\u3001\u305D\u306E\u9699\u306B\u793E\u5916\u304B\u3089\u7BA1\u7406\u30B5\u30FC\u30D0\u30FC\u3078\u306E\u8981\u6C42\u3002\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u8B66\u544A\u3092\u5148\u306B\u3002"
+  minimumDay: 25
+  maximumDay: 30
+  startWindow: {x: 60, y: 260}
+  sourceIpPrefix: 192.0.2.
+  steps:
+  - label: "\u554F\u3044\u5408\u308F\u305B\u306E\u6BBA\u5230"
+    offsetMinutes: 0
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: DIVERSION
+    helpDesk: {fileID: 0}
+  - label: "\u672C\u547D\u306E\u8981\u6C42"
+    offsetMinutes: 1.5
+    kind: 2
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: eccb02d823086c94ba187b0ed4bcf88e, type: 2}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
+    request: {fileID: 11400000, guid: 228ef3c0ae1f44b4c940c1a942d2cd68, type: 2}
+    script: 
+    helpDesk: {fileID: 0}
+  compromiseLog: "\u7BA1\u7406\u30B3\u30F3\u30BD\u30FC\u30EB\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u306B\u6210\u529F"
+  stopOnBlock: 1
+  chance: 0.6
+  adaptive: 0
+  maxAttempts: 4
+  fatalIfAllowed: 0

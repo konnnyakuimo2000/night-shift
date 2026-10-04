@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T3_BRUTE_FORCE
+  m_EditorClassIdentifier: 
+  scenarioId: T3_BRUTE_FORCE
+  designNote: "\u8A8D\u8A3C\u30B5\u30FC\u30D0\u30FC\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u5931\u6557\u304C\u540C\u3058\u63A5\u7D9A\u5143\u304B\u3089\u9023\u7D9A
+    \u2192 \u540C\u3058\u63A5\u7D9A\u5143\u304B\u3089\u6B63\u898F\u306E\u793E\u54E1\u3092\u540D\u4E57\u308B
+    VPN\u63A5\u7D9A\u8981\u6C42\u3002\u62D2\u5426\u3057\u3066\u63A5\u7D9A\u5143\u3092\u906E\u65AD\u3059\u308B\u3002"
+  minimumDay: 11
+  maximumDay: 30
+  startWindow: {x: 60, y: 250}
+  sourceIpPrefix: 198.51.100.
+  steps:
+  - label: "\u30ED\u30B0\u30A4\u30F3\u5931\u6557"
+    offsetMinutes: 0
+    kind: 1
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: 9dc40c3646e4a5446860183d2d50211f, type: 2}
+    eventType: AUTH
+    result: FAIL
+    detail: LOGIN FAIL (VPN)
+    repeat: 9
+    repeatIntervalMinutes: 0.35
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: 
+    helpDesk: {fileID: 0}
+  - label: "VPN\u63A5\u7D9A\u8981\u6C42"
+    offsetMinutes: 5
+    kind: 2
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: 9dc40c3646e4a5446860183d2d50211f, type: 2}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 0.5
+    compromiseUnlessBlocked: 0
+    request: {fileID: 11400000, guid: e45b55fdd02cf044491ef31b2c23a4ac, type: 2}
+    script: 
+    helpDesk: {fileID: 0}
+  - label: "\u30ED\u30B0\u30A4\u30F3\u5931\u6557\uFF08\u518D\u958B\uFF09"
+    offsetMinutes: 14
+    kind: 1
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: 9dc40c3646e4a5446860183d2d50211f, type: 2}
+    eventType: AUTH
+    result: FAIL
+    detail: LOGIN FAIL (VPN)
+    repeat: 6
+    repeatIntervalMinutes: 0.4
+    compromiseUnlessBlocked: 1
+    request: {fileID: 0}
+    script: 
+    helpDesk: {fileID: 0}
+  compromiseLog: "VPN \u30ED\u30B0\u30A4\u30F3\u6210\u529F\uFF08\u7DCF\u5F53\u305F\u308A\u3067\u7A81\u7834\uFF09"
+  stopOnBlock: 0
+  chance: 1
+  adaptive: 0
+  maxAttempts: 4
+  fatalIfAllowed: 0

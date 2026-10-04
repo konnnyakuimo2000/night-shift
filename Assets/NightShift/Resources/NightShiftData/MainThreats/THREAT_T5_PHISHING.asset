@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T5_PHISHING
+  m_EditorClassIdentifier: 
+  scenarioId: T5_PHISHING
+  designNote: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u90E8\u3092\u540D\u4E57\u308B\u507D\u30E1\u30FC\u30EB\u3002\u5DEE\u51FA\u4EBA\u306E\u30A2\u30C9\u30EC\u30B9\u304C\u793E\u5185\u3068\u9055\u3046\u3002\u5831\u544A\u3059\u308C\u3070\u6B63\u89E3\u3001\u5165\u529B\u3059\u308C\u3070\u81EA\u5206\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u304C\u76D7\u307E\u308C\u308B\u3002"
+  minimumDay: 13
+  maximumDay: 25
+  startWindow: {x: 30, y: 280}
+  sourceIpPrefix: 198.51.100.
+  steps:
+  - label: "\u507D\u30E1\u30FC\u30EB"
+    offsetMinutes: 0
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: PHISH_MAIL
+    helpDesk: {fileID: 0}
+  compromiseLog: "\u7BA1\u7406\u30B3\u30F3\u30BD\u30FC\u30EB\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u306B\u6210\u529F"
+  stopOnBlock: 1
+  chance: 0.5
+  adaptive: 0
+  maxAttempts: 4
+  fatalIfAllowed: 0

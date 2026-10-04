@@ -73,6 +73,15 @@ MonoBehaviour:
   backgroundTrafficTemplate: {fileID: 0}
   backgroundLogChance: 0.3
   backgroundActivityScale: 1
+  randomEvents: 0
+  requestCount: 16
+  violationRatio: 0.3
+  burstChance: 0.2
+  routinePool: []
+  violationPool: []
+  helpDeskCount: 2
+  helpDeskPool: []
+  weekLabel: 
   tutorialGateUntilMinute: 240
   tutorialGateBreathMinutes: 1.5
   tutorialGateMaxDelayMinutes: 9999
@@ -84,6 +93,10 @@ MonoBehaviour:
     blockUnknownUser: 1
     requirePermission: 0
     requireVpnPermission: 0
+    requireSourceIpMatch: 0
+    requireOnShift: 0
+    requireActiveEmployment: 0
+    blockOperatorAccount: 0
   unlockedFeatures:
   - CONNECTION_MONITOR
   - EMPLOYEE_DIRECTORY
