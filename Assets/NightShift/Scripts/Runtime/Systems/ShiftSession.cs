@@ -41,6 +41,25 @@ namespace NightShift.Systems
         public MailManager Mail { get; }
 
         public IShiftUi Ui { get; set; }
+
+        // ---- 本番業務の夜の記録（夜の終わりに CareerRecord へまとめる） ----
+        /// <summary>この夜に出た被害（情報漏えい・改ざん・感染の拡大など）</summary>
+        public readonly System.Collections.Generic.List<string> Damage = new System.Collections.Generic.List<string>();
+        public int CorrectReports, WrongReports, AiHandled, AutoAllowed;
+        public bool OperatorCompromised;
+        public bool Overtime;
+        /// <summary>致命的な被害（ゲームオーバー GO2 の原因）。空なら無し</summary>
+        public string FatalIncident;
+        public event Action<string> DamageOccurred;
+
+        public void AddDamage(string what, bool fatal = false)
+        {
+            Damage.Add(what);
+            if (fatal && string.IsNullOrEmpty(FatalIncident)) FatalIncident = what;
+            Logs.Add(Time.CurrentMinute, "SECURITY", "-", "-", "INCIDENT", fatal ? "CRITICAL" : "DAMAGE", what);
+            Notifications.Notify(NotificationType.SecurityAlert, fatal ? "重大インシデント" : "被害の発生", what, Time.CurrentMinute);
+            DamageOccurred?.Invoke(what);
+        }
         /// <summary>プレイヤーのユーザー名（ログインID）</summary>
         public string OperatorName { get; }
         public ShiftPhase Phase { get; private set; } = ShiftPhase.NotStarted;

@@ -101,16 +101,37 @@ namespace NightShift.Events
         EventDefinition PickWeighted(List<EventDefinition> pool, int day)
         {
             float total = 0;
-            foreach (var d in pool) if (d != null && d.IsAvailableOn(day)) total += d.weight;
+            foreach (var d in pool) if (d != null && d.IsAvailableOn(day)) total += WeightOf(d);
             if (total <= 0) return null;
             double r = _s.Rng.NextDouble() * total;
             foreach (var d in pool)
             {
                 if (d == null || !d.IsAvailableOn(day)) continue;
-                r -= d.weight;
+                r -= WeightOf(d);
                 if (r <= 0) return d;
             }
             return pool[pool.Count - 1];
+        }
+
+        /// <summary>
+        /// 出やすさ。自分のIDの不正利用（T4）は、研修で決めたパスワードが弱い・付箋に書いた・初期化が多いほど出やすい。
+        /// 防御AIへの偽の指示（T15）は、防御AIを持っていなければ普通のなりすましと同じ扱い。
+        /// </summary>
+        float WeightOf(EventDefinition d)
+        {
+            float w = d.weight;
+            if (d.userType == UserType.OperatorAccount)
+            {
+                var acc = Core.GameManager.Instance != null ? Core.GameManager.Instance.Account : null;
+                if (acc != null)
+                {
+                    if (!acc.Changed) w *= 3f;
+                    else w *= 1f + (4 - acc.Strength) * 0.5f;
+                    if (acc.WrittenDown) w *= 2f;
+                    w *= 1f + acc.ResetCount * 0.3f;
+                }
+            }
+            return w;
         }
 
         float Rand(float a, float b) => a + (b - a) * (float)_s.Rng.NextDouble();

@@ -96,21 +96,26 @@ namespace NightShift.UI.Shift
         public void Search()
         {
             string dept = _dept.Index > 0 ? _dept.Value : null;
+            bool showInactive = _d.Unlocked(Features.EmploymentStatus);
             _results = _d.S.Employees.All.Where(e =>
+                (e.IsActive || showInactive) &&
                 Contains(e.employeeId, _id.text) &&
                 (string.IsNullOrEmpty(_name.text) || Normalize(e.fullName).Contains(Normalize(_name.text)) || Normalize(e.kana).Contains(Normalize(_name.text))) &&
                 (dept == null || e.department == dept) &&
                 (string.IsNullOrEmpty(_device.text) || Contains(e.deviceId, _device.text) || (!string.IsNullOrEmpty(e.laptopDeviceId) && Contains(e.laptopDeviceId, _device.text)))
             ).ToList();
             if (_d.Unlocked(Features.DeviceCheck))
-                _table.SetRows(_results, e => new[] { e.employeeId, e.fullName, e.department, e.position, e.deviceId, e.onShift ? "勤務中" : "退勤" });
+                _table.SetRows(_results, e => new[] { e.employeeId, e.DisplayName, e.department, e.position, e.deviceId, StatusText(e) });
             else
-                _table.SetRows(_results, e => new[] { e.employeeId, e.fullName, e.department, e.position, e.onShift ? "勤務中" : "退勤" });
+                _table.SetRows(_results, e => new[] { e.employeeId, e.DisplayName, e.department, e.position, StatusText(e) });
             _count.text = $"件数:  {_results.Count} 件";
             _w.SetStatus(0, _results.Count == 0 ? "該当する社員は見つかりませんでした。"
                 : _d.Unlocked(Features.EmployeeDetail) ? "ダブルクリックまたは [詳細表示] で社員情報を表示します。" : "検索結果の一覧を表示しています。");
             if (_results.Count > 0) _table.Select(0);
         }
+
+        /// <summary>一覧の状態欄: 在籍していなければ在籍状態、在籍なら勤務状態</summary>
+        public static string StatusText(EmployeeData e) => e.IsActive ? (e.onShift ? "勤務中" : "退勤") : EmployeeData.EmploymentLabel(e.employment);
 
         void ShowDetail()
         {
@@ -190,7 +195,7 @@ namespace NightShift.UI.Shift
         {
             foreach (Transform t in _body) Destroy(t.gameObject);
             var e = _list[_index];
-            _w.SetTitle($"社員情報の参照 - {e.employeeId} {e.fullName}");
+            _w.SetTitle($"社員情報の参照 - {e.employeeId} {e.DisplayName}");
             _w.SetStatus(0, $"レコード: {_index + 1} / {_list.Count}");
             _w.SetStatus(1, "参照のみ（編集権限なし）");
 
@@ -203,7 +208,7 @@ namespace NightShift.UI.Shift
             Row("社員番号:", e.employeeId, 0, 92, 110);
             Row("勤務状態:", e.onShift ? "勤務中" : "退勤", 250, 70, 110);
             y += 24;
-            Row("氏名:", e.fullName, 0, 92, 200);
+            Row("氏名:", e.DisplayName, 0, 92, 200);
             Row("年齢:", e.age.ToString(), 310, 50, 60);
             y += 24;
             Row("氏名(カナ):", e.kana, 0, 92, 200); y += 24;
@@ -213,12 +218,14 @@ namespace NightShift.UI.Shift
             Row("端末IP:", _d.S.Employees.GetIp(e), 250, 70, 130); y += 24;
             Row("VPN利用:", e.vpnEnabled ? "許可" : "不可", 0, 92, 140);
             Row("VPN端末:", string.IsNullOrEmpty(e.laptopDeviceId) ? "-" : e.laptopDeviceId, 250, 70, 130); y += 24;
-            Row("勤務時間:", e.workHours, 0, 92, 200); y += 30;
+            Row("勤務時間:", e.workHours, 0, 92, 200);
+            if (_d.Unlocked(Features.EmploymentStatus)) Row("在籍状態:", EmployeeData.EmploymentLabel(e.employment), 310, 70, 110);
+            y += 30;
 
             // 顔写真
             var frame = UIFactory.Image(_body, RetroTheme.Field, Color.white, "PhotoFrame");
             frame.rectTransform.Place(514, 0, 102, 126);
-            var photo = UIFactory.Image(frame.transform, PortraitPainter.Get(e), Color.white, "Photo");
+            var photo = UIFactory.Image(frame.transform, e.nameRedacted ? RetroTheme.White : PortraitPainter.Get(e), Color.white, "Photo");
             photo.type = Image.Type.Simple;
             photo.rectTransform.Stretch(3, 3, 3, 3);
             UIFactory.Label(_body, "顔写真", 514, 128, 102, 16, 11, TextAnchor.MiddleCenter).color = RetroTheme.Shadow;

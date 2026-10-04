@@ -165,6 +165,9 @@ namespace NightShift.Core
             ClearScreen();
             DisposeShift();
             var day = Database.GetDay(CurrentDay);
+            // その夜の開始時点の記録を残す（やり直したら戻す）
+            if (_snapshotDay != CurrentDay) { _careerSnapshot = CareerRecord.Current.Snapshot(); _snapshotDay = CurrentDay; }
+            else if (!string.IsNullOrEmpty(_careerSnapshot)) CareerRecord.Restore(_careerSnapshot);
             Session = new ShiftSession(Database, day, System.Environment.TickCount, OperatorName);
             Session.ShiftCompleted += OnShiftCompleted;
             _desktop = ShiftDesktop.Build(ScreenLayer, this, Session);
@@ -204,6 +207,7 @@ namespace NightShift.Core
                     Account.Changed ? $"変更済み（強度: {PasswordPolicy.StrengthLabel(Account.Strength)}{(Account.WrittenDown ? "・付箋あり" : "")}）" : "未変更（初期パスワード）"));
             var slip = Payroll.Compute(day.dayNumber, result, Session.Evaluation, Database.payroll);
             var previous = Wallet.Record(slip, out bool updated);
+            NightClosing.Close(Session, result, slip);
             SetScreen(EvaluationScreen.Build(ScreenLayer, day, result, slip, previous, updated, Wallet.Balance, GoToNextDay, RestartDay), GameState.Evaluation);
         }
 
@@ -281,9 +285,14 @@ namespace NightShift.Core
             }, false);
         }
 
+        string _careerSnapshot;
+        int _snapshotDay = -1;
+
         void StartNewGame()
         {
             CurrentDay = 1;
+            CareerRecord.StartNew();
+            _snapshotDay = -1;
             Wallet.ResetAll();
             Account = OperatorAccount.NewGame(OperatorName);
             Account.Save();

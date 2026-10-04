@@ -80,6 +80,19 @@ namespace NightShift.Core
             Current.Save();
         }
 
+        /// <summary>夜の開始時点の記録に戻す（その夜をやり直すとき）</summary>
+        public static void Restore(string json)
+        {
+            try
+            {
+                var r = JsonUtility.FromJson<CareerRecord>(json);
+                if (r != null) { Current = r; Current.Save(); }
+            }
+            catch { }
+        }
+
+        public string Snapshot() => JsonUtility.ToJson(this);
+
         public void Save()
         {
             try
