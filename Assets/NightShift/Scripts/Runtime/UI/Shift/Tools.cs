@@ -169,7 +169,7 @@ namespace NightShift.UI.Shift
         void TryAuto(EventInstance e)
         {
             if (_enabled != null && !_enabled.Value) return;
-            if (!Eligible(D, e, CareerRecord.Current.autoReviewConditions)) return;
+            if (!Eligible(S, e, CareerRecord.Current.autoReviewConditions)) return;
             e.AutoDecided = true;
             S.AutoAllowed++;
             S.Requests.Decide(e, PlayerAction.Allow);
@@ -177,14 +177,13 @@ namespace NightShift.UI.Shift
         }
 
         /// <summary>自動許可の対象か（社内・非管理系・警告なし ＋ 有効にした条件をすべて満たす）</summary>
-        public static bool Eligible(ShiftDesktop d, EventInstance e, List<string> conds)
+        public static bool Eligible(ShiftSession s, EventInstance e, List<string> conds)
         {
             if (e.Zone != SourceZone.External && e.Destination != null && !e.Destination.isAdministrative && !e.NotifyAsSecurityAlert)
             {
                 var acc = e.Destination.FindAccess(e.AccessType);
                 if (acc != null && acc.requiresVpnEnabled) return false;
                 var emp = e.Employee;
-                var s = d.S;
                 foreach (var c in conds)
                 {
                     switch (System.Array.IndexOf(Conditions, c))

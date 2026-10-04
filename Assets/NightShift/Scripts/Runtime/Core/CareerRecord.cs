@@ -58,6 +58,11 @@ namespace NightShift.Core
 
         public static CareerRecord Current { get; private set; } = Load();
 
+        /// <summary>テスト用: 保存データ（PlayerPrefs）に触れずに、記録を差し替える</summary>
+        public static void SetCurrentForTests(CareerRecord r) => Current = r;
+        /// <summary>テスト中は保存しない</summary>
+        public static bool SaveDisabled;
+
         public static CareerRecord Load()
         {
             CareerRecord r = null;
@@ -100,6 +105,7 @@ namespace NightShift.Core
 
         public void Save()
         {
+            if (SaveDisabled) return;
             try
             {
                 PlayerPrefs.SetString(Key, JsonUtility.ToJson(this));
