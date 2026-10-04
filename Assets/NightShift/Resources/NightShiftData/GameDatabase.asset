@@ -12,58 +12,63 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10640ffc8aa183b4a9cd9252e866ccae, type: 3}
   m_Name: GameDatabase
   m_EditorClassIdentifier: 
-  dataVersion: 16
+  dataVersion: 18
   companyName: NEXUS CORPORATION
   systemName: "\u793E\u5185\u60C5\u5831\u30B7\u30B9\u30C6\u30E0"
   systemVersion: Ver.4.21
   payroll:
-    basePay: 8000
-    payPerScorePoint: 60
-    rankBonusS: 3000
-    rankBonusA: 1500
-    rankBonusB: 500
-    deductionPerMaliciousAllow: 2000
-    deductionPerPolicyViolation: 500
-    minimumPay: 3000
+    basePay: 3000
+    basePayFullShift: 5000
+    trainingLastDay: 7
+    payPerScorePoint: 10
+    rankBonusS: 1000
+    rankBonusA: 500
+    rankBonusB: 0
+    deductionPerMaliciousAllow: 1000
+    deductionPerPolicyViolation: 300
+    deductionPerExpired: 200
+    deductionPerUnresolved: 300
+    transferFee: 210
+    minimumPay: 1000
   permissions:
-  - {fileID: 11400000, guid: b919be391b48d014f9b2d40ee80a49b0, type: 2}
-  - {fileID: 11400000, guid: fe8f316bbe4d4df4db8d066b92ec3ec7, type: 2}
-  - {fileID: 11400000, guid: 6f4979c46aa4001408a768f445a149f4, type: 2}
-  - {fileID: 11400000, guid: 74359a25ba2e3834b80d7ff13573a385, type: 2}
-  - {fileID: 11400000, guid: ffb1c8021d4af3b4582adec576894c2b, type: 2}
-  - {fileID: 11400000, guid: 08c50d0c41061a04e8953e735f227c8a, type: 2}
-  - {fileID: 11400000, guid: d0ce9c5970dabd845b4f0faf744a1a12, type: 2}
-  - {fileID: 11400000, guid: 1cab9e72097c93949beaff5d2e9b9064, type: 2}
-  - {fileID: 11400000, guid: 30cd948d3e9116942b35242dc41562e8, type: 2}
-  - {fileID: 11400000, guid: 4810ae0425b0b434a9b51a8ca4aa1bc3, type: 2}
-  - {fileID: 11400000, guid: 83c42cfd40b214c458c9444a95c8ac8f, type: 2}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   employees:
-  - {fileID: 11400000, guid: 3e53bd45c79ed7c4d8ef3070ce6ece20, type: 2}
-  - {fileID: 11400000, guid: a474a13d0ec2a7843ab069d0da214d1a, type: 2}
-  - {fileID: 11400000, guid: 490a51bd256811241a6c1d72e7750f3b, type: 2}
-  - {fileID: 11400000, guid: e789dfb9cf3274e498e0d58bcd6ee8f6, type: 2}
-  - {fileID: 11400000, guid: c8ba52a8318eb2140bae58530df90ec7, type: 2}
-  - {fileID: 11400000, guid: 94859e3ce70b2b443b8278619f2fad77, type: 2}
-  - {fileID: 11400000, guid: 2133b5877d629a642abcf1aee6c88e93, type: 2}
-  - {fileID: 11400000, guid: 04be9ecc33bd1e04b916d7c6b6835230, type: 2}
-  - {fileID: 11400000, guid: a0870f72f7347b9409e55ed9847c70e3, type: 2}
-  - {fileID: 11400000, guid: edbe7386849849249a394b228d487eb7, type: 2}
-  - {fileID: 11400000, guid: d5d09a568317cc046bc306fba2c63fc6, type: 2}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   nodes:
-  - {fileID: 11400000, guid: 874d600d8794665429f0dec8c5a409e5, type: 2}
-  - {fileID: 11400000, guid: fb6caf7801fa83447ab8ecb4d5aab0db, type: 2}
-  - {fileID: 11400000, guid: 35475a94bc410fa44b4fa4ab877f4328, type: 2}
-  - {fileID: 11400000, guid: 298d983054f874042b0b9a9ca0b7cade, type: 2}
-  - {fileID: 11400000, guid: ecc50913cfb1d7c48b0982405b1850ee, type: 2}
-  - {fileID: 11400000, guid: ac4d108d5a938e0499b1d0aad2134cc0, type: 2}
-  - {fileID: 11400000, guid: 22e5ca4bb63575145b7f1c051b4c63ab, type: 2}
-  - {fileID: 11400000, guid: 9dc40c3646e4a5446860183d2d50211f, type: 2}
-  - {fileID: 11400000, guid: eccb02d823086c94ba187b0ed4bcf88e, type: 2}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   days:
-  - {fileID: 11400000, guid: 4f5482c152fbcb04eabe0a15e541809e, type: 2}
-  - {fileID: 11400000, guid: 2c290b560bc842c45942eaae0a5d14cd, type: 2}
-  - {fileID: 11400000, guid: 2b2b5b9ee0fefc345bae3980d7048faa, type: 2}
-  - {fileID: 11400000, guid: 47a5596006d91ba4f9814850c18d4bcc, type: 2}
-  - {fileID: 11400000, guid: be3949db3a01afd4996dc98cbc1b7f3f, type: 2}
-  - {fileID: 11400000, guid: 115da8e608879a344b7364f680c267d2, type: 2}
-  - {fileID: 11400000, guid: b4a7ee69d4a2e6941a80a63978e936e9, type: 2}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
