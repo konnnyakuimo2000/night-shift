@@ -218,10 +218,10 @@ namespace NightShift.UI.Screens
                 string Y(int v) => OperatorWallet.Yen(v);
                 var lines = new List<(string label, int amount, bool minus)>
                 {
-                    ("基本給（夜勤）", slip.basePay, false),
+                    ("日当（深夜手当込み）", slip.basePay, false),
                     ($"評価手当（{slip.score}点）", slip.performancePay, false),
-                    ($"ランク賞与（{slip.rank}）", slip.rankBonus, false),
-                    ("減額", slip.deduction, true),
+                    ($"精勤手当（{slip.rank}）", slip.rankBonus, false),
+                    ("罰金・控除", slip.deduction, true),
                 };
                 float ly = 6;
                 foreach (var (label, amount, minus) in lines)
@@ -257,7 +257,7 @@ namespace NightShift.UI.Screens
                 string note = "";
                 if (previous != null)
                     note = updated ? $"（前回 {Y(previous.total)} から更新）" : $"（このDAYは前回の {Y(previous.total)} で計上）";
-                if (slip.deductionNotes.Count > 0) note = "減額: " + string.Join("、", slip.deductionNotes) + " " + note;
+                if (slip.deductionNotes.Count > 0) note = "罰金・控除: " + string.Join("、", slip.deductionNotes) + " " + note;
                 var noteText = UIFactory.Label(paper.transform, note, 10, ly + 22, 320, 32, 10, TextAnchor.UpperLeft, RetroTheme.Shadow);
                 noteText.color = new Color(0.45f, 0.45f, 0.5f, 0);
                 anim.Add(t, 0.6f, p =>

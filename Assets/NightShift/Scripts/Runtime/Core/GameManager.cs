@@ -257,12 +257,12 @@ namespace NightShift.Core
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"{OperatorName} 様");
             sb.AppendLine();
-            sb.AppendLine($"DAY {slip.day} の夜勤手当を支給しました。");
+            sb.AppendLine($"DAY {slip.day} の日当を支給しました（深夜手当込み）。");
             sb.AppendLine();
-            sb.AppendLine($"　基本給（夜勤）　　{Y(slip.basePay)}");
+            sb.AppendLine($"　日当（深夜手当込み）{Y(slip.basePay)}");
             sb.AppendLine($"　評価手当（{slip.score}点）　{Y(slip.performancePay)}");
-            sb.AppendLine($"　ランク賞与（{slip.rank}）　{Y(slip.rankBonus)}");
-            if (slip.deduction > 0) sb.AppendLine($"　減額　　　　　　−{Y(slip.deduction)}（{string.Join("、", slip.deductionNotes)}）");
+            sb.AppendLine($"　精勤手当（{slip.rank}）　{Y(slip.rankBonus)}");
+            if (slip.deduction > 0) sb.AppendLine($"　罰金・控除　　　−{Y(slip.deduction)}（{string.Join("、", slip.deductionNotes)}）");
             sb.AppendLine($"　<b>支給額　　　　　{Y(slip.total)}</b>");
             sb.AppendLine();
             sb.AppendLine($"現在の所持金: <b>{Y(Wallet.Balance)}</b>");
@@ -273,7 +273,7 @@ namespace NightShift.Core
                 MailId = "PAYSLIP-" + slip.day,
                 From = "総務部 給与担当",
                 To = $"夜間IT運用担当 {OperatorName} 様",
-                Subject = $"【給与明細】DAY {slip.day} 夜勤手当",
+                Subject = $"【給与明細】DAY {slip.day} 日当",
                 DateLabel = (string.IsNullOrEmpty(day.clockInDateLabel) ? day.dateLabel : day.clockInDateLabel) + " 18:00",
                 Body = sb.ToString(),
                 Day = day.dayNumber

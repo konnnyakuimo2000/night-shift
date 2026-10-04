@@ -30,6 +30,9 @@ namespace NightShift.Core
     {
         public List<PaySlip> slips = new List<PaySlip>();
         public int spent;   // ストアでの支出（後で使う）
+        public int version; // 給与体系の版。古い版の明細は読み込み時に破棄する
+
+        const int CurrentVersion = 2;   // 2: ブラック企業の給与体系（日当制・罰金）
 
         const string Key = "NightShift.Wallet";
 
@@ -50,11 +53,11 @@ namespace NightShift.Core
                 if (!string.IsNullOrEmpty(json))
                 {
                     var w = JsonUtility.FromJson<OperatorWallet>(json);
-                    if (w != null) return w;
+                    if (w != null && w.version == CurrentVersion) return w;
                 }
             }
             catch { }
-            return new OperatorWallet();
+            return new OperatorWallet { version = CurrentVersion };
         }
 
         public void Save()
@@ -111,7 +114,7 @@ namespace NightShift.Core
                 day = day,
                 score = r.Overall,
                 rank = r.Rank,
-                basePay = p.basePay,
+                basePay = p.BasePayFor(day),
                 performancePay = r.Overall * p.payPerScorePoint
             };
             switch (r.Rank)
@@ -129,6 +132,21 @@ namespace NightShift.Core
             {
                 slip.deduction += ev.PolicyViolation * p.deductionPerPolicyViolation;
                 slip.deductionNotes.Add($"ルール違反の接続の許可 {ev.PolicyViolation} 件");
+            }
+            if (ev.ExpiredLegit > 0 && p.deductionPerExpired > 0)
+            {
+                slip.deduction += ev.ExpiredLegit * p.deductionPerExpired;
+                slip.deductionNotes.Add($"期限切れ {ev.ExpiredLegit} 件");
+            }
+            if (ev.Unresolved > 0 && p.deductionPerUnresolved > 0)
+            {
+                slip.deduction += ev.Unresolved * p.deductionPerUnresolved;
+                slip.deductionNotes.Add($"未解決の問い合わせ {ev.Unresolved} 件");
+            }
+            if (p.transferFee > 0)
+            {
+                slip.deduction += p.transferFee;
+                slip.deductionNotes.Add("振込手数料");
             }
             slip.total = Mathf.Max(p.minimumPay, slip.basePay + slip.performancePay + slip.rankBonus - slip.deduction);
             return slip;
