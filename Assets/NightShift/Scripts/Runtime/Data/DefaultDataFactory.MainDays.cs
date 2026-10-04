@@ -83,7 +83,7 @@ namespace NightShift.Data
                 var e = b.Add(ScriptableObject.CreateInstance<EventDefinition>(), "MainEvents", "EVT_" + id);
                 e.eventId = id; e.minimumDay = minDay; e.maximumDay = LastDay;
                 e.triggerWindow = new Vector2(0, 360);
-                e.timeoutMinutes = 28;
+                e.timeoutMinutes = 40;
                 return e;
             }
             EventDefinition routine = c.routine, routineVpn = c.routineVpn;
@@ -251,7 +251,7 @@ namespace NightShift.Data
             t3Req.employeeConditions.preferUnused = false;
             t3Req.destination = c.auth; t3Req.accessType = "VPN接続";
             t3Req.isMalicious = true;
-            t3Req.timeoutMinutes = 30;
+            t3Req.timeoutMinutes = 42;
             var t3 = Threat("T3_BRUTE_FORCE", 11, LastDay, new Vector2(60, 250), "198.51.100.",
                 "認証サーバーへのログイン失敗が同じ接続元から連続 → 同じ接続元から正規の社員を名乗る VPN接続要求。拒否して接続元を遮断する。");
             t3.steps.Add(new ThreatStep { label = "ログイン失敗", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = c.auth, eventType = "AUTH", result = "FAIL", detail = "LOGIN FAIL (VPN)", repeat = 9, repeatIntervalMinutes = 0.35f });
@@ -321,7 +321,7 @@ namespace NightShift.Data
             t10Req.employeeConditions.requiredPermissions.Add(perms["SERVER_ADMIN"]);
             t10Req.destination = c.admin; t10Req.accessType = "管理ログイン";
             t10Req.isMalicious = true;
-            t10Req.timeoutMinutes = 30;
+            t10Req.timeoutMinutes = 42;
             var t10 = Threat("T10_ADMIN_TAKEOVER", 19, LastDay, new Vector2(40, 240), "10.10.", "退勤しているはずの管理者のIDで管理ログイン。許可したうえにアカウントを止めないと致命的（GO2）。UPS の設定変更は停電（V5 REDACT）の兆候。");
             t10.chance = 0.3f;
             t10.stopOnBlock = false;
@@ -356,7 +356,7 @@ namespace NightShift.Data
             t14Req.employeeConditions.preferUnused = false;
             t14Req.destination = c.auth; t14Req.accessType = "VPN接続";
             t14Req.isMalicious = true;
-            t14Req.timeoutMinutes = 25;
+            t14Req.timeoutMinutes = 36;
             var t14 = Threat("T14_DAYBREAK", 28, LastDay, new Vector2(20, 60), "198.51.100.", "自律型攻撃AI DAYBREAK。拒否されると数分後に別の範囲から再挑戦。範囲ごと遮断すれば止まる。");
             t14.adaptive = true;
             t14.maxAttempts = 4;
@@ -376,7 +376,7 @@ namespace NightShift.Data
             t14AdminReq.deviceNamePattern = "UNKNOWN-{n}";
             t14AdminReq.destination = c.admin; t14AdminReq.accessType = "管理ログイン";
             t14AdminReq.isMalicious = true;
-            t14AdminReq.timeoutMinutes = 25;
+            t14AdminReq.timeoutMinutes = 36;
             t14b.steps.Add(new ThreatStep { label = "侵入の試み", offsetMinutes = 0, kind = ThreatStepKind.ConnectionRequest, destination = c.admin, request = t14AdminReq });
 
             var mainThreats = new List<ThreatScenarioDefinition> { c.scannerNoise, c.webProbe, c.scanThenAdmin, t3, t5, t5att, t5ai, t7, t8, t9, t10, t11, t13, t14, t14b };

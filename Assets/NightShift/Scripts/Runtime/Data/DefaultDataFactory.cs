@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static partial class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 27;
+        public const int DataVersion = 28;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -177,7 +177,7 @@ namespace NightShift.Data
             var routine = Ev("REQ_ROUTINE", Vector2.zero);
             routine.destinationMode = DestinationMode.FromEmployeeNormalTargets;
             routine.employeeConditions.preferUnused = false;
-            routine.timeoutMinutes = 25;
+            routine.timeoutMinutes = 36;
 
             var routineVpn = Ev("REQ_ROUTINE_VPN", Vector2.zero);
             routineVpn.minimumDay = 6;
@@ -187,7 +187,7 @@ namespace NightShift.Data
             routineVpn.employeeConditions.preferUnused = false;
             routineVpn.destination = auth; routineVpn.accessType = "VPN接続";
             routineVpn.weight = 0.5f;
-            routineVpn.timeoutMinutes = 25;
+            routineVpn.timeoutMinutes = 36;
 
             var firstNormal = Ev("REQ_FIRST_NORMAL", new Vector2(2, 4));
             firstNormal.employeeConditions.requiredNormalTargets.Add("MAIL");

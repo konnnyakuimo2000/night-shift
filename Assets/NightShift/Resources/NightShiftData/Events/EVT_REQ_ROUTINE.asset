@@ -43,7 +43,7 @@ MonoBehaviour:
   accessType: 
   isMalicious: 0
   expectedAction: 0
-  timeoutMinutes: 25
+  timeoutMinutes: 36
   preferWhileRemoteActive: 0
   notifyAsSecurityAlert: 0
   logEventType: 
