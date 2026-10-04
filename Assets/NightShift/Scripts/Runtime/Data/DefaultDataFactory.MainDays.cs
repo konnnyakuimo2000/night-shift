@@ -267,6 +267,9 @@ namespace NightShift.Data
             var t5 = Threat("T5_PHISHING", 13, 25, new Vector2(30, 280), "198.51.100.", "情報システム部を名乗る偽メール。差出人のアドレスが社内と違う。報告すれば正解、入力すれば自分のパスワードが盗まれる。");
             t5.chance = 0.5f;
             t5.steps.Add(Script("偽メール", 0, "PHISH_MAIL"));
+            var t5att = Threat("T5_ATTACHMENT", 13, LastDay, new Vector2(30, 300), "198.51.100.", "総務部を名乗る偽メール。添付 給与明細.txt.exe を開くとワークステーションが感染してブルースクリーン（V4 BLUESTONE）。");
+            t5att.chance = 0.35f;
+            t5att.steps.Add(Script("添付付きの偽メール", 0, "PHISH_MAIL:ATTACH"));
             var t5ai = Threat("T5_AI_PHISHING", 26, LastDay, new Vector2(30, 280), "198.51.100.", "攻撃支援AIが作る、自然な文面の偽メール。アドレスが紛らわしい（exarnple）。");
             t5ai.chance = 0.7f;
             t5ai.steps.Add(Script("偽メール（AI）", 0, "PHISH_MAIL:AI"));
@@ -375,7 +378,7 @@ namespace NightShift.Data
             t14AdminReq.timeoutMinutes = 25;
             t14b.steps.Add(new ThreatStep { label = "侵入の試み", offsetMinutes = 0, kind = ThreatStepKind.ConnectionRequest, destination = c.admin, request = t14AdminReq });
 
-            var mainThreats = new List<ThreatScenarioDefinition> { c.scannerNoise, c.webProbe, c.scanThenAdmin, t3, t5, t5ai, t7, t8, t9, t10, t11, t13, t14, t14b };
+            var mainThreats = new List<ThreatScenarioDefinition> { c.scannerNoise, c.webProbe, c.scanThenAdmin, t3, t5, t5att, t5ai, t7, t8, t9, t10, t11, t13, t14, t14b };
 
             // ---------------- ルール ----------------
             string rIp = $"{B("社内の登録端末")}からの接続は、接続元の {Col("IPアドレス", Check)} が社員情報の {B("「端末IP」")} と同じか確認する。{Col("違えば拒否", Deny)}（なりすまし）。";

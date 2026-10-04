@@ -112,7 +112,7 @@ namespace NightShift.UI.Shift
             _filtered.Clear();
             foreach (var e in _d.S.Logs.Entries) if (Match(e, kw, type)) _filtered.Add(e);
             bool atBottom = _table.IsAtBottom;
-            _table.SetRows(_filtered, e => new[] { TimeManager.FormatWithSeconds(e.Time), e.Source, e.Destination, e.User, e.EventType, e.Result, e.Detail });
+            _table.SetRows(_filtered, e => new[] { TimeManager.FormatWithSeconds(e.Time), e.Source, e.Destination, e.User, e.EventType, e.Result, DetailText(e) });
             if (_follow.Value && atBottom) _table.ScrollToBottom();
             _w.SetStatus(1, $"表示 {_filtered.Count} / 全 {_d.S.Logs.Entries.Count} 件");
             _seenCount = _d.S.Logs.Entries.Count;
@@ -120,6 +120,13 @@ namespace NightShift.UI.Shift
         }
 
         LogEntry SelectedEntry => _table.Selected as LogEntry;
+
+        /// <summary>書き換えられた（V2 GARBLE）サーバーのログは、意味のない文字に化けて読めない</summary>
+        string DetailText(LogEntry e)
+        {
+            var st = _d.S.Servers.Find(e.Destination) ?? _d.S.Servers.Find(e.Source);
+            return st != null && st.Garbled ? HorrorFx.Garble(e.Detail, e.Sequence) : e.Detail;
+        }
 
         void BlockSelected()
         {

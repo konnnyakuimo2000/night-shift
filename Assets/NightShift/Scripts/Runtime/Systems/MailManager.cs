@@ -30,6 +30,7 @@ namespace NightShift.Systems
     {
         public const string ActionPasswordChange = "PASSWORD";
         public const string ActionPhishForm = "PHISH_FORM";
+        public const string ActionMalwareAttachment = "MALWARE_ATTACHMENT";
         public const string CompanyDomain = "nexus-corp.example";
 
         /// <summary>社内メールに表示する社名（GameManager が GameDatabase から設定する）</summary>

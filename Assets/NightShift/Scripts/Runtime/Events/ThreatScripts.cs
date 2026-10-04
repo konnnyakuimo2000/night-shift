@@ -29,6 +29,7 @@ namespace NightShift.Events
                     if (Victim(s, run) is EmployeeData v1)
                     {
                         s.Security.MarkInfected(v1.deviceId, arg);
+                        if (arg == "V6") s.RequestHorror("MUSICBOX");
                         s.Logs.Add(now, s.Employees.GetIp(v1), "-", v1.fullName, "PROCESS", "START", NewProcessName(arg) + " (" + v1.deviceId + ")");
                     }
                     break;
@@ -151,7 +152,8 @@ namespace NightShift.Events
 
                 // ---------- T5 担当者宛ての偽メール ----------
                 case "PHISH_MAIL":
-                    PhishingMail.Send(s, arg == "AI");
+                    if (arg == "ATTACH") PhishingMail.SendAttachment(s);
+                    else PhishingMail.Send(s, arg == "AI");
                     break;
             }
         }

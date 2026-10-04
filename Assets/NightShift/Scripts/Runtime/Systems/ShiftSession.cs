@@ -79,7 +79,10 @@ namespace NightShift.Systems
         public event Action<string> DamageOccurred;
         /// <summary>停電（V5 REDACT）の演出を要求する</summary>
         public event Action BlackoutRequested;
-        public void RequestBlackout() => BlackoutRequested?.Invoke();
+        public void RequestBlackout() { BlackoutRequested?.Invoke(); HorrorRequested?.Invoke("BLACKOUT"); }
+        /// <summary>ホラー演出の要求（BSOD / BLACKOUT / MUSICBOX / GLITCH）</summary>
+        public event Action<string> HorrorRequested;
+        public void RequestHorror(string what) => HorrorRequested?.Invoke(what);
 
         public void AddDamage(string what, bool fatal = false)
         {

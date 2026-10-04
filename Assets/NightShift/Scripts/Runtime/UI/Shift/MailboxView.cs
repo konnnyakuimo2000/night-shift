@@ -285,6 +285,7 @@ namespace NightShift.UI.Shift
             {
                 case MailManager.ActionPasswordChange: PasswordChangeView.Open(_d); break;
                 case MailManager.ActionPhishForm: PhishFormView.Open(_d, m); break;
+                case MailManager.ActionMalwareAttachment: PhishingMail.OpenAttachment(_d.S, m, _d.HasTool(Data.Items.Vaccine)); break;
             }
         }
 

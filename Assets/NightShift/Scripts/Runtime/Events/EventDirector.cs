@@ -58,6 +58,63 @@ namespace NightShift.Events
                 else Scheduler.Add(t, "TASK PASSWORD", SpawnPasswordTask);
             }
             Threats.ScheduleDay(Scheduler, day);
+            if (day.randomEvents) { ScheduleFlagConsequences(day); ScheduleCarriedInfections(); }
+        }
+
+        /// <summary>間違えた問い合わせの、後日の影響（HELPDESK_CATALOG.md の「間違えると」）</summary>
+        void ScheduleFlagConsequences(DayDefinition day)
+        {
+            var career = Core.CareerRecord.Current;
+            EventDefinition Find(string id)
+            {
+                foreach (var d in day.violationPool) if (d != null && d.eventId == id) return d;
+                return null;
+            }
+            void Infect(string virus)
+            {
+                var emp = _s.Employees.RandomOnShift();
+                if (emp != null) career.infections.Add(virus + ":" + emp.deviceId);
+            }
+            if (career.HasFlag("WRONG_A3")) { career.ClearFlag("WRONG_A3"); Infect("V3"); }
+            if (career.HasFlag("WRONG_A20")) { career.ClearFlag("WRONG_A20"); Infect("V3"); }
+            if (career.HasFlag("WRONG_A9")) { career.ClearFlag("WRONG_A9"); Infect("V1"); }
+            if (career.HasFlag("WRONG_A4") && Find("T1_SPOOFED_SOURCE") is EventDefinition spoof)
+            {
+                career.ClearFlag("WRONG_A4");
+                ScheduleDefinition(spoof, new UnityEngine.Vector2(30, 300), "AFTERMATH A4");
+            }
+            if (career.HasFlag("WRONG_A13") && Find("T6_NOT_ACTIVE_EMPLOYEE") is EventDefinition retired)
+            {
+                career.ClearFlag("WRONG_A13");
+                ScheduleDefinition(retired, new UnityEngine.Vector2(30, 300), "AFTERMATH A13");
+            }
+            if (career.HasFlag("WRONG_A7"))
+            {
+                career.ClearFlag("WRONG_A7");
+                Scheduler.Add(Rand(40, 300), "AFTERMATH A7", () => PhishingMail.SendAttachment(_s));
+            }
+        }
+
+        /// <summary>前の夜に駆除・隔離しなかった感染の続き（定期通信 → 30分後に周りへ広がる）</summary>
+        void ScheduleCarriedInfections()
+        {
+            foreach (var entry in Core.CareerRecord.Current.infections)
+            {
+                var parts = entry.Split(':');
+                if (parts.Length != 2) continue;
+                var emp = _s.Employees.FindByDevice(parts[1]);
+                if (emp == null) continue;
+                _s.Security.MarkInfected(parts[1], parts[0]);
+                var def = UnityEngine.ScriptableObject.CreateInstance<ThreatScenarioDefinition>();
+                def.scenarioId = "CARRY_" + parts[0] + "_" + parts[1];
+                def.minimumDay = 1; def.maximumDay = 99;
+                def.sourceIpPrefix = "203.0.113.";
+                def.stopOnBlock = false;
+                def.steps.Add(new ThreatStep { label = "定期通信", offsetMinutes = 0, kind = ThreatStepKind.Script, script = "BEACON", repeat = 10, repeatIntervalMinutes = 3f });
+                def.steps.Add(new ThreatStep { label = "拡大の判定", offsetMinutes = 31, kind = ThreatStepKind.Script, script = "SPREAD_CHECK" });
+                var run = Threats.Schedule(Scheduler, def, Rand(5f, 40f));
+                run.Victim = emp;
+            }
         }
 
         /// <summary>

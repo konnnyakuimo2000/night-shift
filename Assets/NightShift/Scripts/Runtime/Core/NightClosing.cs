@@ -61,6 +61,11 @@ namespace NightShift.Core
                 career.AddTrust(delta);
             }
 
+            // 駆除・隔離していない感染は、次の夜に残る（経路 G）
+            career.infections.Clear();
+            foreach (var kv in s.Security.Infections)
+                if (kv.Key != "NIGHT-OPS-WS" && !s.Security.IsIsolated(kv.Key)) career.infections.Add(kv.Value + ":" + kv.Key);
+
             // 翌朝のネットニュースに載る出来事
             career.ClearFlag("NEWS_DEFACED"); career.ClearFlag("NEWS_BLACKOUT");
             foreach (var d in s.Damage)

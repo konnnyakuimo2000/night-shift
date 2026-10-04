@@ -68,6 +68,11 @@ namespace NightShift.Core
         public bool letterAccelerators = true;   // 文字キーだけでボタンを押せる（A=許可 等）
         public float notificationSeconds = 8f;
 
+        // ---- ホラー演出（VIRUS_CATALOG.md） ----
+        public bool horrorMild;            // 控えめ（不気味な画像・ささやき声を出さない。ゲーム上の効果は同じ）
+        public bool reduceFlashing;        // 点滅を減らす（光過敏性への配慮）
+        public bool loudSounds = true;     // 急な大きな音
+
         // ---- デバッグ ----
         [Tooltip("任意の日から開始・デバッグパネル（F12）を有効にする")]
         public bool debugMode = Application.isEditor;

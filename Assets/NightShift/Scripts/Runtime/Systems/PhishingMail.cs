@@ -41,6 +41,45 @@ namespace NightShift.Systems
             return mail;
         }
 
+        /// <summary>添付ファイル付きの偽メール（経路 C）。開くと担当者のワークステーションが感染してブルースクリーン（V4 BLUESTONE）</summary>
+        public static MailMessage SendAttachment(ShiftSession s)
+        {
+            var mail = s.Mail.Add(new MailMessage
+            {
+                MailId = "PHISH-ATT-" + s.Day.dayNumber + "-" + s.Rng.Next(1000, 9999),
+                From = MailManager.Sender("総務部 給与担当"),
+                FromAddress = "kyuyo@nexus-corp-payroll.example",
+                To = MailManager.Recipient(s.OperatorName),
+                Subject = "【給与明細】訂正のお知らせ",
+                DateLabel = $"{s.Day.dateLabel} {s.Time.Now}",
+                Body = $"{s.OperatorName} 様\n\n先日お送りした給与明細に誤りがありました。\n訂正版を添付しますので、ご確認ください。\n\n総務部 給与担当",
+                Day = s.Day.dayNumber,
+                ActionKey = MailManager.ActionMalwareAttachment,
+                ActionLabel = "添付: 給与明細.txt.exe を開く",
+                IsPhish = true,
+                ReceivedAt = s.Time.CurrentMinute
+            });
+            s.Notifications.Notify(NotificationType.Info, "新着メール", $"総務部: {mail.Subject}", s.Time.CurrentMinute, () => s.Ui?.OpenMailbox(mail));
+            return mail;
+        }
+
+        /// <summary>添付を開いた。VACCINE 99 の常駐監視（定義ファイルが新しければ）が止める</summary>
+        public static void OpenAttachment(ShiftSession s, MailMessage m, bool vaccine)
+        {
+            if (m.Reported) return;
+            if (vaccine && Core.CareerRecord.Current.vaccineDefinitionDay >= 13)
+            {
+                s.Logs.Add(s.Time.CurrentMinute, "NIGHT-OPS", "-", s.OperatorName, "VACCINE", "BLOCKED", "給与明細.txt.exe（BLUESTONE を検出・隔離）");
+                s.Notifications.Notify(NotificationType.SecurityAlert, "VACCINE 99", "ウイルスを検出しました: BLUESTONE（給与明細.txt.exe）", s.Time.CurrentMinute);
+                return;
+            }
+            m.Reported = true; // 二度は開けない
+            s.Security.MarkInfected("NIGHT-OPS-WS", "V4");
+            s.Logs.Add(s.Time.CurrentMinute, "NIGHT-OPS", "-", s.OperatorName, "PROCESS", "START", "給与明細.txt.exe");
+            s.AddDamage("担当者のワークステーションが感染した（BLUESTONE）");
+            s.RequestHorror("BSOD");
+        }
+
         /// <summary>偽のフォームにIDとパスワードを入力してしまった</summary>
         public static void Submitted(ShiftSession s, MailMessage m)
         {
