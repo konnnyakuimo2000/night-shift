@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_ScannerNoise
+  m_EditorClassIdentifier: 
+  scenarioId: THREAT_SCANNER_NOISE
+  designNote: "\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u4E0A\u306E\u4E00\u822C\u7684\u306A\u81EA\u52D5\u30B9\u30AD\u30E3\u30F3\u3002\u30D5\u30A1\u30A4\u30A2\u30A6\u30A9\u30FC\u30EB\u3067\u62D2\u5426\u3055\u308C\u308B\u3060\u3051\u3002"
+  minimumDay: 6
+  maximumDay: 7
+  startWindow: {x: 40, y: 50}
+  sourceIpPrefix: 203.0.113.
+  steps:
+  - label: "\u30DD\u30FC\u30C8\u30B9\u30AD\u30E3\u30F3"
+    offsetMinutes: 0
+    kind: 1
+    useRelatedSource: 0
+    destination: {fileID: 11400000, guid: 298d983054f874042b0b9a9ca0b7cade, type: 2}
+    eventType: FW
+    result: DENY
+    detail: TCP 21|TCP 23|TCP 445|TCP 1433|TCP 3306
+    repeat: 5
+    repeatIntervalMinutes: 0.3
+    request: {fileID: 0}
+  compromiseLog: "\u7BA1\u7406\u30B3\u30F3\u30BD\u30FC\u30EB\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u306B\u6210\u529F"
+  stopOnBlock: 1

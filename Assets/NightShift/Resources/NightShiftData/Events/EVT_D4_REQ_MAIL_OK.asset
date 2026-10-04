@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a62edd6c1e4f726439a7d85a52522454, type: 3}
+  m_Name: EVT_D4_REQ_MAIL_OK
+  m_EditorClassIdentifier: 
+  eventId: D4_REQ_MAIL_OK
+  category: 0
+  kind: 1
+  minimumDay: 1
+  maximumDay: 8
+  triggerWindow: {x: 10, y: 14}
+  weight: 1
+  severity: 0
+  userType: 0
+  employeeConditions:
+    departments: []
+    excludeDepartments: []
+    requiredPermissions:
+    - {fileID: 11400000, guid: b919be391b48d014f9b2d40ee80a49b0, type: 2}
+    excludedPermissions: []
+    requiredNormalTargets:
+    - MAIL
+    requireOnShift: 1
+    requireVpnEnabled: 0
+    requireVpnDisabled: 0
+    requireLaptop: 0
+    preferUnused: 1
+  accountName: 
+  displayEmployeeId: 
+  sourceType: 0
+  deviceNamePattern: 
+  destinationMode: 0
+  destination: {fileID: 11400000, guid: ecc50913cfb1d7c48b0982405b1850ee, type: 2}
+  accessType: "\u30E1\u30FC\u30EB"
+  isMalicious: 0
+  expectedAction: 0
+  timeoutMinutes: 30
+  preferWhileRemoteActive: 0
+  notifyAsSecurityAlert: 0
+  logEventType: 
+  logResult: 
+  followUp: {fileID: 0}
+  followUpDelayMinutes: 5

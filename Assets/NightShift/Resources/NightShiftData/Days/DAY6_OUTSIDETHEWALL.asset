@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f31fe98f238094b9b3677ba6515054, type: 3}
+  m_Name: DAY6_OUTSIDETHEWALL
+  m_EditorClassIdentifier: 
+  dayNumber: 6
+  title: OUTSIDE THE WALL
+  dateLabel: "1998/05/25 (\u6708)"
+  clockInDateLabel: "1998/05/24 (\u65E5)"
+  startMinute: 0
+  endMinute: 240
+  realSecondsPerGameMinute: 2
+  endWarningMinute: 230
+  graceRealSeconds: 20
+  requestsExpire: 0
+  briefingFrom: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u90E8 \u8AB2\u9577 \u68EE\u7530"
+  briefingBody: "\u672C\u65E5\u304B\u3089 <b>\u793E\u5916\u304B\u3089\u306E\u63A5\u7D9A</b>
+    \u3082\u5BE9\u67FB\u3057\u307E\u3059\u3002\u63A5\u7D9A\u8981\u6C42\u306E <color=#8A4B00><b>\u63A5\u7D9A\u5143</b></color>
+    \u304C <b>\u300C\u793E\u5916\u300D</b> \u306A\u3089\u3001\u30EB\u30FC\u30EB5\u3067\u5224\u65AD\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\u898B\u308B\u3068\u3053\u308D\u306F3\u3064\u3060\u3051\u3067\u3059:
+    <b>\u2460 \u5229\u7528\u30B7\u30B9\u30C6\u30E0\u304C\u300CVPN\u63A5\u7D9A\u300D\u304B</b>\u3000<b>\u2461
+    \u793E\u54E1\u306E\u300CVPN\u5229\u7528\u300D\u304C\u8A31\u53EF\u304B</b>\u3000<b>\u2462
+    \u7AEF\u672B\u304C\u305D\u306E\u793E\u54E1\u306E\u300CVPN\u7AEF\u672B\u300D\u304B</b>\n\u307E\u305F\u3001<color=#0030A0><b>\u30B7\u30B9\u30C6\u30E0\u30ED\u30B0</b></color>\u30FB<color=#0030A0><b>\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u30DE\u30C3\u30D7</b></color>\u30FB<color=#0030A0><b>\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u60C5\u5831</b></color>
+    \u304C\u4F7F\u3048\u308B\u3088\u3046\u306B\u306A\u308A\u307E\u3059\u3002\n\n\u25A0
+    \u672C\u65E5\u306E\u696D\u52D9\n\u30FB<b>\u63A5\u7D9A\u8981\u6C42\u306E\u5BE9\u67FB</b>\uFF08\u793E\u5916\u304B\u3089\u306E\u63A5\u7D9A\u3092\u542B\u3080\uFF09\n\u30FB<b>IT\u554F\u3044\u5408\u308F\u305B</b>\u3078\u306E\u5BFE\u5FDC\n\u30FB<b>\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u8B66\u544A</b>\u304C\u51FA\u305F\u3089\u3001<color=#8A4B00><b>\u30B7\u30B9\u30C6\u30E0\u30ED\u30B0</b></color>
+    \u3067\u305D\u306E\u63A5\u7D9A\u5143\uFF08IP\u30A2\u30C9\u30EC\u30B9\uFF09\u3092\u691C\u7D22\u3057\u3001\u524D\u306B\u4F55\u3092\u3057\u3066\u3044\u305F\u304B\u78BA\u8A8D\u3059\u308B\n\n\u25A0
+    \u63A5\u7D9A\u5BE9\u67FB\u306E\u30EB\u30FC\u30EB"
+  rules:
+  - "<b>\u793E\u54E1</b>\u304C<b>\u81EA\u5206\u306E\u767B\u9332\u7AEF\u672B</b>\u304B\u3089\u63A5\u7D9A\u3059\u308B\u5834\u5408\u306F
+    <color=#0030A0><b>\u8A31\u53EF</b></color> \u3059\u308B\u3002"
+  - "<b>\u793E\u54E1\u3068\u3057\u3066\u767B\u9332\u3055\u308C\u3066\u3044\u306A\u3044\u5229\u7528\u8005</b>\u304B\u3089\u306E\u63A5\u7D9A\u306F
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002\uFF08\u793E\u54E1\u756A\u53F7\u30FB\u6C0F\u540D\u3067\u691C\u7D22\u3057\u3066\u78BA\u8A8D\uFF09"
+  - "<b>\u305D\u306E\u793E\u54E1\u306E\u767B\u9332\u7AEF\u672B\u3067\u306F\u306A\u3044\u7AEF\u672B</b>\u304B\u3089\u306E\u63A5\u7D9A\u306F\u3001\u793E\u54E1\u672C\u4EBA\u3067\u3082
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  - "\u63A5\u7D9A\u8981\u6C42\u306E <color=#8A4B00><b>\u300C\u5FC5\u8981\u306A\u6A29\u9650\u300D</b></color>
+    \u304C\u3001\u793E\u54E1\u60C5\u5831\u306E\u6A29\u9650\u6B04\u3067 \xD7 \u306A\u3089
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  - "\u63A5\u7D9A\u5143\u304C <b>\u793E\u5916</b> \u306E\u5834\u5408\u306F <color=#8A4B00><b>\u300CVPN\u63A5\u7D9A\u300D\u3060\u3051</b></color>\u3002\u793E\u54E1\u306E
+    <b>VPN\u5229\u7528\u304C\u300C\u8A31\u53EF\u300D</b> \u3067\u3001<b>VPN\u7AEF\u672B</b>
+    \u304B\u3089\u306A\u3089 <color=#0030A0><b>\u8A31\u53EF</b></color>\u3002\u305D\u308C\u4EE5\u5916\u306F
+    <color=#B00000><b>\u62D2\u5426</b></color>\u3002"
+  newRuleStartIndex: 4
+  changedRuleIndices: 
+  briefingFooter: "<b>\u7BA1\u7406\u8005\u3067\u3082\u3001\u793E\u5916\u304B\u3089\u306F\u300CVPN\u63A5\u7D9A\u300D\u4EE5\u5916\u306F\u62D2\u5426\u3067\u3059\u3002</b>\n\u5224\u65AD\u306E\u6D41\u308C\u306F\u3001\u64CD\u4F5C\u30DE\u30CB\u30E5\u30A2\u30EB\u306E
+    <color=#8A4B00><b>\u300C\u793E\u5916\u304B\u3089\u306E\u63A5\u7D9A\u300D</b></color>
+    \u306E\u56F3\u3092\u898B\u3066\u304F\u3060\u3055\u3044\u3002\n\n\u203B \u64CD\u4F5C\u65B9\u6CD5\u306A\u3069\u306F\u6DFB\u4ED8\u306E\u30DE\u30CB\u30E5\u30A2\u30EB\u3092\u53C2\u7167\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u3053\u306E\u696D\u52D9\u9023\u7D61\u306F\u3001\u30BF\u30B9\u30AF\u30D0\u30FC\u306E
+    [\u30E1\u30FC\u30EB] \u306E\u53D7\u4FE1\u30C8\u30EC\u30A4\u304B\u3089\u3044\u3064\u3067\u3082\u78BA\u8A8D\u3067\u304D\u307E\u3059\u3002"
+  attachments:
+  - {fileID: 11400000, guid: 1bff7a1e20937204eb4983f6b3674a89, type: 2}
+  - {fileID: 11400000, guid: 0906b99c5869d874d8c23df8ff2623b4, type: 2}
+  - {fileID: 11400000, guid: 0c1849e2d856559499e44f1577441c16, type: 2}
+  fixedEvents:
+  - {fileID: 11400000, guid: e30797a0b356fe04781f74d482a75fdb, type: 2}
+  - {fileID: 11400000, guid: 1419d22d0bd1a7540aa24d931d92a851, type: 2}
+  - {fileID: 11400000, guid: 93da2f1dc1a799742929854896b07913, type: 2}
+  - {fileID: 11400000, guid: 9bd5669b1d97b2c49af4907b28344aa9, type: 2}
+  - {fileID: 11400000, guid: 34b4402b99d9bdc4e9df56c0c768c410, type: 2}
+  randomSlots:
+  - label: routine-1
+    window: {x: 95, y: 105}
+    pool:
+    - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
+  - label: routine-2
+    window: {x: 135, y: 150}
+    pool:
+    - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
+    - {fileID: 11400000, guid: 1a5b672491c2bc74ca0ff49619f7e1cb, type: 2}
+  - label: routine-3
+    window: {x: 165, y: 180}
+    pool:
+    - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
+    - {fileID: 11400000, guid: 1a5b672491c2bc74ca0ff49619f7e1cb, type: 2}
+  helpDesk:
+  - {fileID: 11400000, guid: 36ccb9c7e1d8ffd4da2d26344e8000a8, type: 2}
+  threats:
+  - {fileID: 11400000, guid: 416a29c0991140a4ea11fd45e3dd1ca2, type: 2}
+  backgroundTrafficTemplate: {fileID: 0}
+  backgroundLogChance: 0.3
+  backgroundActivityScale: 1
+  tutorialGateUntilMinute: 240
+  tutorialGateBreathMinutes: 1.5
+  tutorialGateMaxDelayMinutes: 9999
+  passwordChangeAtMinute: -1
+  policy:
+    blockExternalToAdministrative: 1
+    blockUnregisteredDevice: 1
+    blockUnregisteredToCritical: 1
+    blockUnknownUser: 1
+    requirePermission: 1
+    requireVpnPermission: 1
+  unlockedFeatures:
+  - CONNECTION_MONITOR
+  - EMPLOYEE_DIRECTORY
+  - DEVICE_CHECK
+  - EMPLOYEE_DETAIL
+  - EMPLOYEE_PERMISSIONS
+  - PERMISSION_HINT
+  - SERVER_GUIDE
+  - ADMIN_PERMISSIONS
+  - HELPDESK
+  - REMOTE_SUPPORT
+  - SYSTEM_LOG
+  - NETWORK_MAP
+  - SECURITY_INFO
