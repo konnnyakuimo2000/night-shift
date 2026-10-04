@@ -101,6 +101,7 @@ namespace NightShift.UI.Shift
                 16, TextAnchor.UpperLeft, Color.white, true);
             text.rectTransform.Stretch(60, 60, 60, 60);
             _bsod = bg.gameObject;
+            FadeIn(_bsod);
             _bsodEnd = _d.S.Time.CurrentMinute + gameMinutes;
             _humTimer = 0;
         }
@@ -123,8 +124,18 @@ namespace NightShift.UI.Shift
             _crtGlow.rectTransform.anchorMin = new Vector2(0.18f, 0.18f); _crtGlow.rectTransform.anchorMax = new Vector2(0.82f, 0.82f);
             _crtGlow.rectTransform.offsetMin = _crtGlow.rectTransform.offsetMax = Vector2.zero;
             _blackout = bg.gameObject;
+            FadeIn(_blackout);
             _blackoutEnd = _d.S.Time.CurrentMinute + gameMinutes;
             _humTimer = 1.5f;
+        }
+
+        /// <summary>「点滅を減らす」なら、一瞬で切り替えず 1秒かけて暗転する</summary>
+        static void FadeIn(GameObject go)
+        {
+            if (!Set.reduceFlashing) return;
+            var cg = go.AddComponent<CanvasGroup>();
+            cg.alpha = 0;
+            go.AddComponent<FadeInGroup>().Group = cg;
         }
 
         void EndBlackout()
@@ -211,6 +222,19 @@ namespace NightShift.UI.Shift
                 foreach (var kv in s.Security.Infections)
                     if (kv.Value == "V3" && !s.Security.IsIsolated(kv.Key)) { AudioFx.Cry(); break; }
             }
+        }
+    }
+
+    public class FadeInGroup : MonoBehaviour
+    {
+        public CanvasGroup Group;
+        public float Duration = 1f;
+        float _t;
+        void Update()
+        {
+            _t += Time.unscaledDeltaTime;
+            if (Group != null) Group.alpha = Mathf.Clamp01(_t / Duration);
+            if (_t >= Duration) Destroy(this);
         }
     }
 

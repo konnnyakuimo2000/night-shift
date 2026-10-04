@@ -167,7 +167,7 @@ namespace NightShift.UI
             var flash = UIFactory.Check(_page, "点滅を減らす（激しい明滅をゆっくりした暗転にする）", S.reduceFlashing, v => { S.reduceFlashing = v; Saved(); });
             flash.GetComponent<RectTransform>().Place(130, y, 380, 20);
             y += 26;
-            var loud = UIFactory.Check(_page, "急な大きな音", S.loudSounds, v => { S.loudSounds = v; Saved(); });
+            var loud = UIFactory.Check(_page, "急な大きな音を鳴らす", S.loudSounds, v => { S.loudSounds = v; Saved(); });
             loud.GetComponent<RectTransform>().Place(130, y, 380, 20);
         }
 

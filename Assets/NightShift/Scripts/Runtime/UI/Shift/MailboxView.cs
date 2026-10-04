@@ -313,12 +313,13 @@ namespace NightShift.UI.Shift
 
 namespace NightShift.UI.Shift
 {
-    /// <summary>業務開始ボタンを目立たせる（読了後はオレンジ色で脈打つ）</summary>
+    /// <summary>業務開始ボタンを目立たせる（読了後は紺地・白抜きの「既定のボタン」になり、ゆっくり明滅する）</summary>
     public class StartButtonPulse : MonoBehaviour
     {
         public RetroButton Button;
         public bool Ready;
-        static readonly Color Orange = new Color(1f, 0.62f, 0.15f);
+        static readonly Color Navy = new Color(0f, 0f, 0.5f);
+        static readonly Color NavyLight = new Color(0.15f, 0.25f, 0.75f);
         static readonly Color Disabled = new Color(0.82f, 0.82f, 0.82f);
 
         void Update()
@@ -326,11 +327,10 @@ namespace NightShift.UI.Shift
             if (Button == null) return;
             if (Ready)
             {
-                float k = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4f);
-                Button.Background.color = Color.Lerp(Orange, new Color(1f, 0.85f, 0.45f), k * 0.6f);
+                float k = Core.GameSettings.Current.reduceFlashing ? 0f : 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 2f);
+                Button.Background.color = Color.Lerp(Navy, NavyLight, k);
                 Button.Label.color = Color.white;
-                float s = 1f + 0.035f * k;
-                Button.transform.localScale = new Vector3(s, s, 1);
+                Button.transform.localScale = Vector3.one;
             }
             else
             {

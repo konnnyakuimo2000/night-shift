@@ -255,7 +255,7 @@ namespace NightShift.UI.Shift
             w.Accelerators[KeyCode.B] = () => MailboxView.Open(d);
 
             var ag = UIFactory.Group(c, "セキュリティ警告の履歴", 0, 224, 600, 180);
-            v._alerts = TableView.CreateStretch(ag, 0, 0, 0, 0, new TableColumn("時刻", 60), new TableColumn("件名", 140), new TableColumn("内容", 360));
+            v._alerts = TableView.CreateStretch(ag, 0, 0, 0, 0, new TableColumn("時刻", 60), new TableColumn("件名", 140), new TableColumn("内容", 340));
             w.SetStatus(0, "セキュリティ警告は自動判定ではありません。内容は各自で確認してください。");
         }
 

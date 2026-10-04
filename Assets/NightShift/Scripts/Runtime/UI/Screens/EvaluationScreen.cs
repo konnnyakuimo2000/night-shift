@@ -185,9 +185,10 @@ namespace NightShift.UI.Screens
             anim.Add(t + 0.22f, 0.35f, p =>
             {
                 // ドン: 揺れとフラッシュ
-                float shake = (1 - p) * 6f;
+                bool calm = Core.GameSettings.Current.reduceFlashing;
+                float shake = calm ? 0f : (1 - p) * 6f;
                 winRt.anchoredPosition = basePos + new Vector2(UnityEngine.Random.Range(-shake, shake), UnityEngine.Random.Range(-shake, shake));
-                flash.color = new Color(1, 1, 1, good ? 0.35f * (1 - p) : 0.15f * (1 - p));
+                flash.color = new Color(1, 1, 1, calm ? 0f : good ? 0.35f * (1 - p) : 0.15f * (1 - p));
                 comment2.color = new Color(0.3f, 0.3f, 0.35f, p);
                 if (p >= 1) winRt.anchoredPosition = basePos;
             }, () => { AudioFx.BigStamp(); if (good) AudioFx.Fanfare(); });

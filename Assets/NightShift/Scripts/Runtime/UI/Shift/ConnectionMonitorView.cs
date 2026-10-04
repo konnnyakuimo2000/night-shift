@@ -28,7 +28,7 @@ namespace NightShift.UI.Shift
             if (!d.Require(Data.Features.ConnectionMonitor)) return;
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = "ネットワーク接続監視 - 接続要求", Icon = "network", Width = 800, Height = 540,
+                Id = Id, Title = "ネットワーク接続監視 - 接続要求", Icon = "network", Width = 800, Height = 540, Position = new Vector2(0, 0),
                 Menus = ShiftDesktop.StandardMenus(d), StatusCells = 3, StatusWidths = new float[] { 110, 110 }
             }, out bool created);
             var v = created ? w.gameObject.AddComponent<ConnectionMonitorView>() : w.GetComponent<ConnectionMonitorView>();
@@ -54,15 +54,15 @@ namespace NightShift.UI.Shift
             var lg = UIFactory.Group(c, "接続要求一覧", 0, 30, 780, 200);
             _table = TableView.CreateStretch(lg, 0, 0, 0, 0,
                 new TableColumn("受付", 48), new TableColumn("要求番号", 74), new TableColumn("利用者", 110), new TableColumn("端末", 104),
-                new TableColumn("接続元", 140), new TableColumn("接続先", 96), new TableColumn("利用システム", 122), new TableColumn("状態", 56));
+                new TableColumn("接続元", 120), new TableColumn("接続先", 96), new TableColumn("利用システム", 122), new TableColumn("状態", 56));
             _table.SelectionChanged += _ => RefreshDetail();
 
             var dg = UIFactory.Group(c, "要求内容", 0, 236, 560, 210);
             float y = 0;
             void F(string key, string label, float x, float w)
             {
-                UIFactory.Label(dg, label, x, y, 74, 20);
-                _fields[key] = UIFactory.ValueBox(dg, x + 76, y, w, 20, "");
+                UIFactory.Label(dg, label, x, y, 90, 20);
+                _fields[key] = UIFactory.ValueBox(dg, x + 92, y, w - 14, 20, "");
             }
             F("id", "要求番号:", 0, 160); F("time", "受付時刻:", 270, 180); y += 26;
             F("user", "利用者:", 0, 160); F("emp", "社員番号:", 270, 180); y += 26;

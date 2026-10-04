@@ -151,7 +151,7 @@ namespace NightShift.UI.Shift
 
             var q = UIFactory.Group(c, "要求キュー（期限の近い順）", 0, 202, 500, 200);
             _queue = TableView.CreateStretch(q, 0, 0, 0, 0,
-                new TableColumn("要求", 70), new TableColumn("利用者", 110), new TableColumn("接続元", 120), new TableColumn("接続先", 100), new TableColumn("残り", 60));
+                new TableColumn("要求", 70), new TableColumn("利用者", 110), new TableColumn("接続元", 104), new TableColumn("接続先", 100), new TableColumn("残り", 60));
             S.Requests.Created += OnCreated;
             W.SetStatus(0, "自動許可した要求の責任は、あなたにあります。");
             ProcessPending();

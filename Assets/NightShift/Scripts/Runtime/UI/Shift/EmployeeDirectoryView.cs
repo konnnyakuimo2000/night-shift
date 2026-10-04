@@ -23,7 +23,7 @@ namespace NightShift.UI.Shift
             if (!d.Require(Data.Features.EmployeeDirectory)) return null;
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = "社員情報の検索・参照", Icon = "people", Width = 740, Height = 470,
+                Id = Id, Title = "社員情報の検索・参照", Icon = "people", Width = 740, Height = 470, Position = new Vector2(540, 40),
                 Menus = ShiftDesktop.StandardMenus(d), StatusCells = 1
             }, out bool created);
             if (!created) return w.GetComponent<EmployeeDirectoryView>();
@@ -53,9 +53,9 @@ namespace NightShift.UI.Shift
             _device.gameObject.SetActive(deviceCheck);
 
             UIFactory.Button(g, "検索開始(F)", 520, -2, 178, 24, Search, "search");
-            UIFactory.Button(g, "条件クリア(R)", 520, 26, 178, 24, () => Clear(true), "doc");
+            UIFactory.Button(g, "条件クリア(Del)", 520, 26, 178, 24, () => Clear(true), "doc");
 
-            var rg = UIFactory.Group(c, "検索結果", 0, 102, 720, 280);
+            var rg = UIFactory.Group(c, "検索結果", 0, 102, 720, 262);
             _table = deviceCheck
                 ? TableView.CreateStretch(rg, 0, 0, 0, 0,
                     new TableColumn("社員番号", 76), new TableColumn("氏名", 110), new TableColumn("所属", 150),
@@ -65,15 +65,15 @@ namespace NightShift.UI.Shift
                     new TableColumn("役職", 160), new TableColumn("勤務状態", 80));
             _table.DoubleClicked += o => { if (_d.Unlocked(Features.EmployeeDetail)) EmployeeDetailView.Open(_d, (EmployeeData)o, _results); };
 
-            _count = UIFactory.Label(c, "", 0, 390, 160, 24);
-            var detailBtn = UIFactory.Button(c, "詳細表示(D)", 400, 388, 150, 26, ShowDetail, "people");
+            _count = UIFactory.Label(c, "", 0, 370, 160, 24);
+            var detailBtn = UIFactory.Button(c, "詳細表示(D)", 400, 368, 150, 26, ShowDetail, "people");
             detailBtn.Interactable = _d.Unlocked(Features.EmployeeDetail);
-            UIFactory.Button(c, "閉じる(C)", 570, 388, 150, 26, _w.RequestClose, "exit");
+            UIFactory.Button(c, "閉じる(C)", 570, 368, 150, 26, _w.RequestClose, "exit");
 
             _w.Accelerators[KeyCode.F] = Search;
             _w.Accelerators[KeyCode.Return] = Search;
             _w.Accelerators[KeyCode.KeypadEnter] = Search;
-            _w.Accelerators[KeyCode.R] = () => Clear(true);
+            _w.Accelerators[KeyCode.Delete] = () => Clear(true);
             if (_d.Unlocked(Features.EmployeeDetail)) _w.Accelerators[KeyCode.D] = ShowDetail;
             _w.Accelerators[KeyCode.C] = _w.RequestClose;
             _w.Accelerators[KeyCode.UpArrow] = () => _table.MoveSelection(-1);
@@ -139,7 +139,7 @@ namespace NightShift.UI.Shift
             if (!d.Require(Features.EmployeeDetail)) return;
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = "employee", Title = "社員情報の参照", Icon = "people", Width = 640, Height = 560, Maximizable = false,
+                Id = "employee", Title = "社員情報の参照", Icon = "people", Width = 640, Height = 560, Maximizable = false, Position = new Vector2(640, 60),
                 Menus = ShiftDesktop.StandardMenus(d), StatusCells = 2, StatusWidths = new float[] { 160 }
             }, out bool created);
             var v = created ? w.gameObject.AddComponent<EmployeeDetailView>() : w.GetComponent<EmployeeDetailView>();
