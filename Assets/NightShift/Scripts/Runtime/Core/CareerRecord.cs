@@ -46,6 +46,11 @@ namespace NightShift.Core
         public List<string> endingsSeen = new List<string>();
         public List<string> gameOversSeen = new List<string>();
         public List<string> infections = new List<string>(); // 夜をまたいで残る感染（"V3:SALES-PC05" など）
+        public List<IdCount> items = new List<IdCount>();   // 所持品（機材・ツールは 1、消耗品は個数）
+        public List<string> disabledTools = new List<string>(); // 持っているが使わない設定にしたツール
+        public int vaccineDefinitionDay;                    // ウイルス定義ファイルを最後に更新した日
+        public int extraTokensTonight;                      // 今夜の追加トークン
+        public List<string> autoReviewConditions = new List<string>(); // 自動審査ツールの条件
 
         const int CurrentVersion = 1;
         const string Key = "NightShift.Career";
@@ -144,6 +149,30 @@ namespace NightShift.Core
                 return min + (int)((uint)h % (uint)span);
             }
         }
+
+        // ---------------- 所持品 ----------------
+        public int ItemCount(string id)
+        {
+            foreach (var c in items) if (c.id == id) return c.count;
+            return 0;
+        }
+
+        public bool Owns(string id) => ItemCount(id) > 0;
+
+        public void AddItem(string id, int n = 1)
+        {
+            foreach (var c in items) if (c.id == id) { c.count += n; return; }
+            items.Add(new IdCount { id = id, count = n });
+        }
+
+        public bool UseItem(string id)
+        {
+            foreach (var c in items) if (c.id == id && c.count > 0) { c.count--; return true; }
+            return false;
+        }
+
+        /// <summary>ツールが使える状態か（持っていて、無効にしていない）</summary>
+        public bool ToolActive(string id) => Owns(id) && !disabledTools.Contains(id);
 
         // ---------------- フラグ ----------------
         public bool HasFlag(string f) => flags.Contains(f);

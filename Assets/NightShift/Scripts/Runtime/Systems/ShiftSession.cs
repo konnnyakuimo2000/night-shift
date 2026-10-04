@@ -16,7 +16,7 @@ namespace NightShift.Systems
         void ShowStatus(string message);
     }
 
-    public enum ShiftPhase { NotStarted, Running, Grace, Complete }
+    public enum ShiftPhase { NotStarted, Running, Grace, Overtime, Complete }
 
     /// <summary>
     /// 1日分のシフトの全状態。DAY Restart はこのオブジェクトを作り直すだけで完結する。
@@ -50,6 +50,30 @@ namespace NightShift.Systems
         public int CorrectReports, WrongReports, AiHandled, AutoAllowed;
         public bool OperatorCompromised;
         public bool Overtime;
+        /// <summary>業務終了時に「残業する／退勤する」を尋ねている（答えるまで猶予は進まない）</summary>
+        public bool OvertimeOffered { get; private set; }
+        public float OvertimeEnd { get; private set; }
+        public const float OvertimeMinutes = 30f;
+
+        bool CanOfferOvertime() =>
+            Day.dayNumber >= DefaultDataFactory.MainStartDay && !Overtime
+            && Core.CareerRecord.Current.ItemCount(Items.Coffee) > 0
+            && (Requests.Pending.Count > 0 || HelpDesk.OpenCount > 0);
+
+        /// <summary>缶コーヒーを1本飲んで、30分だけ残業する（新しい仕事は来ない・要求は期限切れにならない）</summary>
+        public void StartOvertime()
+        {
+            if (!OvertimeOffered) return;
+            OvertimeOffered = false;
+            if (!Core.CareerRecord.Current.UseItem(Items.Coffee)) return;
+            Overtime = true;
+            Phase = ShiftPhase.Overtime;
+            OvertimeEnd = Day.endMinute + OvertimeMinutes;
+            Logs.Add(Time.CurrentMinute, "NIGHT-OPS", "-", OperatorName, "SHIFT", "OVERTIME", "残業（缶コーヒー）");
+            Time.Start();
+        }
+
+        public void DeclineOvertime() => OvertimeOffered = false;
         /// <summary>致命的な被害（ゲームオーバー GO2 の原因）。空なら無し</summary>
         public string FatalIncident;
         public event Action<string> DamageOccurred;
@@ -176,8 +200,17 @@ namespace NightShift.Systems
                     if (now >= Day.endMinute) EndShift();
                     break;
                 }
+                case ShiftPhase.Overtime:
+                {
+                    float delta = Time.Tick(unscaledDelta);
+                    float now = Time.CurrentMinute;
+                    if (delta > 0) { HelpDesk.Tick(now, delta); Servers.Tick(now); }
+                    if (now >= OvertimeEnd || (Requests.Pending.Count == 0 && HelpDesk.OpenCount == 0)) Complete();
+                    break;
+                }
                 case ShiftPhase.Grace:
                 {
+                    if (OvertimeOffered) break; // 残業するか答えるまで待つ
                     // 期限切れなしの日は、未処理の要求がなくなるまで待つ
                     if (!Time.Paused && Day.requestsExpire) GraceRemaining -= unscaledDelta;
                     float delta = unscaledDelta / Time.RealSecondsPerGameMinute * Time.DebugTimeScale;
@@ -198,6 +231,7 @@ namespace NightShift.Systems
             Logs.Add(Day.endMinute, "NIGHT-OPS", "-", OperatorName, "SHIFT", "END", "新規受付を停止");
             Phase = ShiftPhase.Grace;
             GraceRemaining = Day.graceRealSeconds;
+            OvertimeOffered = CanOfferOvertime();
             ShiftEnded?.Invoke();
             if (Requests.Pending.Count > 0)
                 Notifications.Notify(NotificationType.ShiftNotice, "業務終了", $"{Day.EndLabel} になりました。保留中の要求 {Requests.Pending.Count} 件を処理してください。", Time.CurrentMinute, () => Ui?.OpenConnectionMonitor(null));

@@ -32,6 +32,7 @@ namespace NightShift.UI.Shift
                 M("   ネットワークマップ", () => NetworkMonitorView.Open(d), "globe", Data.Features.NetworkMap),
                 M("   サーバー運用管理", () => ServerManagementView.Open(d), "server", Data.Features.ServerManagement),
                 M("   ユーザー管理", () => UserManagementView.Open(d), "people", Data.Features.UserManagement),
+                M("   社内購買システム", () => StoreView.Open(d), "folder", Data.Features.Store),
                 MenuItem.Sep(),
                 new MenuItem("   メール（業務連絡・マニュアル）", () => MailboxView.Open(d)) { Icon = "mail" },
                 new MenuItem("   パスワードの変更", () => PasswordChangeView.Open(d)) { Icon = "lock" },
@@ -308,6 +309,23 @@ namespace NightShift.UI.Shift
             var ok = UIFactory.Button(c, "OK", 120, 80, 90, 24, w.Close);
             w.Accelerators[KeyCode.Return] = w.Close;
             w.Accelerators[KeyCode.O] = w.Close;
+        }
+
+        /// <summary>2択の質問（閉じるボタンなし。どちらかを選ぶまで閉じない）</summary>
+        public static void Ask(ShiftDesktop d, string title, string message, string yesLabel, System.Action onYes, string noLabel, System.Action onNo, string icon = "info")
+        {
+            var w = d.OpenWindow(new WindowSpec
+            {
+                Id = "ask:" + title, Title = title, Icon = icon, Width = 420, Height = 170, Closable = false, Minimizable = false, Maximizable = false,
+                Position = new Vector2(430, 260), ShowInTaskbar = false
+            }, out bool created);
+            if (!created) return;
+            var c = w.Content;
+            var ic = UIFactory.Image(c, RetroTheme.BigIcon(icon), Color.white, "Icon");
+            ic.rectTransform.Place(8, 10, 32, 32);
+            UIFactory.Label(c, message, 52, 6, 350, 74, 12, TextAnchor.MiddleLeft);
+            UIFactory.Button(c, yesLabel, 40, 96, 160, 26, () => { w.Close(); onYes?.Invoke(); });
+            UIFactory.Button(c, noLabel, 210, 96, 160, 26, () => { w.Close(); onNo?.Invoke(); });
         }
 
         /// <summary>はい／いいえの確認</summary>

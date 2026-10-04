@@ -416,6 +416,9 @@ namespace NightShift.Data
                 $"・すぐに [システム設定] → [パスワードの変更] で {B("パスワードを変更")} してください。",
                 $"・{Col("パスワードを付箋に書いていると、狙われやすくなります。", Deny)}");
 
+            // ---------------- 社内購買システムの商品 ----------------
+            BuildStore(c);
+
             // ---------------- 問い合わせ（本番のプール） ----------------
             var helpPool = BuildMainHelpDesk(c);
 
@@ -609,6 +612,58 @@ namespace NightShift.Data
             d23.fixedEvents.Add(vAiSpoof);
             d24.fixedEvents.Add(vAiOffShift);
             d28.fixedEvents.Add(vInjection);
+        }
+
+        // ============================================================
+        /// <summary>社内購買システムの商品（1998年の物価・自腹）。TOOL_CATALOG.md</summary>
+        static void BuildStore(MainContext c)
+        {
+            void I(string id, string name, StoreCategory cat, int price, int day, string desc, string icon, string pre = null,
+                bool consumable = false, int maxStock = 1, string ad = null)
+            {
+                var it = c.b.Add(ScriptableObject.CreateInstance<StoreItemDefinition>(), "Store", "ITEM_" + id);
+                it.itemId = id; it.displayName = name; it.category = cat; it.price = price; it.unlockDay = day;
+                it.description = desc; it.icon = icon; it.prerequisite = pre; it.consumable = consumable;
+                it.maxStock = consumable ? maxStock : 1;
+                it.grantsFeature = consumable ? "" : id;
+                it.adCopy = ad;
+                c.db.storeItems.Add(it);
+            }
+            const string M = Items.Monitor1;
+            I(Items.Monitor1, "サブモニター（1台目）15インチCRT", StoreCategory.Hardware, 19800, 8,
+                "担当者用ワークステーションの画面。社内の払い下げ品。ツールを使うための前提です。", "pc", null, false, 1, "デスクトップが広がる！ 15インチCRT ¥19,800");
+            I(Items.Monitor2, "サブモニター（2台目）17インチCRT", StoreCategory.Hardware, 34800, 15,
+                "ワークステーションの画面がもう1面増え、ツールを並べて置けます。", "pc", M);
+            I(Items.ProfilePanel, "社員情報パネル", StoreCategory.Tool, 12800, 8,
+                "接続要求を選ぶと、その社員の情報（端末・端末IP・勤務状態・在籍状態・VPN・権限）をサブモニターに表示します。見比べるのはあなたです。", "people", M);
+            I(Items.LogAnalyzer, "ログ解析", StoreCategory.Tool, 9800, 8,
+                "選んだログと同じ接続元・利用者の行を色付けし、直近10分の件数を集計します。", "log", M);
+            I(Items.RemoteKit, "リモート診断キット", StoreCategory.Tool, 12800, 8,
+                "リモート接続中のPCの状態（Wi-Fi・IP・DNS・プリンター・プロセス）を一覧表示します。", "remote", M);
+            I(Items.AutoReview, "自動審査ツール", StoreCategory.Tool, 24800, 10,
+                "要求を並べ替え・絞り込み、期限までの残り時間を表示。設定した条件をすべて満たす簡単な要求を自動で許可します（拒否は自動ではしません）。自動許可の責任はあなたにあります。", "check", M, false, 1, "審査がはかどる！ 自動審査ツール");
+            I(Items.Vaccine, "VACCINE 99 Client", StoreCategory.Security, 9800, 10,
+                "ワークステーションとリモート接続中の社員PCを検査・駆除。定義ファイルに載っているウイルスだけを検出します。", "shield", M, false, 1, "VACCINE 99 新発売");
+            I(Items.VaccineUpdate, "VACCINE 99 定義ファイル更新", StoreCategory.Consumable, 1000, 10,
+                "最新のウイルス定義に更新します（その時点までに出たウイルスを検出できるようになります）。", "shield", Items.Vaccine, true, 1);
+            I(Items.FwConsole, "遮断コンソール", StoreCategory.Tool, 14800, 11,
+                "IPアドレスの範囲（例: 198.51.100.*）をまとめて遮断できます。", "firewall", M);
+            I(Items.MailInspector, "メール差出人チェッカー", StoreCategory.Tool, 4800, 13,
+                "選んだメールの差出人アドレス・送信元サーバーを大きく表示します（本物かどうかは表示しません）。", "mail", M);
+            I(Items.ServerMonitor, "サーバー監視ダッシュボード", StoreCategory.Tool, 24800, 15,
+                "全サーバーのサービス状態・プロセス・発行元を1画面に表示します（不審かどうかは表示しません）。", "server", M);
+            I(Items.Isolator, "端末隔離ツール", StoreCategory.Tool, 16800, 16,
+                "社員PCを一覧から選んで、ボタン1つでネットワークから隔離します。", "lock", M);
+            I(Items.VaccineServer, "VACCINE 99 Server", StoreCategory.Security, 19800, 17,
+                "社内サーバーを検査・駆除します（Client が前提）。", "shield", Items.Vaccine);
+            I(Items.Correlator, "相関タイムライン", StoreCategory.Tool, 29800, 22,
+                "同じ接続元の範囲・同じ利用者の記録を時系列に並べます（関連があるかの判断はあなた）。", "clock", M);
+            I(Items.SocAi, "サイバー防御AI「SOC-AI」", StoreCategory.AI, 49800, 25,
+                "持っているツールをプラグインとして使い、調査・許可/拒否の提案を行います。1夜 30,000 トークンまで。AI も間違えます。", "debug", M, false, 1, "夜勤の相棒、SOC-AI 発売");
+            I(Items.TokenPack, "SOC-AI 追加トークン", StoreCategory.Consumable, 2980, 25,
+                "今夜使えるトークンを +20,000。", "debug", Items.SocAi, true, 3);
+            I(Items.Coffee, "缶コーヒー", StoreCategory.Consumable, 120, 8,
+                "06:00 以降も30分だけ残業できます（残業代は出ません）。1夜に1本まで。", "clock", null, true, 5);
         }
 
         // ============================================================

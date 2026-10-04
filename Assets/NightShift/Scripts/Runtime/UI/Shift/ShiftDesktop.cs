@@ -154,7 +154,17 @@ namespace NightShift.UI.Shift
 
         void OnEndWarning() => ShowStatus("業務終了まで残り10分です。");
 
-        void OnShiftEnded() => ShowStatus($"{S.Day.EndLabel} 業務終了。新規の受付を停止しました。");
+        void OnShiftEnded()
+        {
+            ShowStatus($"{S.Day.EndLabel} 業務終了。新規の受付を停止しました。");
+            if (S.OvertimeOffered)
+            {
+                int coffee = CareerRecord.Current.ItemCount(Data.Items.Coffee);
+                MessageBox.Ask(this, "業務終了", $"{S.Day.EndLabel} になりました。仕事が残っています。\n缶コーヒーを1本飲んで、30分だけ残業しますか？（残り {coffee} 本・残業代は出ません）",
+                    "残業する（缶コーヒー）", () => { S.StartOvertime(); ShowStatus("残業中 — 新しい仕事は来ません。残りを片付けてください。"); },
+                    "退勤する", S.DeclineOvertime, "clock");
+            }
+        }
 
         // ---------------- Update ----------------
         public void Tick()
@@ -371,7 +381,21 @@ namespace NightShift.UI.Shift
         }
 
         // ---------------- Features ----------------
-        public bool Unlocked(string feature) => S.Day.IsUnlocked(feature);
+        public bool Unlocked(string feature) => S.Day.IsUnlocked(feature) || HasTool(feature);
+
+        /// <summary>購入・ツールの有効/無効が変わった</summary>
+        public event Action InventoryChanged;
+        public void OnInventoryChanged() => InventoryChanged?.Invoke();
+
+        /// <summary>購入したツール・機材が使えるか（ツールはサブモニターが前提）</summary>
+        public bool HasTool(string id)
+        {
+            var c = CareerRecord.Current;
+            if (!c.ToolActive(id)) return false;
+            if (id == Data.Items.Monitor1 || id == Data.Items.Monitor2) return true;
+            var item = Game.Database.FindItem(id);
+            return item == null || item.category == Data.StoreCategory.Consumable || c.Owns(Data.Items.Monitor1);
+        }
 
         /// <summary>未解放のシステムは開かせない（メニュー・ボタン・通知・キー操作すべての共通ガード）</summary>
         public bool Require(string feature)

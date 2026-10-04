@@ -56,6 +56,8 @@ namespace NightShift.UI.Shift
             UIFactory.Button(c, "受信(F5)", 0, 0, 90, 24, Refresh, "mail");
             foreach (var (label, x) in new[] { ("返信", 94f), ("転送", 168f), ("削除", 242f) })
                 UIFactory.Button(c, label, x, 0, 70, 24, null).Interactable = false;
+            if (_d.Unlocked(Data.Features.Store))
+                UIFactory.Button(c, "社内購買システム", 320, 0, 150, 24, () => StoreView.Open(_d), "folder");
             if (_onStart != null)
             {
                 _start = UIFactory.Button(c, "業務開始", 0, 0, 240, 30, StartShift, "clock");

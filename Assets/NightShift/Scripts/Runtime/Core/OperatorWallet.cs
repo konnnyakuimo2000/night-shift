@@ -101,6 +101,20 @@ namespace NightShift.Core
             Save();
         }
 
+        public string Snapshot() => JsonUtility.ToJson(this);
+
+        public void Restore(string json)
+        {
+            try
+            {
+                var w = JsonUtility.FromJson<OperatorWallet>(json);
+                if (w == null) return;
+                slips = w.slips; spent = w.spent; version = w.version;
+                Save();
+            }
+            catch { }
+        }
+
         public static string Yen(int v) => (v < 0 ? "−" : "") + "¥" + Math.Abs(v).ToString("N0");
     }
 

@@ -28,6 +28,13 @@ namespace NightShift.Data
         public List<EmployeeData> employees = new List<EmployeeData>();
         public List<NetworkNodeDefinition> nodes = new List<NetworkNodeDefinition>();
         public List<DayDefinition> days = new List<DayDefinition>();
+        public List<StoreItemDefinition> storeItems = new List<StoreItemDefinition>();
+
+        public StoreItemDefinition FindItem(string id)
+        {
+            foreach (var i in storeItems) if (i != null && i.itemId == id) return i;
+            return null;
+        }
 
         /// <summary>指定日の定義（無ければ null）</summary>
         public DayDefinition FindDay(int day)

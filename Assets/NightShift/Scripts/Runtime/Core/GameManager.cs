@@ -166,8 +166,18 @@ namespace NightShift.Core
             DisposeShift();
             var day = Database.GetDay(CurrentDay);
             // その夜の開始時点の記録を残す（やり直したら戻す）
-            if (_snapshotDay != CurrentDay) { _careerSnapshot = CareerRecord.Current.Snapshot(); _snapshotDay = CurrentDay; }
-            else if (!string.IsNullOrEmpty(_careerSnapshot)) CareerRecord.Restore(_careerSnapshot);
+            if (_snapshotDay != CurrentDay)
+            {
+                CareerRecord.Current.extraTokensTonight = 0;
+                _careerSnapshot = CareerRecord.Current.Snapshot();
+                _walletSnapshot = Wallet.Snapshot();
+                _snapshotDay = CurrentDay;
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(_careerSnapshot)) CareerRecord.Restore(_careerSnapshot);
+                if (!string.IsNullOrEmpty(_walletSnapshot)) Wallet.Restore(_walletSnapshot);
+            }
             Session = new ShiftSession(Database, day, System.Environment.TickCount, OperatorName);
             Session.ShiftCompleted += OnShiftCompleted;
             _desktop = ShiftDesktop.Build(ScreenLayer, this, Session);
@@ -286,7 +296,7 @@ namespace NightShift.Core
             }, false);
         }
 
-        string _careerSnapshot;
+        string _careerSnapshot, _walletSnapshot;
         int _snapshotDay = -1;
 
         void StartNewGame()
