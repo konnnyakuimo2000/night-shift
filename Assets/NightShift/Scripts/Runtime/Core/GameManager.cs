@@ -109,8 +109,8 @@ namespace NightShift.Core
             _scaler = scaler;
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280, 800);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            // Expand: どの画面比率でも、論理キャンバスが 1280×800 を下回らない（16:9 で下端が欠けない）
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             go.AddComponent<GraphicRaycaster>();
 
             var bg = UIFactory.Solid(go.transform, Color.black, "Background");

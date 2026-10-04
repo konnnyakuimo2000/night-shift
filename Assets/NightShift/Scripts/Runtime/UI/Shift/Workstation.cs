@@ -87,7 +87,10 @@ namespace NightShift.UI.Shift
             var start = UIFactory.Button(bar.transform, "スタート", ToggleStart, "start");
             start.Label.fontStyle = FontStyle.Bold;
             start.Rect.Place(3, 3, 84, 24);
-            _taskButtons = UIFactory.Rect("Tasks", bar.transform).Stretch(92, 3, 300, 3);
+            // サブモニターからも一時停止できるように（Esc でも可）
+            var pause = UIFactory.Button(bar.transform, "一時停止", () => Desktop.OpenPause(), "clock");
+            pause.Rect.Place(90, 3, 84, 24);
+            _taskButtons = UIFactory.Rect("Tasks", bar.transform).Stretch(178, 3, 300, 3);
             _switcher = UIFactory.Rect("Monitors", bar.transform);
             _switcher.AnchorTopRight(150, 3, 140, 24);
             var tray = UIFactory.Image(bar.transform, RetroTheme.ThinSunken, Color.white, "Tray");

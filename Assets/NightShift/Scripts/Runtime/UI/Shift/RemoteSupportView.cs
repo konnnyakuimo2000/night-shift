@@ -32,7 +32,7 @@ namespace NightShift.UI.Shift
             if (!d.Require(Data.Features.RemoteSupport)) return;
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = "リモートサポート", Icon = "remote", Width = 880, Height = 668, Maximizable = false,
+                Id = Id, Title = "リモートサポート", Icon = "remote", Width = 880, Height = 640, Maximizable = true,
                 StatusCells = 3, StatusWidths = new float[] { 220, 120 }, Position = new Vector2(200, 4)
             }, out bool created);
             var v = created ? w.gameObject.AddComponent<RemoteSupportView>() : w.GetComponent<RemoteSupportView>();

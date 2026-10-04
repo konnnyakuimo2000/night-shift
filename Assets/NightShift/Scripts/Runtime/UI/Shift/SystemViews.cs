@@ -313,38 +313,11 @@ namespace NightShift.UI.Shift
 
         /// <summary>2択の質問（閉じるボタンなし。どちらかを選ぶまで閉じない）</summary>
         public static void Ask(ShiftDesktop d, string title, string message, string yesLabel, System.Action onYes, string noLabel, System.Action onNo, string icon = "info")
-        {
-            var w = d.OpenWindow(new WindowSpec
-            {
-                Id = "ask:" + title, Title = title, Icon = icon, Width = 420, Height = 170, Closable = false, Minimizable = false, Maximizable = false,
-                Position = new Vector2(430, 260), ShowInTaskbar = false
-            }, out bool created);
-            if (!created) return;
-            var c = w.Content;
-            var ic = UIFactory.Image(c, RetroTheme.BigIcon(icon), Color.white, "Icon");
-            ic.rectTransform.Place(8, 10, 32, 32);
-            UIFactory.Label(c, message, 52, 6, 350, 74, 12, TextAnchor.MiddleLeft);
-            UIFactory.Button(c, yesLabel, 40, 96, 160, 26, () => { w.Close(); onYes?.Invoke(); });
-            UIFactory.Button(c, noLabel, 210, 96, 160, 26, () => { w.Close(); onNo?.Invoke(); });
-        }
+            => d.ShowModal(title, message, icon, yesLabel, onYes, noLabel, onNo);
 
         /// <summary>はい／いいえの確認</summary>
         public static void Confirm(ShiftDesktop d, string title, string message, System.Action onYes, string icon = "warning")
-        {
-            var w = d.OpenWindow(new WindowSpec
-            {
-                Id = "confirm:" + title, Title = title, Icon = icon, Width = 380, Height = 160, Minimizable = false, Maximizable = false,
-                Position = new Vector2(450, 270), ShowInTaskbar = false
-            }, out bool created);
-            if (!created) return;
-            var c = w.Content;
-            var ic = UIFactory.Image(c, RetroTheme.BigIcon(icon), Color.white, "Icon");
-            ic.rectTransform.Place(8, 10, 32, 32);
-            UIFactory.Label(c, message, 52, 6, 310, 70, 12, TextAnchor.MiddleLeft);
-            UIFactory.Button(c, "はい(Y)", 90, 88, 90, 24, () => { w.Close(); onYes?.Invoke(); });
-            UIFactory.Button(c, "いいえ(N)", 190, 88, 90, 24, w.Close);
-            w.Accelerators[KeyCode.Y] = () => { w.Close(); onYes?.Invoke(); };
-            w.Accelerators[KeyCode.N] = w.Close;
-        }
+            => d.ShowModal(title, message, icon, "はい(Enter)", onYes, "いいえ(Esc)", null);
+
     }
 }

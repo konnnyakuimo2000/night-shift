@@ -178,6 +178,7 @@ namespace NightShift.UI.Shift
             var s = _d.S;
             float now = s.Time.CurrentMinute;
             bool paused = s.Time.Paused;
+            _d.EffectBlocking = _bsod != null || _blackout != null;
 
             if (_bsod != null)
             {

@@ -209,6 +209,23 @@ namespace NightShift.Core
             return ctrl == b.ctrl && alt == b.alt && shift == b.shift;
         }
 
+        /// <summary>
+        /// 業務画面のボタン操作（許可・拒否など）のキー。修飾キーなしの文字キーに割り当てていて、
+        /// 設定の「文字キーだけでボタンを押す」がオフのときは Alt＋その文字キーで押す。
+        /// </summary>
+        public static bool PressedButton(string action)
+        {
+            var b = Current.Get(action);
+            if (b == null || b.key == KeyCode.None || !Input.GetKeyDown(b.key)) return false;
+            bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+            bool alt = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr);
+            bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            bool plainLetter = !b.ctrl && !b.alt && !b.shift &&
+                ((b.key >= KeyCode.A && b.key <= KeyCode.Z) || (b.key >= KeyCode.Alpha0 && b.key <= KeyCode.Alpha9));
+            if (plainLetter && !Current.letterAccelerators) return alt && !ctrl && !shift;
+            return ctrl == b.ctrl && alt == b.alt && shift == b.shift;
+        }
+
         /// <summary>割り当てる。同じ組み合わせを使っている別のアクションは、元のキーと入れ替える。</summary>
         public string Assign(string action, KeyBinding combo)
         {

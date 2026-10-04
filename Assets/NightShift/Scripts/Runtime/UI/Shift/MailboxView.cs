@@ -32,7 +32,7 @@ namespace NightShift.UI.Shift
             bool preShift = !d.ShiftStarted && onStart != null;
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = "メール - 受信トレイ", Icon = "mail", Width = 1180, Height = 740,
+                Id = Id, Title = "メール - 受信トレイ", Icon = "mail", Width = 1180, Height = 680,
                 Closable = true, Minimizable = true, Maximizable = false, Position = new Vector2(50, 4),
                 ShowInTaskbar = false, // タスクバーの常設 [メール] ボタンがこのウィンドウのボタンを兼ねる
                 Menus = ShiftDesktop.StandardMenus(d), StatusCells = 2, StatusWidths = new float[] { 160 }
@@ -82,7 +82,7 @@ namespace NightShift.UI.Shift
 
             // フォルダー
             var folders = UIFactory.Image(c, RetroTheme.Field, Color.white, "Folders");
-            folders.rectTransform.Place(0, 32, 110, 634);
+            folders.rectTransform.Place(0, 32, 110, 574);
             _inboxButton = UIFactory.FlatButton(folders.transform, "受信トレイ", Refresh, "mail");
             _inboxButton.Label.alignment = TextAnchor.MiddleLeft;
             _inboxButton.Rect.Place(2, 2, 106, 22);
@@ -94,12 +94,12 @@ namespace NightShift.UI.Shift
 
             // 一覧
             // 一覧は左の細い列、本文は右側に縦いっぱい
-            _table = TableView.Create(c, 114, 32, 330, 634,
+            _table = TableView.Create(c, 114, 32, 330, 574,
                 new TableColumn("", 18), new TableColumn("件名", 188), new TableColumn("受信日時", 90));
             _table.SelectionChanged += o => Show(o as MailMessage);
 
             // プレビュー
-            _preview = UIFactory.Rect("Preview", c).Place(450, 32, 720, 634);
+            _preview = UIFactory.Rect("Preview", c).Place(450, 32, 720, 574);
 
             _w.Accelerators[KeyCode.UpArrow] = () => _table.MoveSelection(-1);
             _w.Accelerators[KeyCode.DownArrow] = () => _table.MoveSelection(1);

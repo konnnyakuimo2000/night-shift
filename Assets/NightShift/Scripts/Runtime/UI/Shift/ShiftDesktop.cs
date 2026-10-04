@@ -284,14 +284,18 @@ namespace NightShift.UI.Shift
             if (ShortcutInput.Capturing) return; // キー設定の入力待ち中
             bool debug = Core.GameSettings.Current.debugMode;
             if (debug && keys.Contains(Shortcut.ToggleDebug)) DebugPanelView.Open(this);
-            if (keys.Contains(Shortcut.OpenMail) && _pause == null) MailboxView.Open(this);
             if (debug && keys.Contains(Shortcut.ToggleOverlay)) ToggleOverlay();
 
-            if (_pause != null)
+            // 一時停止キー（既定 Esc）は最優先。リモート操作中・サブモニター表示中・演出中でも必ず効く
+            if (keys.Contains(Shortcut.Escape))
             {
-                if (keys.Contains(Shortcut.Escape)) ClosePause();
-                return;
+                if (ModalOpen) { CancelModal(); return; }
+                if (_pause != null) { ClosePause(); return; }
+                if (PopupMenu.IsOpen) { PopupMenu.CloseAll(); return; }
+                if (ShiftStarted && S.Phase != ShiftPhase.Complete) { OpenPause(); return; }
             }
+            if (_pause != null || ModalOpen) return;
+            if (keys.Contains(Shortcut.OpenMail)) MailboxView.Open(this);
 
             // Remote Support がアクティブなら、キー入力はリモートPCへ
             var active = Windows.Active;
@@ -356,6 +360,69 @@ namespace NightShift.UI.Shift
         }
 
         public void ToggleOverlay() => _overlay.Toggle();
+
+        // ---------------- 入力の受け付け ----------------
+        /// <summary>ブルースクリーン・停電などの演出で、メインの操作ができない</summary>
+        public bool EffectBlocking { get; set; }
+        public bool IsPaused => _pause != null;
+
+        /// <summary>メインモニターの業務画面への判定キー（許可・拒否など）を受け付けない状態</summary>
+        public bool InputBlocked => _pause != null || ModalOpen || CurrentMonitor != 0 || EffectBlocking;
+
+        // ---------------- モーダル（他を操作できない確認） ----------------
+        readonly List<Action> _modalCancels = new List<Action>();
+        public bool ModalOpen => _modalCancels.Count > 0;
+
+        void CancelModal()
+        {
+            if (_modalCancels.Count == 0) return;
+            _modalCancels[_modalCancels.Count - 1]?.Invoke();
+        }
+
+        /// <summary>
+        /// 画面全体を暗くして最前面に出す確認。どちらかを選ぶまで他の操作はできない。
+        /// Enter = 1つ目のボタン、Esc（一時停止キー）= 2つ目のボタン。
+        /// </summary>
+        public void ShowModal(string title, string message, string icon, string yesLabel, Action onYes, string noLabel, Action onNo)
+        {
+            PopupMenu.CloseAll();
+            var dim = UIFactory.Solid(_modalLayer, new Color(0, 0, 0, 0.45f), "ModalDim");
+            dim.rectTransform.Stretch();
+            dim.transform.SetAsLastSibling();
+            var box = UIFactory.Panel(dim.transform, RetroTheme.Raised, "Modal");
+            box.rectTransform.anchorMin = box.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            box.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            box.rectTransform.sizeDelta = new Vector2(440, 190);
+            var bar = UIFactory.Image(box.transform, RetroTheme.GradientSprite(RetroTheme.TitleActiveA, RetroTheme.TitleActiveB), Color.white, "Title");
+            bar.rectTransform.StretchH(3, 18, 3, 3);
+            UIFactory.Label(bar.transform, " " + title, 12, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
+            var ic = UIFactory.Image(box.transform, RetroTheme.BigIcon(icon ?? "info"), Color.white, "Icon");
+            ic.rectTransform.Place(14, 34, 32, 32);
+            var msg = UIFactory.Label(box.transform, message, 58, 28, 370, 104, 12, TextAnchor.MiddleLeft);
+            msg.verticalOverflow = VerticalWrapMode.Overflow;
+
+            Action cancel = null;
+            bool done = false;
+            void Close(Action then)
+            {
+                if (done) return;
+                done = true;
+                _modalCancels.Remove(cancel);
+                if (dim != null) Destroy(dim.gameObject);
+                then?.Invoke();
+            }
+            cancel = () => Close(onNo);
+            _modalCancels.Add(cancel);
+
+            bool two = !string.IsNullOrEmpty(noLabel);
+            var yes = UIFactory.Button(box.transform, yesLabel, two ? 50 : 140, 146, 160, 28, () => Close(onYes));
+            yes.Label.fontStyle = FontStyle.Bold;
+            if (two) UIFactory.Button(box.transform, noLabel, 230, 146, 160, 28, () => Close(onNo));
+            var enter = dim.gameObject.AddComponent<Screens.KeyAction>();
+            enter.Key = KeyCode.Return;
+            enter.Action = () => Close(onYes);
+            AudioFx.Notify();
+        }
 
         // ---------------- Pause ----------------
         public void OpenPause()

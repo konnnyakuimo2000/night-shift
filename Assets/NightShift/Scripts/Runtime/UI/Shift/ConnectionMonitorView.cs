@@ -245,12 +245,13 @@ namespace NightShift.UI.Shift
 
         void Update()
         {
-            // キー設定で割り当てた 許可／拒否／社員参照（このWindowがアクティブな時のみ）
-            if (_d.Windows.Active == _w && !Controls.ShortcutInput.Capturing && !Controls.ShortcutInput.TextFieldFocused && !PopupMenu.IsOpen)
+            // キー設定で割り当てた 許可／拒否／社員参照（このWindowがアクティブで、メインモニターを見ていて、
+            // 一時停止・確認ダイアログ・ブルースクリーン等の演出中でない時のみ）
+            if (_d.Windows.Active == _w && !_d.InputBlocked && !Controls.ShortcutInput.Capturing && !Controls.ShortcutInput.TextFieldFocused && !PopupMenu.IsOpen)
             {
-                if (Core.GameSettings.Pressed(Core.GameSettings.Allow)) Decide(PlayerAction.Allow);
-                else if (Core.GameSettings.Pressed(Core.GameSettings.Block)) Decide(PlayerAction.Block);
-                else if (Core.GameSettings.Pressed(Core.GameSettings.Lookup)) LookupEmployee();
+                if (Core.GameSettings.PressedButton(Core.GameSettings.Allow)) Decide(PlayerAction.Allow);
+                else if (Core.GameSettings.PressedButton(Core.GameSettings.Block)) Decide(PlayerAction.Block);
+                else if (Core.GameSettings.PressedButton(Core.GameSettings.Lookup)) LookupEmployee();
             }
             if (_dirty && Time.frameCount % 5 == 0) Refresh();
             if (_d.S.Phase == ShiftPhase.Grace)

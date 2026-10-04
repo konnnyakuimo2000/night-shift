@@ -135,6 +135,7 @@ namespace NightShift.UI
                 t.rectTransform.Place(x + 3, 0, c.Width - 5, RetroTheme.RowHeight);
                 t.horizontalOverflow = HorizontalWrapMode.Wrap;
                 t.verticalOverflow = VerticalWrapMode.Truncate;
+                EllipsisText.Attach(t);
                 r.Cells.Add(t);
                 // 縦罫線
                 var line = UIFactory.Solid(go, new Color(0.85f, 0.85f, 0.85f), "Grid");
