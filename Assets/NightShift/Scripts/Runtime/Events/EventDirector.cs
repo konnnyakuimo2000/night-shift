@@ -184,6 +184,7 @@ namespace NightShift.Events
             {
                 MailId = "TASK-PASSWORD-" + _s.Day.dayNumber,
                 From = MailManager.Sender("情報システム部 セキュリティ担当"),
+                FromAddress = "security@" + MailManager.CompanyDomain,
                 To = MailManager.Recipient(_s.OperatorName),
                 Subject = "【依頼】初期パスワードの変更について",
                 DateLabel = $"{_s.Day.dateLabel} {_s.Time.Now}",

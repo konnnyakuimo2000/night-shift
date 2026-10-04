@@ -143,7 +143,7 @@ namespace NightShift.UI.Shift
             var e = SelectedEntry;
             if (e == null) { AudioFx.Error(); return; }
             bool suspicious = _d.S.Security.IsHostile(e.Source) || IsInfectedSource(e.Source) || e.Result == "SUSPICIOUS";
-            _w.SetStatus(0, _d.S.Security.Report($"不審なログ（{e.Source} / {e.EventType} {e.Result}）", suspicious));
+            _w.SetStatus(0, _d.S.Security.Report($"不審なログ（{e.Source} / {e.EventType} {e.Result}）", suspicious, e.Source));
         }
 
         bool IsInfectedSource(string ip)

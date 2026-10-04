@@ -20,12 +20,17 @@ namespace NightShift.Systems
         public string ActionKey;            // UI 側で処理する操作（例: PASSWORD）
         public string ActionLabel;
         public float ReceivedAt = -1;       // シフト中に届いたメールのゲーム内時刻
+        public string FromAddress;          // 差出人のメールアドレス（DAY13〜表示）
+        public bool IsPhish;                // 偽メール（報告すべきもの）
+        public bool Reported;
     }
 
     /// <summary>運用担当者の受信トレイ。業務連絡・作業依頼などはすべてメールで届く。</summary>
     public class MailManager
     {
         public const string ActionPasswordChange = "PASSWORD";
+        public const string ActionPhishForm = "PHISH_FORM";
+        public const string CompanyDomain = "nexus-corp.example";
 
         /// <summary>社内メールに表示する社名（GameManager が GameDatabase から設定する）</summary>
         public static string CompanyName = "ネクサスコーポレーション";
@@ -76,6 +81,7 @@ namespace NightShift.Systems
             {
                 MailId = "BRIEFING-" + day.dayNumber,
                 From = Sender(day.briefingFrom),
+                FromAddress = "morita@" + CompanyDomain,
                 To = Recipient(operatorName),
                 Subject = $"【業務連絡】DAY {day.dayNumber} 夜間業務について",
                 DateLabel = (string.IsNullOrEmpty(day.clockInDateLabel) ? day.dateLabel : day.clockInDateLabel) + " 21:30",

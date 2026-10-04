@@ -277,6 +277,7 @@ namespace NightShift.Core
             {
                 MailId = "PAYSLIP-" + slip.day,
                 From = MailManager.Sender("総務部 給与担当"),
+                FromAddress = "kyuyo@" + MailManager.CompanyDomain,
                 To = MailManager.Recipient(OperatorName),
                 Subject = $"【給与明細】DAY {slip.day} 日当",
                 DateLabel = (string.IsNullOrEmpty(day.clockInDateLabel) ? day.dateLabel : day.clockInDateLabel) + " 18:00",

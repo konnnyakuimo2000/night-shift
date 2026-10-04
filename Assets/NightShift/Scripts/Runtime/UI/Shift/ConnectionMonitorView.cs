@@ -193,7 +193,7 @@ namespace NightShift.UI.Shift
         void ReportSelected()
         {
             if (!(_table.Selected is EventInstance e)) { AudioFx.Error(); return; }
-            _w.SetStatus(0, _d.S.Security.Report($"不審な接続要求 {e.RequestId}（{e.SourceIp} / {e.DisplayUser}）", e.IsMalicious));
+            _w.SetStatus(0, _d.S.Security.Report($"不審な接続要求 {e.RequestId}（{e.SourceIp} / {e.DisplayUser}）", e.IsMalicious, e.SourceIp));
             if (_reportBtn != null) _reportBtn.Interactable = false;
         }
 

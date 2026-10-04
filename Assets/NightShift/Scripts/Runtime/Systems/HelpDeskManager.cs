@@ -94,6 +94,13 @@ namespace NightShift.Systems
             {
                 t.PC = VirtualPCState.Create(def.pcProfile, employee, _s.Employees.GetIp(employee), _s.Rng);
                 ApplyFault(t, def);
+                // 感染している端末なら、見慣れないプロセスが動いている（手がかり）
+                string virus = _s.Security.InfectionOf(employee.deviceId);
+                if (virus != null)
+                {
+                    t.PC.StartProcess(virus == "V6" ? "briar.exe" : virus == "V1" ? "tinnitus.scr" : "svch0st.exe");
+                    t.PC.MalwareState = virus;
+                }
             }
 
             _tickets.Add(t);

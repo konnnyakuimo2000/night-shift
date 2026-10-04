@@ -112,9 +112,13 @@ namespace NightShift.Systems
         }
 
         // ---------------- 報告 ----------------
-        /// <summary>報告。correct = 報告すべきもの（不正・不審）だったか</summary>
-        public string Report(string what, bool correct)
+        readonly HashSet<string> _reported = new HashSet<string>();
+        public bool WasReported(string ip) => !string.IsNullOrEmpty(ip) && _reported.Contains(ip);
+
+        /// <summary>報告。correct = 報告すべきもの（不正・不審）だったか。ip = 報告した接続元</summary>
+        public string Report(string what, bool correct, string ip = null)
         {
+            if (!string.IsNullOrEmpty(ip)) _reported.Add(ip);
             _s.Logs.Add(_s.Time.CurrentMinute, "NIGHT-OPS", "情報システム部", _s.OperatorName, "REPORT", "SENT", what);
             if (correct) { _s.CorrectReports++; _s.Evaluation.SecurityActionsCorrect++; }
             else { _s.WrongReports++; _s.Evaluation.SecurityActionsWrong++; }

@@ -260,7 +260,122 @@ namespace NightShift.Data
             t3.stopOnBlock = false; // 拒否しても、遮断しない限り続く
             t3.compromiseLog = "VPN ログイン成功（総当たりで突破）";
 
-            var mainThreats = new List<ThreatScenarioDefinition> { c.scannerNoise, c.webProbe, c.scanThenAdmin, t3 };
+            ThreatStep Script(string label, float offset, string script, int repeat = 1, float interval = 1f, HelpDeskDefinition hd = null) =>
+                new ThreatStep { label = label, offsetMinutes = offset, kind = ThreatStepKind.Script, script = script, repeat = repeat, repeatIntervalMinutes = interval, helpDesk = hd };
+
+            // T5 担当者宛ての偽メール（DAY13〜）
+            var t5 = Threat("T5_PHISHING", 13, 25, new Vector2(30, 280), "198.51.100.", "情報システム部を名乗る偽メール。差出人のアドレスが社内と違う。報告すれば正解、入力すれば自分のパスワードが盗まれる。");
+            t5.chance = 0.5f;
+            t5.steps.Add(Script("偽メール", 0, "PHISH_MAIL"));
+            var t5ai = Threat("T5_AI_PHISHING", 26, LastDay, new Vector2(30, 280), "198.51.100.", "攻撃支援AIが作る、自然な文面の偽メール。アドレスが紛らわしい（exarnple）。");
+            t5ai.chance = 0.7f;
+            t5ai.steps.Add(Script("偽メール（AI）", 0, "PHISH_MAIL:AI"));
+
+            // T7 感染した社員PC（DAY16〜）: 定期通信 → 「PCが重い」の問い合わせ → 30分で周りに広がる
+            var hdInfected = b.Add(ScriptableObject.CreateInstance<HelpDeskDefinition>(), "MainHelpDesk", "HD_T7_PC_SLOW");
+            hdInfected.definitionId = "T7_PC_SLOW"; hdInfected.type = HelpDeskType.Remote; hdInfected.minimumDay = 16; hdInfected.maximumDay = LastDay;
+            hdInfected.subject = "PCが急に重くなった";
+            hdInfected.message = "{dept}の{name}です。\n添付ファイルを開いてから、PCがすごく重いです。ディスクのランプもずっと点きっぱなしで…。見てもらえますか？（端末: {device}）";
+            hdInfected.pcProfile = c.profile;
+            hdInfected.resolutionConditions.Add(new StateValue { key = "InternetConnectivity", value = "false" });
+            hdInfected.successReply = "ネットワークから切り離したんですね。わかりました、触らずに待ちます。";
+            hdInfected.failureReply = "まだ重いままです…。ランプもずっと点いています。";
+            hdInfected.reminderMessage = "PCがどんどん重くなっています…。";
+            hdInfected.explanation = "感染が疑われるPCは、まずネットワークから切り離す（Wi-Fi を切る・隔離する）。再起動はしない。";
+            hdInfected.sourceNote = "令和4年度 ITパスポート試験 問100（改変）";
+            var t7 = Threat("T7_INFECTED_PC", 16, LastDay, new Vector2(30, 250), "203.0.113.", "社員PCが感染し、社外の指令サーバーと定期通信。30分以内に隔離しないと周りのPCに広がる（V3 NIGHTCRY）。");
+            t7.chance = 0.6f;
+            t7.steps.Add(Script("被害者", 0, "PICK_VICTIM"));
+            t7.steps.Add(Script("感染", 0.1f, "INFECT:V3"));
+            t7.steps.Add(Script("定期通信", 1, "BEACON", 10, 3f));
+            t7.steps.Add(Script("問い合わせ", 6, "TICKET", 1, 1, hdInfected));
+            t7.steps.Add(Script("拡大の判定", 31, "SPREAD_CHECK"));
+
+            // T8 内部からの大量持ち出し（DAY18〜）: 報告すれば防げる
+            var t8 = Threat("T8_EXFILTRATION", 18, LastDay, new Vector2(40, 260), "10.10.", "権限も端末も正しい社員が、深夜に共有ファイルを大量に読む。ログを報告（または停止・隔離）すれば防げる。");
+            t8.chance = 0.5f;
+            t8.steps.Add(Script("被害者", 0, "PICK_VICTIM:FILE"));
+            t8.steps.Add(Script("大量の読み込み", 0.5f, "FILE_READ", 14, 0.5f));
+            t8.steps.Add(Script("持ち出し", 22, "EXFIL_CHECK"));
+
+            // T9 公開Webの改ざん（DAY17〜）: 不審なプロセスを止めれば防げる
+            var t9 = Threat("T9_WEB_DEFACE", 17, LastDay, new Vector2(40, 260), "192.0.2.", "公開Webの探索 → 不審なファイルの書き込み → 25分後にページが書き換えられる（V2 GARBLE）。");
+            t9.chance = 0.5f;
+            t9.steps.Add(new ThreatStep { label = "探索", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = c.web, eventType = "HTTP", result = "404", detail = "GET /cgi-bin/upload.cgi|GET /admin/upload/|GET /htdocs/", repeat = 3, repeatIntervalMinutes = 0.5f });
+            t9.steps.Add(Script("不審なプロセス", 4, "WEB_IMPLANT"));
+            t9.steps.Add(Script("改ざん", 29, "WEB_DEFACE_CHECK"));
+            t9.stopOnBlock = false;
+
+            // T10 管理者アカウントの乗っ取り（DAY19〜）: 退勤中の管理者のIDで管理ログイン → UPS 設定変更 → 停電
+            var t10Req = Ev("T10_ADMIN_TAKEOVER_REQUEST", 19);
+            t10Req.category = EventCategory.Threat;
+            t10Req.notifyAsSecurityAlert = true;
+            t10Req.severity = Severity.High;
+            t10Req.employeeConditions.requireOnShift = false;
+            t10Req.employeeConditions.requireOffShift = true;
+            t10Req.employeeConditions.preferUnused = false;
+            t10Req.employeeConditions.requiredPermissions.Add(perms["SERVER_ADMIN"]);
+            t10Req.destination = c.admin; t10Req.accessType = "管理ログイン";
+            t10Req.isMalicious = true;
+            t10Req.timeoutMinutes = 30;
+            var t10 = Threat("T10_ADMIN_TAKEOVER", 19, LastDay, new Vector2(40, 240), "10.10.", "退勤しているはずの管理者のIDで管理ログイン。許可したうえにアカウントを止めないと致命的（GO2）。UPS の設定変更は停電（V5 REDACT）の兆候。");
+            t10.chance = 0.45f;
+            t10.stopOnBlock = false;
+            t10.compromiseLog = "管理者アカウントが乗っ取られた";
+            t10.steps.Add(new ThreatStep { label = "管理ログイン要求", offsetMinutes = 0, kind = ThreatStepKind.ConnectionRequest, destination = c.admin, request = t10Req });
+            t10.steps.Add(Script("UPS 設定変更", 6, "UPS_CHANGE"));
+            t10.steps.Add(Script("停電の判定", 20, "BLACKOUT_CHECK"));
+            t10.steps.Add(Script("乗っ取りの判定", 60, "ADMIN_FATAL_CHECK"));
+
+            // T11 身代金ウイルス（DAY20〜）: FILE WRITE の連続。30分以内に隔離しないと致命的（GO2）
+            var t11 = Threat("T11_RANSOMWARE", 20, LastDay, new Vector2(40, 280), "203.0.113.", "1台の端末からファイルの書き換え（.briar）が連続。30分以内に隔離しないと全社のファイルが暗号化される（V6 BRIAR ROSE・致命的）。");
+            t11.chance = 0.4f;
+            t11.steps.Add(Script("被害者", 0, "PICK_VICTIM"));
+            t11.steps.Add(Script("感染", 0.1f, "INFECT:V6"));
+            t11.steps.Add(Script("書き換え", 1, "RANSOM_WRITE", 30, 1f));
+            t11.steps.Add(Script("暗号化の判定", 31, "RANSOM_CHECK"));
+
+            // T13 陽動（DAY25〜）: 問い合わせを一斉に出し、その間に管理サーバーへの要求
+            var t13 = Threat("T13_DIVERSION", 25, LastDay, new Vector2(60, 260), "192.0.2.", "問い合わせが一斉に届き、その隙に社外から管理サーバーへの要求。セキュリティ警告を先に。");
+            t13.chance = 0.6f;
+            t13.steps.Add(Script("問い合わせの殺到", 0, "DIVERSION"));
+            t13.steps.Add(new ThreatStep { label = "本命の要求", offsetMinutes = 1.5f, kind = ThreatStepKind.ConnectionRequest, destination = c.admin, request = vExtAdmin });
+
+            // T14 自律型攻撃AI（DAY28〜30）: 拒否されると経路を変えて再挑戦。範囲ごと遮断すれば止まる
+            var t14Req = Ev("T14_AUTONOMOUS_REQUEST", 28);
+            t14Req.category = EventCategory.Threat;
+            t14Req.notifyAsSecurityAlert = true;
+            t14Req.severity = Severity.High;
+            t14Req.sourceType = SourceType.AttackerSource;
+            t14Req.deviceNamePattern = "NB-{hex}";
+            t14Req.employeeConditions.requireVpnEnabled = true;
+            t14Req.employeeConditions.preferUnused = false;
+            t14Req.destination = c.auth; t14Req.accessType = "VPN接続";
+            t14Req.isMalicious = true;
+            t14Req.timeoutMinutes = 25;
+            var t14 = Threat("T14_DAYBREAK", 28, LastDay, new Vector2(20, 60), "198.51.100.", "自律型攻撃AI DAYBREAK。拒否されると数分後に別の範囲から再挑戦。範囲ごと遮断すれば止まる。");
+            t14.adaptive = true;
+            t14.maxAttempts = 6;
+            t14.compromiseLog = "自律型攻撃AIに侵入された（DAYBREAK）";
+            t14.steps.Add(new ThreatStep { label = "探索", offsetMinutes = 0, kind = ThreatStepKind.LogEntry, destination = c.auth, eventType = "AUTH", result = "FAIL", detail = "LOGIN FAIL (VPN)", repeat = 4, repeatIntervalMinutes = 0.3f });
+            t14.steps.Add(new ThreatStep { label = "侵入の試み", offsetMinutes = 2, kind = ThreatStepKind.ConnectionRequest, destination = c.auth, request = t14Req });
+            var t14b = Threat("T14_DAYBREAK_LATE", 28, LastDay, new Vector2(200, 260), "203.0.113.", "夜の後半、もう一度別の経路から。");
+            t14b.adaptive = true;
+            t14b.maxAttempts = 6;
+            t14b.compromiseLog = t14.compromiseLog;
+            var t14AdminReq = Ev("T14_AUTONOMOUS_ADMIN", 28);
+            t14AdminReq.category = EventCategory.Threat;
+            t14AdminReq.notifyAsSecurityAlert = true;
+            t14AdminReq.severity = Severity.High;
+            t14AdminReq.userType = UserType.Unknown;
+            t14AdminReq.sourceType = SourceType.AttackerSource;
+            t14AdminReq.deviceNamePattern = "UNKNOWN-{n}";
+            t14AdminReq.destination = c.admin; t14AdminReq.accessType = "管理ログイン";
+            t14AdminReq.isMalicious = true;
+            t14AdminReq.timeoutMinutes = 25;
+            t14b.steps.Add(new ThreatStep { label = "侵入の試み", offsetMinutes = 0, kind = ThreatStepKind.ConnectionRequest, destination = c.admin, request = t14AdminReq });
+
+            var mainThreats = new List<ThreatScenarioDefinition> { c.scannerNoise, c.webProbe, c.scanThenAdmin, t3, t5, t5ai, t7, t8, t9, t10, t11, t13, t14, t14b };
 
             // ---------------- ルール ----------------
             string rIp = $"{B("社内の登録端末")}からの接続は、接続元の {Col("IPアドレス", Check)} が社員情報の {B("「端末IP」")} と同じか確認する。{Col("違えば拒否", Deny)}（なりすまし）。";

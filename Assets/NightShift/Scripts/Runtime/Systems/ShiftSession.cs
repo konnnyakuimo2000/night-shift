@@ -53,6 +53,9 @@ namespace NightShift.Systems
         /// <summary>致命的な被害（ゲームオーバー GO2 の原因）。空なら無し</summary>
         public string FatalIncident;
         public event Action<string> DamageOccurred;
+        /// <summary>停電（V5 REDACT）の演出を要求する</summary>
+        public event Action BlackoutRequested;
+        public void RequestBlackout() => BlackoutRequested?.Invoke();
 
         public void AddDamage(string what, bool fatal = false)
         {

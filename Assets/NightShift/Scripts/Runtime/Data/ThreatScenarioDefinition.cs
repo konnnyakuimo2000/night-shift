@@ -8,7 +8,8 @@ namespace NightShift.Data
     {
         Traffic,           // 通信のみ（Network Monitor / 一部Log）
         LogEntry,          // ログに記録
-        ConnectionRequest  // プレイヤーに判断させる接続要求
+        ConnectionRequest, // プレイヤーに判断させる接続要求
+        Script             // ThreatScripts の処理（感染・改ざん・停電など）
     }
 
     [Serializable]
@@ -30,6 +31,10 @@ namespace NightShift.Data
         public bool compromiseUnlessBlocked;
         [Tooltip("ConnectionRequest の場合の定義")]
         public EventDefinition request;
+        [Tooltip("Script の処理名（ThreatScripts）")]
+        public string script;
+        [Tooltip("Script で使う問い合わせの定義（被害者からの問い合わせ）")]
+        public HelpDeskDefinition helpDesk;
     }
 
     /// <summary>
@@ -50,5 +55,12 @@ namespace NightShift.Data
         public string compromiseLog = "管理コンソールへのログインに成功";
         [Tooltip("要求を拒否した場合、以降のステップを停止する")]
         public bool stopOnBlock = true;
+        [Tooltip("対象の日にこのシナリオが起きる確率")]
+        [Range(0f, 1f)] public float chance = 1f;
+        [Tooltip("拒否されると経路を変えて再挑戦する（自律型攻撃AI）")]
+        public bool adaptive;
+        public int maxAttempts = 4;
+        [Tooltip("要求を許可されたら、その夜の致命的な被害（ゲームオーバー GO2）")]
+        public bool fatalIfAllowed;
     }
 }

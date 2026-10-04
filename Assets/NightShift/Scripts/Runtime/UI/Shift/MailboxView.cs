@@ -196,7 +196,8 @@ namespace NightShift.UI.Shift
                 UIFactory.ValueBox(_preview, 58, y, 662, 20, value, false);
                 y += 22;
             }
-            Row("差出人:", m.From);
+            bool showAddr = _d.Unlocked(Data.Features.MailSender) && !string.IsNullOrEmpty(m.FromAddress);
+            Row("差出人:", showAddr ? $"{m.From} <{m.FromAddress}>" : m.From);
             Row("宛先:", m.To);
             Row("日付:", m.DateLabel);
             Row("件名:", m.Subject);
@@ -235,10 +236,21 @@ namespace NightShift.UI.Shift
             }
 
             // メール内の操作ボタン
-            if (!string.IsNullOrEmpty(m.ActionKey))
+            bool canReport = _d.Unlocked(Data.Features.Report) && !m.IsBriefing;
+            if (!string.IsNullOrEmpty(m.ActionKey) || canReport)
             {
-                var action = UIFactory.Button(_preview, m.ActionLabel ?? "開く", 0, y, 240, 28, () => RunAction(m.ActionKey), "lock");
-                action.Label.fontStyle = FontStyle.Bold;
+                if (!string.IsNullOrEmpty(m.ActionKey))
+                {
+                    var mm = m;
+                    var action = UIFactory.Button(_preview, m.ActionLabel ?? "開く", 0, y, 240, 28, () => RunAction(mm.ActionKey, mm), "lock");
+                    action.Label.fontStyle = FontStyle.Bold;
+                }
+                if (canReport)
+                {
+                    var mr = m;
+                    var rep = UIFactory.Button(_preview, m.Reported ? "報告済み" : "このメールを報告", 250, y, 160, 28, () => ReportMail(mr), "warning");
+                    rep.Interactable = !m.Reported;
+                }
                 y += 34;
             }
 
@@ -261,12 +273,23 @@ namespace NightShift.UI.Shift
             return time.Contains(":") ? date + " " + time : date;
         }
 
-        void RunAction(string key)
+        void RunAction(string key, MailMessage m)
         {
             switch (key)
             {
                 case MailManager.ActionPasswordChange: PasswordChangeView.Open(_d); break;
+                case MailManager.ActionPhishForm: PhishFormView.Open(_d, m); break;
             }
+        }
+
+        void ReportMail(MailMessage m)
+        {
+            if (m.Reported) return;
+            m.Reported = true;
+            _w.SetStatus(0, _d.S.Security.Report($"不審なメール「{m.Subject}」（{m.FromAddress}）", m.IsPhish));
+            var shown = _shown;
+            _shown = null;
+            Show(shown);
         }
 
         void Update()
