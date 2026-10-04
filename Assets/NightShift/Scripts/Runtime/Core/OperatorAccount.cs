@@ -73,7 +73,7 @@ namespace NightShift.Core
             Save();
         }
 
-        /// <summary>新しいゲームを始めた時（タイトルの CLOCK IN）</summary>
+        /// <summary>新しいゲームを始めた時（タイトルの「出勤する」）</summary>
         public static OperatorAccount NewGame(string userId)
         {
             var a = new OperatorAccount { UserId = userId };

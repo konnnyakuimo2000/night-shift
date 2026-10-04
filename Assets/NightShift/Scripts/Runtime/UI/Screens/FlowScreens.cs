@@ -74,7 +74,7 @@ namespace NightShift.UI.Screens
                 by -= h + 8;
                 return b;
             }
-            var clockIn = Centered(onContinue != null ? "CLOCK IN（DAY 1 から）" : "CLOCK IN", onClockIn, "clock", 32);
+            var clockIn = Centered(onContinue != null ? "出勤する（DAY 1 から）" : "出勤する", onClockIn, "clock", 32);
             clockIn.Label.fontStyle = FontStyle.Bold;
             if (onContinue != null)
                 Centered($"続きから（DAY {reachedDay}）", onContinue, "clock", 32).Label.fontStyle = FontStyle.Bold;

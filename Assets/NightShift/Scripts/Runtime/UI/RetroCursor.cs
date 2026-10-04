@@ -13,7 +13,9 @@ namespace NightShift.UI
     {
         enum Kind { None, Arrow, Hand, Beam }
 
-        const int Scale = 2;
+        // 16x16 の絵を 1.5 倍（24x24）で表示
+        const float Scale = 1.5f;
+        const int Size = 24;
         static Texture2D _arrow, _hand, _beam;
         Kind _current = Kind.None;
         readonly List<RaycastResult> _hits = new List<RaycastResult>();
@@ -81,25 +83,21 @@ namespace NightShift.UI
 
         static Texture2D Make(string[] art)
         {
-            int n = 16 * Scale;
+            int n = Size;
             var t = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
             t.hideFlags = HideFlags.DontSave;
             var px = new Color[n * n];
             var navy = new Color(0.05f, 0.08f, 0.32f, 1f);
             var cyan = new Color(0.2f, 0.85f, 0.95f, 1f);
             var shadow = new Color(0f, 0f, 0f, 0.35f);
-            for (int y = 0; y < 16; y++)
-            for (int x = 0; x < 16; x++)
+            for (int ty = 0; ty < n; ty++)
+            for (int tx = 0; tx < n; tx++)
             {
+                int x = Mathf.Min(15, (int)(tx / Scale));
+                int y = Mathf.Min(15, (int)(ty / Scale)); // 上からの行
                 char ch = x < art[y].Length ? art[y][x] : '.';
                 Color c = ch == 'B' ? navy : ch == 'W' ? Color.white : ch == 'C' ? cyan : ch == 'S' ? shadow : new Color(0, 0, 0, 0);
-                for (int sy = 0; sy < Scale; sy++)
-                for (int sx = 0; sx < Scale; sx++)
-                {
-                    int px_ = x * Scale + sx;
-                    int py_ = (15 - y) * Scale + sy; // テクスチャは下から
-                    px[py_ * n + px_] = c;
-                }
+                px[(n - 1 - ty) * n + tx] = c; // テクスチャは下から
             }
             t.SetPixels(px);
             t.Apply();
@@ -120,8 +118,8 @@ namespace NightShift.UI
             _current = k;
             switch (k)
             {
-                case Kind.Hand: Cursor.SetCursor(_hand, new Vector2(4 * Scale + 1, 0), CursorMode.Auto); break;
-                case Kind.Beam: Cursor.SetCursor(_beam, new Vector2(6 * Scale, 7 * Scale), CursorMode.Auto); break;
+                case Kind.Hand: Cursor.SetCursor(_hand, new Vector2(Mathf.Round(4.5f * Scale), 0), CursorMode.Auto); break;
+                case Kind.Beam: Cursor.SetCursor(_beam, new Vector2(Mathf.Round(6.5f * Scale), Mathf.Round(7.5f * Scale)), CursorMode.Auto); break;
                 default: Cursor.SetCursor(_arrow, Vector2.zero, CursorMode.Auto); break;
             }
         }
