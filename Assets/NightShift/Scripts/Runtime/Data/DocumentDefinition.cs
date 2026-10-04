@@ -20,13 +20,15 @@ namespace NightShift.Data
         public string requiredFeature;
         [Tooltip("前書き（常に表示）")]
         [TextArea(4, 20)] public string body;
-        [Tooltip("章ごとの本文。requiredFeature が解放されている章だけ表示する")]
+        [Tooltip("ページ（業務ごと）。requiredFeature が解放されているページだけ表示する")]
         public List<DocumentSection> sections = new List<DocumentSection>();
     }
 
     [Serializable]
     public class DocumentSection
     {
+        [Tooltip("ページのタイトル（目次に表示）")]
+        public string title;
         public string requiredFeature;
         [TextArea(4, 30)] public string text;
     }

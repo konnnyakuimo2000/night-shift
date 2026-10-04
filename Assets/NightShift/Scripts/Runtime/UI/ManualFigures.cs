@@ -45,7 +45,7 @@ namespace NightShift.UI
                 case "NETWORK_ZONES": return NetworkZones(holder, ctx);
                 case "REMOTE_FLOW": return RemoteFlow(holder);
                 case "EXTERNAL_FLOW": return ExternalFlow(holder);
-                default: return 0;
+                default: return ManualUiFigures.Build(id, holder, ctx);
             }
         }
 

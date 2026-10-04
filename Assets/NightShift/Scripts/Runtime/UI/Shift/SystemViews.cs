@@ -164,42 +164,8 @@ namespace NightShift.UI.Shift
     /// <summary>添付文書のビューア</summary>
     public static class DocumentView
     {
-        public static void Open(ShiftDesktop d, Data.DocumentDefinition doc)
-        {
-            var w = d.OpenWindow(new WindowSpec
-            {
-                Id = "doc:" + doc.documentId, Title = $"{doc.fileName} - 文書ビューア", Icon = doc.icon, Width = 660, Height = 580,
-                Menus = ShiftDesktop.StandardMenus(d), StatusCells = 1
-            }, out bool created);
-            if (!created) return;
-            var c = w.Content;
-            var head = UIFactory.Solid(c, RetroTheme.Navy, "Head");
-            head.rectTransform.StretchH(0, 30);
-            UIFactory.Label(head.transform, "  " + doc.title, 15, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
-            var text = new StringBuilder(doc.body ?? "");
-            foreach (var sec in doc.sections)
-            {
-                if (sec == null || (!string.IsNullOrEmpty(sec.requiredFeature) && !d.Unlocked(sec.requiredFeature))) continue;
-                text.Append(System.Environment.NewLine).Append(System.Environment.NewLine).Append(sec.text);
-            }
-            var sr = DocumentRenderer.Render(c, Expand(d, text.ToString()), (id, holder) => ManualFigures.Build(id, holder, d.FigureContext));
-            ((RectTransform)sr.transform).Stretch(0, 34, 0, 34);
-            var close = UIFactory.Button(c, "閉じる(C)", 0, 0, 100, 26, w.RequestClose);
-            close.Rect.anchorMin = close.Rect.anchorMax = new Vector2(1, 0);
-            close.Rect.pivot = new Vector2(1, 0);
-            close.Rect.anchoredPosition = new Vector2(0, 2);
-            w.Accelerators[KeyCode.C] = w.RequestClose;
-            if (d.IsRequiredReading(doc.documentId) && !d.IsRead(doc.documentId))
-            {
-                w.SetStatus(0, $"{doc.fileName} — 最後までスクロールすると「既読」になります。");
-                ReadTracker.Attach(sr, () =>
-                {
-                    d.MarkRead(doc.documentId);
-                    if (w != null) w.SetStatus(0, $"{doc.fileName} — 既読");
-                });
-            }
-            else w.SetStatus(0, doc.fileName);
-        }
+        /// <summary>マニュアル（業務ごとのページ）を開く</summary>
+        public static void Open(ShiftDesktop d, Data.DocumentDefinition doc) => ManualViewer.Open(d, doc);
 
         static string PermissionLabel(ShiftDesktop d, string id)
         {
@@ -207,7 +173,7 @@ namespace NightShift.UI.Shift
             return id;
         }
 
-        static string Expand(ShiftDesktop d, string body)
+        public static string Expand(ShiftDesktop d, string body)
         {
             body = (body ?? "").Replace("{OPERATOR}", d.S.OperatorName);
             if (body.Contains("{ACCESS_TABLE}"))

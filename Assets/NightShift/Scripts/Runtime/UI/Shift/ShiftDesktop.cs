@@ -269,8 +269,55 @@ namespace NightShift.UI.Shift
         static bool Available(Data.DocumentDefinition doc, Data.DayDefinition day) =>
             doc != null && day != null && (string.IsNullOrEmpty(doc.requiredFeature) || day.IsUnlocked(doc.requiredFeature));
 
+        static bool PageAvailable(Data.DocumentSection sec, Data.DayDefinition day) =>
+            sec != null && day != null && (string.IsNullOrEmpty(sec.requiredFeature) || day.IsUnlocked(sec.requiredFeature));
+
+        /// <summary>今日表示されるページ（業務ごと）の番号</summary>
+        public List<int> VisiblePages(Data.DocumentDefinition doc)
+        {
+            var list = new List<int>();
+            if (doc == null) return list;
+            for (int i = 0; i < doc.sections.Count; i++) if (PageAvailable(doc.sections[i], S.Day)) list.Add(i);
+            return list;
+        }
+
+        /// <summary>今日新しく増えたページ（文書自体が今日届いた場合は全ページ）</summary>
+        public List<int> NewPages(Data.DocumentDefinition doc)
+        {
+            var day = S.Day;
+            var list = new List<int>();
+            if (!Available(doc, day) || !day.attachments.Contains(doc)) return list;
+            var yesterday = Game.Database.FindDay(day.dayNumber - 1);
+            bool docIsNew = yesterday == null || !Available(doc, yesterday) || !yesterday.attachments.Contains(doc);
+            for (int i = 0; i < doc.sections.Count; i++)
+            {
+                var sec = doc.sections[i];
+                if (!PageAvailable(sec, day)) continue;
+                if (docIsNew || !PageAvailable(sec, yesterday)) list.Add(i);
+            }
+            return list;
+        }
+
+        static string PageKey(Data.DocumentDefinition doc, int page) => doc.documentId + "#" + page;
+
+        public bool IsNewPage(Data.DocumentDefinition doc, int page) => NewPages(doc).Contains(page);
+        public bool IsPageRead(Data.DocumentDefinition doc, int page) => Game.IsRead(S.Day.dayNumber, PageKey(doc, page));
+
+        public void MarkPageRead(Data.DocumentDefinition doc, int page)
+        {
+            if (IsPageRead(doc, page)) return;
+            Game.MarkRead(S.Day.dayNumber, PageKey(doc, page));
+            ReadingChanged?.Invoke();
+        }
+
+        Data.DocumentDefinition FindDoc(string id)
+        {
+            foreach (var d in S.Day.attachments) if (d != null && d.documentId == id) return d;
+            return null;
+        }
+
         /// <summary>
-        /// 業務開始前に読む必要があるもの: 今日の業務連絡メール本文 ＋ 今日新しく届いた／章が追加されたマニュアル。
+        /// 業務開始前に読む必要があるもの: 今日の業務連絡メール本文 ＋ マニュアルの「今日新しく増えたページ」。
         /// </summary>
         public List<ReadingItem> RequiredReading()
         {
@@ -279,17 +326,18 @@ namespace NightShift.UI.Shift
             {
                 new ReadingItem { Id = BriefingReadId, Label = "業務連絡メール（本文）", Read = Game.IsRead(day.dayNumber, BriefingReadId) }
             };
-            var yesterday = Game.Database.FindDay(day.dayNumber - 1);
             foreach (var doc in day.attachments)
             {
-                if (!Available(doc, day)) continue;
-                bool updated = yesterday == null || !Available(doc, yesterday) || !yesterday.attachments.Contains(doc);
-                if (!updated)
-                    foreach (var sec in doc.sections)
-                        if (sec != null && !string.IsNullOrEmpty(sec.requiredFeature) && day.IsUnlocked(sec.requiredFeature) && !yesterday.IsUnlocked(sec.requiredFeature))
-                        { updated = true; break; }
-                if (!updated) continue;
-                list.Add(new ReadingItem { Id = doc.documentId, Label = doc.fileName, Read = Game.IsRead(day.dayNumber, doc.documentId) });
+                var pages = NewPages(doc);
+                if (pages.Count == 0) continue;
+                int read = 0;
+                foreach (var p in pages) if (IsPageRead(doc, p)) read++;
+                list.Add(new ReadingItem
+                {
+                    Id = doc.documentId,
+                    Label = $"{doc.fileName}（新しいページ {read}/{pages.Count}）",
+                    Read = read == pages.Count
+                });
             }
             return list;
         }
@@ -305,7 +353,15 @@ namespace NightShift.UI.Shift
             get { foreach (var r in RequiredReading()) if (!r.Read) return false; return true; }
         }
 
-        public bool IsRead(string id) => Game.IsRead(S.Day.dayNumber, id);
+        /// <summary>メール本文、または文書（新しいページをすべて読んだか）</summary>
+        public bool IsRead(string id)
+        {
+            if (id == BriefingReadId) return Game.IsRead(S.Day.dayNumber, id);
+            var doc = FindDoc(id);
+            if (doc == null) return true;
+            foreach (var p in NewPages(doc)) if (!IsPageRead(doc, p)) return false;
+            return true;
+        }
 
         public void MarkRead(string id)
         {

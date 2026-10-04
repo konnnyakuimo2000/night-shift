@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 15;
+        public const int DataVersion = 16;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -447,142 +447,142 @@ namespace NightShift.Data
             hdR2.reminderMessage = "プリンターの件、どうでしょうか…？";
 
             // ---------------- Attachments (manuals) ----------------
-            DocumentDefinition Doc(string id, string title, string file_, string icon, string requiredFeature, string intro)
+            // マニュアルは「業務ごとに1ページ」。新しい業務が解放されると、その日にページが増える。
+            DocumentDefinition Doc(string id, string title, string file_, string icon, string requiredFeature)
             {
                 var d = b.Add(ScriptableObject.CreateInstance<DocumentDefinition>(), "Documents", "DOC_" + id);
-                d.documentId = id; d.title = title; d.fileName = file_; d.icon = icon; d.requiredFeature = requiredFeature; d.body = intro;
+                d.documentId = id; d.title = title; d.fileName = file_; d.icon = icon; d.requiredFeature = requiredFeature; d.body = "";
                 return d;
             }
-            void Sec(DocumentDefinition d, string feature, params string[] lines) =>
-                d.sections.Add(new DocumentSection { requiredFeature = feature, text = string.Join("\n", lines) });
+            void Page(DocumentDefinition d, string title, string feature, params string[] lines) =>
+                d.sections.Add(new DocumentSection { title = title, requiredFeature = feature, text = string.Join("\n", lines) });
 
-            var manualSystem = Doc("SYSTEM_MANUAL", "社内情報システム 操作マニュアル（夜間運用担当向け）", "業務システム操作マニュアル.doc", "doc", "",
-                "本書は社内情報システムの操作方法をまとめたものです。担当範囲が広がると、章が追加されます。");
-            Sec(manualSystem, Features.ConnectionMonitor,
-                B("■ ネットワーク接続監視（接続要求の審査）"),
-                "{FIG:CONNECTION_SCREEN}",
-                "社内ネットワークへの接続要求が届くと、画面右下に通知が表示されます。一覧から要求を選び、内容を確認してから処理してください。",
-                $"・{Col("接続を許可(A)", Allow)} / {Col("接続を拒否(B)", Deny)} … 選択中の要求を処理します。{B("処理後の取り消しはできません。")}",
-                "・社員情報を参照(R) … 利用者の社員番号で社員情報を検索します。",
-                $"・本番の業務では、要求に {B("受付からの期限")} があります（{B("研修期間中は期限切れになりません")}）。",
-                "・確認する項目: 利用者 / 社員番号 / 接続先 / 利用システム",
+            // ===== 業務システム操作マニュアル =====
+            var manualSystem = Doc("SYSTEM_MANUAL", "社内情報システム 操作マニュアル（夜間運用担当向け）", "業務システム操作マニュアル.doc", "doc", "");
+            Page(manualSystem, "はじめに（判断の流れ）", "",
+                $"夜間運用担当の主な仕事は、社内ネットワークへの {B("接続要求")} を審査することです。",
+                $"届いた要求を1件ずつ選び、社員情報と照らし合わせて {Col("許可", Allow)} か {Col("拒否", Deny)} を決めます。",
                 "",
-                B("■ 審査の流れ"),
-                "本日のルールでの判断の流れです（担当範囲が広がると段階が増えます）。",
-                "{FIG:REVIEW_FLOW}");
-            Sec(manualSystem, Features.EmployeeDirectory,
-                B("■ 社員情報の検索"),
-                "{FIG:DIRECTORY_SCREEN}",
-                "社員番号・氏名・部署で検索できます（部分一致）。検索結果には社員番号・氏名・所属・役職が表示されます。",
-                $"・{Col("該当する社員が見つからない", Deny)} 場合、その利用者は社員として登録されていません。");
-            Sec(manualSystem, Features.DeviceCheck,
-                B("■ 端末の確認"),
-                $"・接続要求の {B("端末")} と、社員情報の {B("登録端末")} を照らし合わせてください。",
-                "・社員情報は端末番号でも検索できます。接続元が社内か社外かも確認してください。");
-            Sec(manualSystem, Features.EmployeeDetail,
-                B("■ 社員情報の詳細表示"),
-                "検索結果をダブルクリックするか [詳細表示] で、顔写真・端末・勤務状態などの詳細を表示します。",
-                $"・{B("登録端末")} … その社員に割り当てられたPC。{B("VPN端末")} は社外接続用の登録ノートPCです。",
-                $"・{Col("社員本人でも、別の端末からの接続は認められません。", Deny)}");
-            Sec(manualSystem, Features.EmployeePermissions,
-                B("■ 権限情報"),
-                "{FIG:PERMISSION_MATCH}",
-                $"・{B("権限欄")} … ○ は権限あり、× は権限なし。{B("要求の『必要な権限』と同じ名前の行")} を見ます。",
-                $"・{B("普段使うシステム")} … その社員が普段使うシステム。{Col("権限とは別の情報", Check)} です。");
-            Sec(manualSystem, Features.AdminPermissions,
-                $"・{B("【管理者権限】")} … パソコンやサーバーを管理する権限です。{B("「管理者」とつく権限は1種類ではありません")}（ローカル管理者・サーバー管理者 など）。");
-            Sec(manualSystem, Features.PermissionHint,
-                $"・接続要求の {Col("「必要な権限」", Check)} 欄に、その接続に必要な権限が表示されます。社員情報の権限欄で ○ か × かを確認してください。");
-            Sec(manualSystem, Features.ServerGuide,
-                $"・サーバーごとの利用システムと必要な権限は、{Col("「社内サーバー構成資料」", Check)} に一覧があります（参考資料）。");
-            Sec(manualSystem, Features.HelpDesk,
-                B("■ ITサポート受付管理"),
-                $"・{B("相談")} … 社員からの質問です。回答を選んで [回答を送信(S)] します。",
-                $"・{B("障害")} … 社員PCの不具合です。[リモート接続(R)] で社員PCを操作し、直ったことを確認してから [対応完了を報告(P)] してください。",
-                $"・{Col("リモート接続中も業務時間は進みます。", Deny)} 他の業務が入ったら、いったん中断して戻ってきても構いません。");
-            Sec(manualSystem, Features.SystemLog,
-                B("■ 社外からの接続"),
+                "下の図は、本日のルールでの判断の流れです（担当範囲が広がると段階が増えます）。",
+                "{FIG:REVIEW_FLOW}",
+                $"・迷ったら、まず調べること。{B("ページの赤い枠")} が、各業務で見る場所です。");
+            Page(manualSystem, "接続要求の審査", Features.ConnectionMonitor,
+                "[ネットワーク接続監視] の画面です。要求が届くと画面右下に通知が出ます。",
+                "{FIG:UI_CONNECTION}",
+                $"・{B("①")} 一覧から要求を1件選びます。",
+                $"・{B("②")} 要求内容の {B("利用者・社員番号")} を確認します。",
+                $"・{B("③")} [社員情報を参照] で、利用者を社員情報で検索できます。",
+                $"・{B("④")} 確認できたら {Col("接続を許可", Allow)} か {Col("接続を拒否", Deny)} を押します。{B("処理後の取り消しはできません。")}",
+                $"・本番の業務では、要求に {B("受付からの期限")} があります（{B("研修期間中は期限切れになりません")}）。");
+            Page(manualSystem, "社員の検索", Features.EmployeeDirectory,
+                "[社員情報の検索・参照] の画面です。",
+                "{FIG:UI_DIRECTORY}",
+                $"・{B("①")} 社員番号や氏名を入力して [検索開始]。",
+                $"・{B("②")} 結果の一覧に出てくれば社員です。{Col("見つからなければ、社員として登録されていません。", Deny)}");
+            Page(manualSystem, "端末の確認", Features.DeviceCheck,
+                $"要求の {B("端末")} と、社員の {B("登録端末")} が同じかを見比べます。",
+                "{FIG:UI_DEVICE}",
+                $"・{B("①")} 接続要求の「端末」",
+                $"・{B("②")} 社員情報の「登録端末」",
+                $"・{Col("社員本人でも、別の端末（他人のPC・私物のPC）からの接続は拒否です。", Deny)}");
+            Page(manualSystem, "社員の詳細", Features.EmployeeDetail,
+                "検索結果をダブルクリックするか [詳細表示] で、社員の詳細を開きます。",
+                "{FIG:UI_DETAIL}",
+                $"・{B("①")} 顔写真・所属・勤務状態",
+                $"・{B("②")} 登録端末と VPN端末（社外から使う登録ノートPC）");
+            Page(manualSystem, "権限の確認", Features.EmployeePermissions,
+                $"要求の {B("必要な権限")} と {B("同じ名前の行")} を、社員の権限欄で探します。",
+                "{FIG:UI_PERMISSION}",
+                $"・{B("①")} 接続要求の「必要な権限」（例: 人事システム）",
+                $"・{B("②")} 社員詳細の権限欄で同じ名前の行を探し、{Col("○ なら許可", Allow)}、{Col("× なら拒否", Deny)}。",
+                $"・社員詳細の {B("【普段使うシステム】")} は参考情報です。判断には使いません。");
+            Page(manualSystem, "管理者権限", Features.AdminPermissions,
+                $"管理用のサーバー（ADMIN-SRV01）への接続には {B("サーバー管理者")} の権限が必要です。",
+                "{FIG:UI_ADMIN}",
+                $"・{B("①")} 必要な権限が「サーバー管理者」の要求",
+                $"・{B("②")} 社員詳細の {B("【管理者権限】")} の欄で「サーバー管理者」を見ます。",
+                $"・{Col("「ローカル管理者」は自分のPCの管理権限で、サーバー管理者とは別です。", Deny)}");
+            Page(manualSystem, "ITサポート受付", Features.HelpDesk,
+                "[ITサポート受付管理] の画面です。社員からの問い合わせが届きます。",
+                "{FIG:UI_HELPDESK}",
+                $"・{B("①")} 受付一覧。区分が {B("相談")} か {B("障害")} かを見ます。",
+                $"・{B("②")} 問い合わせ内容（社員からのメッセージ）",
+                $"・{B("③")} 相談 → 回答を選んで [回答を送信]。障害 → [リモート接続] で社員のPCを直します。",
+                $"・{Col("リモート接続中も業務時間は進みます。", Deny)} 手順は「トラブル対応マニュアル」を参照してください。");
+            Page(manualSystem, "社外からの接続", Features.SystemLog,
                 $"接続要求の {B("接続元")} が {Col("「社外」", Check)} のときは、次の3つだけを確認します。",
-                "{FIG:EXTERNAL_FLOW}",
-                $"・{B("①")} 利用システムが {B("「VPN接続」")} か（社外から社内のシステムを直接使うことはできません）",
+                "{FIG:UI_EXTERNAL}",
+                $"・{B("①")} 利用システムが {B("「VPN接続」")} か",
                 $"・{B("②")} 社員情報の {B("「VPN利用」")} が {Col("許可", Allow)} か",
                 $"・{B("③")} 接続要求の端末が、社員情報の {B("「VPN端末」")} と同じか",
-                $"・{Col("管理者でも、社外からは「VPN接続」以外は拒否です。", Deny)}",
-                "",
-                B("■ システムログの検索・参照"),
-                "社内システムの主な通信・処理の記録です。キーワード（IPアドレス、サーバー名、利用者など）と種別で絞り込めます。",
-                $"・{B("セキュリティ警告")} が出たら、要求の接続元（IPアドレス）をキーワードに入れて検索し、{B("前に同じIPが何をしていたか")} を確認します。",
-                "・行をダブルクリックすると、その接続元で絞り込みます。",
-                $"・ログは自動では分析されません。{B("同じ接続元・同じ時間帯の記録")} に注目してください。");
-            Sec(manualSystem, Features.NetworkMap,
-                B("■ ネットワークマップ"),
-                "通信の流れ（接続元 → 接続先）を表示します。サーバーは監視のみで、操作はできません。");
-            Sec(manualSystem, "",
-                B("■ アカウント"),
+                "{FIG:EXTERNAL_FLOW}",
+                $"・{Col("管理者でも、社外からは「VPN接続」以外は拒否です。", Deny)}");
+            Page(manualSystem, "システムログ", Features.SystemLog,
+                "[システムログの検索・参照] の画面です。社内の通信・処理の記録が残ります。",
+                "{FIG:UI_LOG}",
+                $"・{B("①")} {B("セキュリティ警告")} が出たら、要求の接続元（IPアドレス）をキーワードに入れて [検索開始]。",
+                $"・{B("②")} 同じIPが {B("前に何をしていたか")}（ポートスキャンなど）を確認します。",
+                "・行をダブルクリックすると、その接続元で絞り込みます。ログは自動では分析されません。");
+            Page(manualSystem, "ネットワークマップ", Features.NetworkMap,
+                "通信の流れ（接続元 → 接続先）を表示します。サーバーは監視のみで、操作はできません。",
+                "社内ネットワークの区分は「社内サーバー構成資料」を参照してください。");
+            Page(manualSystem, "アカウントとキー操作", "",
                 $"・ログインパスワードは [システム設定] → [パスワードの変更] で変更できます。{B("パスワードは他人に教えないこと。")}",
-                "",
-                B("■ キーボード操作"),
-                "・ウィンドウ切替: {KEY:SWITCH} / Alt+PageUp　・ウィンドウを閉じる: {KEY:CLOSE}　・一時停止: {KEY:PAUSE}　・メール: {KEY:MAIL}",
+                "・ウィンドウ切替: {KEY:SWITCH} / Alt+PageUp　・閉じる: {KEY:CLOSE}　・一時停止: {KEY:PAUSE}　・メール: {KEY:MAIL}",
+                "・接続を許可: {KEY:ALLOW}　・接続を拒否: {KEY:BLOCK}　・社員情報を参照: {KEY:LOOKUP}",
                 "・メインメニューの各システムは 1〜7 のキーでも開けます。",
                 "（キーの割り当ては [システム設定] → [キー設定] で変更できます）");
-            Sec(manualSystem, Features.ConnectionMonitor,
-                B("■ 接続監視のキー操作"),
-                "・接続を許可: {KEY:ALLOW}　・接続を拒否: {KEY:BLOCK}　・社員情報を参照: {KEY:LOOKUP}");
-            Sec(manualSystem, Features.RemoteSupport,
-                B("■ リモートPCのキーボード操作"),
+            Page(manualSystem, "リモートPCのキー操作", Features.RemoteSupport,
                 "・スタート {KEY:REMOTE_START} / ファイル名を指定して実行 {KEY:REMOTE_RUN} / エクスプローラー {KEY:REMOTE_EXPLORER}",
                 "・設定 {KEY:REMOTE_SETTINGS} / デスクトップ {KEY:REMOTE_DESKTOP} / タスク マネージャー {KEY:REMOTE_TASKMGR} / 更新 {KEY:REFRESH}",
                 "（Windows キーや Alt+Tab は手元のPCが処理するため、上記のキーを使ってください）");
 
-            var manualServer = Doc("SERVER_GUIDE", "社内サーバー構成資料", "社内サーバー構成資料.doc", "server", Features.ServerGuide,
-                "社内のサーバーと、接続に必要な権限の早見表です。サーバーの管理操作（サービス停止・再起動など）は、まだ担当範囲ではありません。");
-            Sec(manualServer, "",
-                B("■ 早見表: 接続先 → 利用システム → 必要な権限"),
-                "接続要求の「必要な権限」欄に表示される内容の一覧です（参考）。",
+            // ===== 社内サーバー構成資料 =====
+            var manualServer = Doc("SERVER_GUIDE", "社内サーバー構成資料", "社内サーバー構成資料.doc", "server", Features.ServerGuide);
+            Page(manualServer, "早見表（必要な権限）", "",
+                "社内のサーバーと、接続に必要な権限の一覧です。接続要求の「必要な権限」欄に表示される内容と同じです（参考資料）。",
                 "{ACCESS_TABLE}",
-                $"・{B("「管理者」とつく権限は1種類ではありません。")} 例: {B("ローカル管理者")} は自分のPCの管理権限で、{Col("サーバー管理者", Check)} とは別です。");
-            Sec(manualServer, Features.NetworkMap,
-                B("■ ネットワークの区分"),
+                $"・{B("「管理者」とつく権限は1種類ではありません。")} {B("ローカル管理者")} は自分のPCの管理権限で、{Col("サーバー管理者", Check)} とは別です。",
+                "・サーバーの管理操作（サービス停止・再起動など）は、まだ担当範囲ではありません。");
+            Page(manualServer, "ネットワークの区分", Features.NetworkMap,
                 "{FIG:NETWORK_ZONES}",
-                $"・{B("社外 (INTERNET)")} … インターネット。すべての社外からの通信は FIREWALL を通ります。",
+                $"・{B("社外 (INTERNET)")} … インターネット。社外からの通信は FIREWALL を通ります。",
                 $"・{B("公開 (DMZ)")} … 社外に公開している Web サーバー。社外からのアクセスは日常的に発生します。",
-                $"・{B("社内")} … 業務システム。社外から利用する場合は {Col("VPN 経由", Check)} が必要です。",
+                $"・{B("社内")} … 業務システム。社外から使うには {Col("VPN 接続", Check)} が必要です。",
                 $"・{B("社員端末 (EMPLOYEE PCs)")} … 各社員の登録PC。",
                 "",
-                B("■ サーバー一覧（区分・利用システムと必要な権限）"),
-                "{SERVER_LIST}",
-                "",
-                B("■ 補足"),
-                $"・{Col("管理系", Deny)} のサーバーへのログインには、{Col("サーバー管理者", Check)} などの管理者権限が必要です。",
-                $"・{B("重要")} のサーバーは業務データを扱います。登録されていない端末からの利用は認められていません。");
+                B("サーバー一覧"),
+                "{SERVER_LIST}");
 
-            var manualTrouble = Doc("TROUBLE_MANUAL", "PCトラブル対応マニュアル（リモートサポート）", "トラブル対応マニュアル.doc", "helpdesk", Features.RemoteSupport,
-                "社員PCの不具合にリモートで対応するための手順です。");
-            Sec(manualTrouble, "",
-                B("■ 基本の流れ"),
+            // ===== トラブル対応マニュアル =====
+            var manualTrouble = Doc("TROUBLE_MANUAL", "PCトラブル対応マニュアル（リモートサポート）", "トラブル対応マニュアル.doc", "helpdesk", Features.RemoteSupport);
+            Page(manualTrouble, "基本の流れ", "",
+                "社員PCの不具合にリモートで対応する手順です。",
                 "{FIG:REMOTE_FLOW}",
-                $"1. {B("症状を確認")} … 社員からの問い合わせ内容を読み、何ができないのかを把握する。",
-                $"2. {B("リモート接続")} … 受付管理から社員PCに接続する。",
+                $"1. {B("症状を確認")} … 問い合わせ内容を読み、何ができないのかを把握する。",
+                $"2. {B("リモート接続")} … 受付管理の [リモート接続] で社員PCに接続する。",
                 $"3. {B("原因を調べる")} … 設定画面・通知領域のアイコン・コマンド プロンプトなどで状態を確認する。",
                 $"4. {B("対処する")} … 原因に応じて設定を変更する。",
-                $"5. {Col("動作を確認する", Check)} … 実際に使えるようになったか確かめる（例: Web ページの表示、ping、印刷の状態）。",
-                $"6. {B("報告する")} … [対応完了を報告] で社員に確認してもらう。{Col("直っていない状態で報告すると、社員から再度連絡が来ます。", Deny)}",
-                "",
-                B("■ ネットワークにつながらない場合の確認箇所"),
+                $"5. {Col("動作を確認する", Check)} … 実際に使えるようになったか確かめる（Web ページの表示、ping、印刷の状態）。",
+                $"6. {B("報告する")} … [対応完了を報告]。{Col("直っていない状態で報告すると、社員から再度連絡が来ます。", Deny)}");
+            Page(manualTrouble, "リモート画面の見かた", "",
+                "{FIG:UI_REMOTE}",
+                $"・{B("①")} 通知領域（ネットワーク・プリンターのアイコン）",
+                $"・{B("②")} [スタート] から設定・コマンド プロンプトなどを開けます。",
+                $"・{B("③")} 直ったことを確認してから [対応完了を報告]。");
+            Page(manualTrouble, "ネットワークにつながらない", "",
                 "・画面右下の通知領域のネットワーク アイコン",
                 "・[設定] → [ネットワーク]（Wi-Fi の状態、IP アドレス）",
                 "・[ネットワーク接続]（ファイル名を指定して実行: ncpa.cpl）… アダプターの有効／無効",
                 "・コマンド プロンプト（ファイル名を指定して実行: cmd）",
                 "　　ipconfig / ipconfig /all … IP アドレス・ゲートウェイの確認",
-                "　　ping <ホスト名> … 相手に届くかの確認（例: ping intranet）",
-                "",
-                B("■ 印刷できない場合の確認箇所"),
+                "　　ping <ホスト名> … 相手に届くかの確認（例: ping intranet）");
+            Page(manualTrouble, "印刷できない", "",
                 "・[設定] → [プリンター] … プリンターの状態",
-                "・プリンターのキュー（通知領域のプリンター アイコン / control printers）… ドキュメントの状態と [プリンター] メニュー",
-                "",
-                B("■ その他のツール"),
+                "・プリンターのキュー（通知領域のプリンター アイコン / control printers）… ドキュメントの状態と [プリンター] メニュー");
+            Page(manualTrouble, "その他のツール", "",
                 "・タスク マネージャー（{KEY:REMOTE_TASKMGR}）… 実行中のアプリケーション・プロセス・ネットワーク状況",
-                "・エクスプローラー（{KEY:REMOTE_EXPLORER}）… ファイル・共有フォルダー（\\\\FILE-SRV01）",
+                "・エクスプローラー（{KEY:REMOTE_EXPLORER}）… ファイル・共有フォルダー",
                 $"・{Col("システムのプロセスは終了しないでください。", Deny)}");
 
             // ---------------- Rules ----------------
