@@ -102,6 +102,7 @@ namespace NightShift.Events
                     {
                         s.Servers.Implant("ADMIN-SRV01", "upsctl.exe", "T10");
                         s.Logs.Add(now, s.Employees.GetIp(v7), "ADMIN-SRV01", $"{v7.fullName} ({v7.employeeId})", "CONFIG", "CHANGED", "UPS: 停電時の動作設定を変更");
+                        s.Notifications.Notify(NotificationType.SecurityAlert, "サーバー監視", $"ADMIN-SRV01 の設定が変更されました（{v7.employeeId}）。", now, () => s.Ui?.OpenLogViewer());
                     }
                     break;
                 case "BLACKOUT_CHECK":

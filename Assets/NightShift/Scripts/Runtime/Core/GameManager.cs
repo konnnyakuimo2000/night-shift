@@ -134,8 +134,8 @@ namespace NightShift.Core
         public void ShowTitle()
         {
             DisposeShift();
-            int reached = ReachedDay;
-            SetScreen(TitleScreen.Build(ScreenLayer, StartNewGame, reached > 1 ? ContinueGame : (System.Action)null, reached, Quit, Database.days.Count, StartFromDay), GameState.Title);
+            int resume = ResumeDay;
+            SetScreen(TitleScreen.Build(ScreenLayer, StartNewGame, resume > 0 ? ContinueGame : (System.Action)null, resume, Quit, Database.days.Count, StartFromDay), GameState.Title);
         }
 
         public void ShowClockIn() => SetScreen(ClockInScreen.Build(ScreenLayer, Database.GetDay(CurrentDay), OperatorName, Database.companyNameJa, name =>
@@ -167,6 +167,7 @@ namespace NightShift.Core
                 _walletSnapshot = Wallet.Snapshot();
                 _snapshotDay = CurrentDay;
                 SaveWeekSnapshot(CurrentDay);
+                SaveCheckpoint(CurrentDay);
             }
             else
             {
@@ -215,8 +216,12 @@ namespace NightShift.Core
             NightClosing.Close(Session, result, slip);
             _pendingGameOver = EndingResolver.CheckGameOver(CareerRecord.Current, Session);
             _finalOutcome = EndingResolver.Outcome(Session);
-            if (_pendingGameOver == null) SaveProgress(CurrentDay + 1);
-            SetScreen(EvaluationScreen.Build(ScreenLayer, day, result, slip, previous, updated, Wallet.Balance, GoToNextDay, RestartDay), GameState.Evaluation);
+            if (_pendingGameOver == null)
+            {
+                SaveProgress(CurrentDay + 1);
+                SaveCheckpoint(CurrentDay + 1);
+            }
+            SetScreen(EvaluationScreen.Build(ScreenLayer, day, result, slip, previous, updated, Wallet.Balance, GoToNextDay, RestartDay, NightReview.Build(Session)), GameState.Evaluation);
         }
 
         /// <summary>翌日へ。翌日の定義が無ければ COMING SOON。</summary>
@@ -297,6 +302,7 @@ namespace NightShift.Core
             catch { }
             CurrentDay = day;
             _snapshotDay = -1;
+            SaveCheckpoint(day);
             ShowDayStart();
         }
 
@@ -304,7 +310,57 @@ namespace NightShift.Core
         const string ProgressKey = "NightShift.ReachedDay";
         const string NameKey = "NightShift.OperatorName";
 
-        /// <summary>到達した日（続きから開始できる日）</summary>
+        // ---------------- セーブ地点（続きから） ----------------
+        // 日付・30日間の記録・財布・アカウントを1か所にまとめて保存する（日付だけ先に進む、などの食い違いを防ぐ）
+        const string CheckpointKey = "NightShift.Checkpoint";
+        const string CheckpointSep = "#CHECKPOINT#";
+
+        /// <summary>「続きから」で始まる日（セーブ地点が無ければ 0）</summary>
+        public int ResumeDay
+        {
+            get
+            {
+                if (TryReadCheckpoint(out int day, out _)) return day;
+                return ReachedDay > 1 ? ReachedDay : 0; // セーブ地点を作る前の古いセーブ
+            }
+        }
+
+        static bool TryReadCheckpoint(out int day, out string[] parts)
+        {
+            day = 0; parts = null;
+            try
+            {
+                parts = PlayerPrefs.GetString(CheckpointKey, "").Split(new[] { CheckpointSep }, System.StringSplitOptions.None);
+                return parts.Length == 4 && int.TryParse(parts[0], out day) && day > 0;
+            }
+            catch { return false; }
+        }
+
+        void SaveCheckpoint(int day)
+        {
+            if (Database.FindDay(day) == null) return;
+            try
+            {
+                PlayerPrefs.SetString(CheckpointKey, string.Join(CheckpointSep, new[] { day.ToString(), CareerRecord.Current.Snapshot(), Wallet.Snapshot(), Account.Snapshot() }));
+                PlayerPrefs.SetString(NameKey, OperatorName);
+                PlayerPrefs.Save();
+            }
+            catch { }
+        }
+
+        /// <summary>新しく始めたら、前のゲームのセーブ地点と週の初日のセーブを消す</summary>
+        static void ClearSaves()
+        {
+            try
+            {
+                PlayerPrefs.DeleteKey(CheckpointKey);
+                foreach (var w in WeekStarts) PlayerPrefs.DeleteKey(WeekKey(w));
+                PlayerPrefs.Save();
+            }
+            catch { }
+        }
+
+        /// <summary>到達した最高の日（記録用）</summary>
         public int ReachedDay
         {
             get
@@ -329,11 +385,13 @@ namespace NightShift.Core
         }
 
         /// <summary>30日間の記録に応じた業務メール（警告・週間評価）</summary>
+        public const string PredecessorMonitorFlag = "PREDECESSOR_MONITOR";
+
         void AddCareerMails(DayDefinition day)
         {
             var career = CareerRecord.Current;
             int n = day.dayNumber;
-            if (n <= DefaultDataFactory.MainStartDay) return;
+            if (n < DefaultDataFactory.MainStartDay) return;
             string date = (string.IsNullOrEmpty(day.clockInDateLabel) ? day.dateLabel : day.clockInDateLabel) + " 20:00";
             void Mail(string id, string from, string subject, string body) => Session.Mail.Add(new MailMessage
             {
@@ -341,6 +399,19 @@ namespace NightShift.Core
                 To = MailManager.Recipient(OperatorName), Subject = subject, DateLabel = date,
                 Body = $"{OperatorName} 様\n\n{body}\n" + MailManager.Signature(from), Day = n
             }, false);
+
+            // 本番初日: 前任者の机に残っていた古いモニターを、サブモニターとして使わせてもらえる
+            if (!career.HasFlag(PredecessorMonitorFlag))
+            {
+                career.SetFlag(PredecessorMonitorFlag);
+                if (!career.Owns(Items.Monitor1)) career.AddItem(Items.Monitor1);
+                Mail("PREDECESSOR-MONITOR", "情報システム部 課長 森田", "前任者の机のモニターについて",
+                    "前任者の机に、古い15インチのモニターが残っていました。\n捨てるのも手間なので、サブモニターとして使ってください。\n（備品の申請は不要です。壊したら弁償です）");
+            }
+            if (Session.SeniorHelp)
+                Mail("SENIOR-HELP-" + n, "カスタマーサポート部 中村", "今夜、少し残ります",
+                    $"最近きつそうなので、今夜は私も少し残って、問い合わせを{ShiftSession.SeniorHelpTickets}件ほど引き受けます。\n無理をしないように。\n（課長には「精勤手当はなし」と言われました。ごめんなさい）");
+            if (n == DefaultDataFactory.MainStartDay) return;
 
             if (career.ConsecutiveRank("D", n - 1) == 2)
                 Mail("WARN-GO1-" + n, "情報システム部 課長 森田", "【最終警告】業務評価について",
@@ -413,6 +484,7 @@ namespace NightShift.Core
         {
             CurrentDay = 1;
             CareerRecord.StartNew();
+            ClearSaves();
             _snapshotDay = -1;
             Wallet.ResetAll();
             Account = OperatorAccount.NewGame(OperatorName);
@@ -433,9 +505,21 @@ namespace NightShift.Core
 
         void ContinueGame()
         {
-            CurrentDay = ReachedDay;
-            Account = OperatorAccount.Load();
             try { OperatorName = PlayerPrefs.GetString(NameKey, OperatorName); } catch { }
+            if (TryReadCheckpoint(out int day, out var parts) && Database.FindDay(day) != null)
+            {
+                // セーブ地点の日付・記録・財布・アカウントをそろえて戻す
+                CareerRecord.Restore(parts[1]);
+                Wallet.Restore(parts[2]);
+                Account = OperatorAccount.Restore(parts[3]);
+                CurrentDay = day;
+            }
+            else
+            {
+                CurrentDay = Mathf.Max(1, ReachedDay);
+                Account = OperatorAccount.Load();
+            }
+            _snapshotDay = -1;
             ShowDayStart();
         }
 

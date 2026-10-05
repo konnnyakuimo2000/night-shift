@@ -116,7 +116,8 @@ namespace NightShift.Systems
         /// <summary>報告。correct = 報告すべきもの（不正・不審）だったか。ip = 報告した接続元</summary>
         public string Report(string what, bool correct, string ip = null)
         {
-            if (!string.IsNullOrEmpty(ip)) _reported.Add(ip);
+            // 同じ接続元を何度報告しても、評価は最初の1回だけ（報告の連打で点を稼げないように）
+            if (!string.IsNullOrEmpty(ip) && !_reported.Add(ip)) return $"{ip} はすでに報告しています。";
             _s.Logs.Add(_s.Time.CurrentMinute, "NIGHT-OPS", "情報システム部", _s.OperatorName, "REPORT", "SENT", what);
             if (correct) { _s.CorrectReports++; _s.Evaluation.SecurityActionsCorrect++; }
             else { _s.WrongReports++; _s.Evaluation.SecurityActionsWrong++; }

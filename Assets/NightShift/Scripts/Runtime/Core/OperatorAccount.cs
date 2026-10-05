@@ -38,6 +38,20 @@ namespace NightShift.Core
             return new OperatorAccount();
         }
 
+        public string Snapshot() => JsonUtility.ToJson(this);
+
+        /// <summary>セーブ地点の内容に戻して保存する</summary>
+        public static OperatorAccount Restore(string json)
+        {
+            try
+            {
+                var a = JsonUtility.FromJson<OperatorAccount>(json);
+                if (a != null && !string.IsNullOrEmpty(a.Password)) { a.Save(); return a; }
+            }
+            catch { }
+            return Load();
+        }
+
         public void Save()
         {
             try

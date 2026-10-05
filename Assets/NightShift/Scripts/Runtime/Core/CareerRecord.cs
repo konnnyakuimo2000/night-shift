@@ -51,6 +51,7 @@ namespace NightShift.Core
         public int vaccineDefinitionDay;                    // ウイルス定義ファイルを最後に更新した日
         public int extraTokensTonight;                      // 今夜の追加トークン
         public List<string> autoReviewConditions = new List<string>(); // 自動審査ツールの条件
+        public bool autoReviewEnabled;                                  // 自動審査ツールの自動許可（初めは停止）
 
         const int CurrentVersion = 1;
         const string Key = "NightShift.Career";

@@ -190,8 +190,8 @@ namespace NightShift.UI
         {
             var img = Image(parent, RetroTheme.Field, white ? Color.white : RetroTheme.FieldReadOnly, "Value");
             img.rectTransform.Place(x, y, w, h);
-            var t = Label(img.transform, text, RetroTheme.FontSize, TextAnchor.MiddleLeft);
-            t.rectTransform.Stretch(4, 2, 4, 2);
+            var t = Label(img.transform, text, h >= 20 ? RetroTheme.DataFontSize : RetroTheme.FontSize, TextAnchor.MiddleLeft);
+            t.rectTransform.Stretch(4, h >= 20 ? 1 : 2, 4, h >= 20 ? 1 : 2);
             if (h <= 26) EllipsisText.Attach(t); // 1行の欄は、はみ出したら「…」で省略して全文はツールチップ
             return t;
         }

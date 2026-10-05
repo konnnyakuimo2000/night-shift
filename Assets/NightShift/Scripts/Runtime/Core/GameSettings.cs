@@ -54,6 +54,7 @@ namespace NightShift.Core
         public int resolutionWidth = 1280;
         public int resolutionHeight = 800;
         public int uiScalePercent = 100;
+        public bool largeText;             // 判断に使う文字（一覧・入力欄）を大きくする
         public int frameRate = 60;        // 0 = 無制限
         public bool vsync;
 
@@ -171,6 +172,7 @@ namespace NightShift.Core
             }
             catch { }
             if (s == null) s = new GameSettings();
+            if (System.Array.IndexOf(UiScales, s.uiScalePercent) < 0) s.uiScalePercent = Mathf.Clamp(s.uiScalePercent, UiScales[0], 100);
             s.EnsureBindings();
             return s;
         }
@@ -266,7 +268,8 @@ namespace NightShift.Core
             new Vector2Int(1600, 900), new Vector2Int(1680, 1050), new Vector2Int(1920, 1080), new Vector2Int(1920, 1200), new Vector2Int(2560, 1440)
         };
 
-        public static readonly int[] UiScales = { 80, 90, 100, 110, 125, 150 };
+        // 画面は 1280×800 を基準に配置しているため、100% を超える拡大はできない（はみ出す）。読みやすさは largeText で補う
+        public static readonly int[] UiScales = { 80, 90, 100 };
         public static readonly int[] FrameRates = { 30, 60, 120, 0 };
         public static readonly float[] NotificationTimes = { 5f, 8f, 12f, 20f };
 

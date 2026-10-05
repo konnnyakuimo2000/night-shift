@@ -137,29 +137,57 @@ namespace NightShift.UI.Shift
             {
                 string cond = Conditions[i];
                 bool available = i < 6 || D.Unlocked(Features.EmploymentStatus);
-                var t = UIFactory.Check(g, cond + (available ? "" : "（DAY12〜）"), career.autoReviewConditions.Contains(cond), v =>
+                var t = UIFactory.Check(g, cond + (available ? "" : "（DAY12〜）") + (i == IpMatchIndex ? "（推奨）" : ""), career.autoReviewConditions.Contains(cond), v =>
                 {
                     if (v) { if (!career.autoReviewConditions.Contains(cond)) career.autoReviewConditions.Add(cond); }
                     else career.autoReviewConditions.Remove(cond);
+                    // 条件を全部外したら、自動許可も止める
+                    if (career.autoReviewConditions.Count == 0 && _enabled != null && _enabled.Value) SetEnabled(false, "条件がないため、自動許可を停止しました。");
+                    UpdateWarning();
                 });
                 t.GetComponent<RectTransform>().Place(0, 22 + i * 22, 300, 20);
                 if (!available) t.Interactable = false;
             }
-            _enabled = UIFactory.Check(g, "自動許可を有効にする", true, v => { if (v) ProcessPending(); });
+            _enabled = UIFactory.Check(g, "自動許可を有効にする", career.autoReviewEnabled && career.autoReviewConditions.Count > 0, v =>
+            {
+                if (v && career.autoReviewConditions.Count == 0) { AudioFx.Error(); SetEnabled(false, "条件を1つ以上選んでから有効にしてください。"); return; }
+                SetEnabled(v, v ? "自動許可を開始しました。許可した要求の責任は、あなたにあります。" : "自動許可を停止しました。");
+            });
             _enabled.GetComponent<RectTransform>().Place(320, 22, 170, 20);
             _count = UIFactory.Label(g, "", 320, 50, 170, 40, 11, TextAnchor.UpperLeft);
+            // IP の照合を外すと、IP を偽ったなりすまし接続も通してしまう
+            _warning = UIFactory.Label(g, "", 320, 94, 170, 80, 11, TextAnchor.UpperLeft, new Color(0.7f, 0, 0));
+            UpdateWarning();
 
             var q = UIFactory.Group(c, "要求キュー（期限の近い順）", 0, 220, 500, 200);
             _queue = TableView.CreateStretch(q, 0, 0, 0, 0,
                 new TableColumn("要求", 70), new TableColumn("利用者", 110), new TableColumn("接続元", 104), new TableColumn("接続先", 100), new TableColumn("残り", 60));
             S.Requests.Created += OnCreated;
-            W.SetStatus(0, "自動許可した要求の責任は、あなたにあります。");
+            W.SetStatus(0, _enabled.Value ? "自動許可した要求の責任は、あなたにあります。" : "条件を選んでから「自動許可を有効にする」を押してください。");
             ProcessPending();
         }
 
         protected override void OnClosed() { if (D != null && D.S != null) D.S.Requests.Created -= OnCreated; }
 
         void OnCreated(EventInstance e) { if (e.State == EventState.Pending) TryAuto(e); }
+
+        public const int IpMatchIndex = 5;
+        Text _warning;
+
+        void UpdateWarning()
+        {
+            if (_warning == null) return;
+            bool ipOff = !CareerRecord.Current.autoReviewConditions.Contains(Conditions[IpMatchIndex]);
+            _warning.text = ipOff ? "⚠ IP の照合がオフです。接続元を偽ったなりすまし接続も、自動で許可されます。" : "";
+        }
+
+        void SetEnabled(bool v, string message)
+        {
+            CareerRecord.Current.autoReviewEnabled = v;
+            if (_enabled.Value != v) _enabled.SetValue(v, false);
+            W.SetStatus(0, message);
+            if (v) ProcessPending();
+        }
 
         void ProcessPending()
         {
@@ -168,7 +196,7 @@ namespace NightShift.UI.Shift
 
         void TryAuto(EventInstance e)
         {
-            if (_enabled != null && !_enabled.Value) return;
+            if (_enabled == null || !_enabled.Value || CareerRecord.Current.autoReviewConditions.Count == 0) return;
             if (!Eligible(S, e, CareerRecord.Current.autoReviewConditions)) return;
             e.AutoDecided = true;
             S.AutoAllowed++;

@@ -77,12 +77,14 @@ namespace NightShift.Tests
         }
 
         [Test]
-        public void Ransomware_IsFatalUnlessIsolatedWithin30Minutes()
+        public void Ransomware_IsFatalUnlessIsolatedWithin45Minutes()
         {
             var def = TestData.FindThreat(TestData.Day(20), "T11_RANSOMWARE");
             var s1 = TestData.Session(20);
             s1.Director.Threats.Schedule(s1.Director.Scheduler, def, 0);
-            AdvanceTo(s1, 35);
+            AdvanceTo(s1, 40);
+            Assert.IsNull(s1.FatalIncident, "45分までは間に合う");
+            AdvanceTo(s1, 50);
             Assert.IsNotNull(s1.FatalIncident, "放置すると致命的");
 
             var s2 = TestData.Session(20);
@@ -91,7 +93,7 @@ namespace NightShift.Tests
             Assert.IsNotNull(run.Victim);
             Assert.IsTrue(s2.Security.IsInfected(run.Victim.deviceId));
             s2.Security.Isolate(run.Victim.deviceId);
-            AdvanceTo(s2, 35);
+            AdvanceTo(s2, 50);
             Assert.IsNull(s2.FatalIncident, "隔離すれば防げる");
         }
 
@@ -210,6 +212,22 @@ namespace NightShift.Tests
                 foreach (var r in s.Director.Threats.Runs) if (r.Definition.scenarioId == "T7_INFECTED_PC") found = true;
                 Assert.IsTrue(found, $"seed {seed}");
             }
+        }
+        [Test]
+        public void Grace_WaitsForOpenHelpDeskTicket_EvenWithNoPendingRequests()
+        {
+            var s = TestData.Session(20);
+            s.StartShift();
+            var def = TestData.Day(20).helpDeskPool.Find(h => h.type == HelpDeskType.Binary);
+            var t = s.HelpDesk.Create(def, s.Employees.All[0]);
+            foreach (var e in new System.Collections.Generic.List<EventInstance>(s.Requests.Pending)) s.Requests.Decide(e, PlayerAction.Block);
+            s.EndShift();
+            s.DeclineOvertime();
+            s.Tick(0.1f);
+            Assert.AreEqual(ShiftPhase.Grace, s.Phase, "問い合わせが残っている間は、猶予が続く");
+            s.HelpDesk.Answer(t, t.CorrectIndex, "tester");
+            s.Tick(0.1f);
+            Assert.AreEqual(ShiftPhase.Complete, s.Phase);
         }
     }
 }

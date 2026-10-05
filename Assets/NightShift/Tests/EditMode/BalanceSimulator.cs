@@ -28,55 +28,80 @@ namespace NightShift.Tests
             public float ActionSec;                        // 遮断・隔離などの操作にかかる実秒
             public float PhishReport, PhishFall;           // 偽メールを報告する確率・引っかかる確率
             public int TrainingPayPerNight;                // 研修7夜の平均手取り
+            public float SwitchSec;                        // 作業の種類を変えるときの、画面の切り替え・調べ直しの実秒
+            public int AutoReviewConditions;               // 自動審査ツールで設定する条件の数（7つのうち先頭から）
         }
 
-        public static readonly Skill Expert = new Skill { Name = "上級", RequestSec = 8, RequestAccuracy = 0.97f, BinarySec = 8, BinaryAccuracy = 0.95f, RemoteSec = 35, RemoteSuccess = 0.95f, NoticeMinutes = 5, NoticeChance = 0.9f, ActionSec = 8, PhishReport = 0.9f, PhishFall = 0.02f, TrainingPayPerNight = 4300 };
-        public static readonly Skill Average = new Skill { Name = "平均", RequestSec = 14, RequestAccuracy = 0.9f, BinarySec = 14, BinaryAccuracy = 0.85f, RemoteSec = 60, RemoteSuccess = 0.8f, NoticeMinutes = 10, NoticeChance = 0.65f, ActionSec = 14, PhishReport = 0.5f, PhishFall = 0.1f, TrainingPayPerNight = 3800 };
-        public static readonly Skill Novice = new Skill { Name = "初心者", RequestSec = 22, RequestAccuracy = 0.8f, BinarySec = 22, BinaryAccuracy = 0.7f, RemoteSec = 90, RemoteSuccess = 0.6f, NoticeMinutes = 20, NoticeChance = 0.35f, ActionSec = 20, PhishReport = 0.2f, PhishFall = 0.25f, TrainingPayPerNight = 3200 };
+        public static readonly Skill Expert = new Skill { Name = "上級", RequestSec = 8, RequestAccuracy = 0.97f, BinarySec = 8, BinaryAccuracy = 0.95f, RemoteSec = 35, RemoteSuccess = 0.95f, NoticeMinutes = 5, NoticeChance = 0.9f, ActionSec = 8, PhishReport = 0.9f, PhishFall = 0.02f, TrainingPayPerNight = 4300, SwitchSec = 2, AutoReviewConditions = 7 };
+        public static readonly Skill Average = new Skill { Name = "平均", RequestSec = 14, RequestAccuracy = 0.9f, BinarySec = 14, BinaryAccuracy = 0.85f, RemoteSec = 60, RemoteSuccess = 0.8f, NoticeMinutes = 10, NoticeChance = 0.65f, ActionSec = 14, PhishReport = 0.5f, PhishFall = 0.1f, TrainingPayPerNight = 3800, SwitchSec = 4, AutoReviewConditions = 6 };
+        public static readonly Skill Novice = new Skill { Name = "初心者", RequestSec = 22, RequestAccuracy = 0.8f, BinarySec = 22, BinaryAccuracy = 0.7f, RemoteSec = 90, RemoteSuccess = 0.6f, NoticeMinutes = 20, NoticeChance = 0.35f, ActionSec = 20, PhishReport = 0.2f, PhishFall = 0.25f, TrainingPayPerNight = 3200, SwitchSec = 6, AutoReviewConditions = 4 };
 
         public class NightStats
         {
             public int Day, Requests, Tickets, Threats, PeakPending, Expired, MaliciousAllowed, PolicyAllowed, FalsePositive, Damage, AutoAllowed;
             public bool Fatal;
+            public string FatalText;
             public string Rank;
             public int Score, Pay;
             public float BusyRatio;
         }
 
         // ============================================================ 1夜のシミュレーション
+        // 実際のプレイに近づけるため:
+        //  - 本物のシフト進行（ShiftSession.Tick）を実秒で回す。終業後の猶予・残業の打診も通る
+        //  - 判断・対応の結果は、作業時間を使い終わった時点で確定する（その間に期限が切れることもある）
+        //  - 作業の種類が変わるたびに、画面の切り替え・調べ直しの時間（SwitchSec）がかかる
+        //  - 自動審査ツールの条件は、腕前に応じて一部しか設定しない
+        public static ShiftSession LastSession;   // 調査用
+
         public static NightStats SimulateNight(int day, int seed, Skill k, HashSet<string> tools, CareerRecord career)
         {
             CareerRecord.SetCurrentForTests(career);
             var s = TestData.Session(day, seed);
+            LastSession = s;
             var rng = new Random(seed * 7919 + day);
-            float spm = s.Day.realSecondsPerGameMinute;
-            float M(float realSec) => realSec / spm;     // 実秒 → ゲーム内分
             bool Has(string id) => tools.Contains(id) && tools.Contains(Items.Monitor1);
-            if (Has(Items.AutoReview)) foreach (var c in AutoReviewTool.Conditions) if (!career.autoReviewConditions.Contains(c)) career.autoReviewConditions.Add(c);
+            if (Has(Items.AutoReview))
+            {
+                career.autoReviewConditions.Clear();
+                for (int i = 0; i < Math.Min(k.AutoReviewConditions, AutoReviewTool.Conditions.Length); i++)
+                    career.autoReviewConditions.Add(AutoReviewTool.Conditions[i]);
+                career.autoReviewEnabled = career.autoReviewConditions.Count > 0;
+            }
 
             s.StartShift();
-            float busyUntil = 0, busyTotal = 0;
+            const float step = 0.2f;                 // 実秒
+            float rt = 0, busyUntil = 0, busyTotal = 0;
+            Action pending = null;                   // 作業が終わった時点で確定する結果
+            string lastKind = null;
             var handledRuns = new HashSet<ThreatScenarioRun>();
+            var nextLook = new Dictionary<ThreatScenarioRun, float>();
             var mailsSeen = new HashSet<string>();
             int peak = 0;
-            float dt = 0.1f;
-            float end = s.Day.endMinute;
+            float shiftRealSec = (s.Day.endMinute - s.Day.startMinute) * s.Day.realSecondsPerGameMinute;
 
-            for (float t = 0; t <= end + 12; t += dt)
+            float Cost(string kind, float sec)
             {
-                s.Time.JumpTo(t);
-                if (t <= end) s.Director.Tick(t, dt);
-                s.Requests.Tick(t);
-                s.HelpDesk.Tick(t, dt);
-                s.Servers.Tick(t);
+                float c = sec + (lastKind != null && lastKind != kind ? k.SwitchSec : 0);
+                lastKind = kind;
+                return c;
+            }
+
+            while (s.Phase != ShiftPhase.Complete && rt < shiftRealSec * 3)
+            {
+                s.Tick(step);
+                rt += step;
+                if (s.OvertimeOffered) s.DeclineOvertime();
+                float t = s.Time.CurrentMinute;
                 peak = Math.Max(peak, s.Requests.Pending.Count);
 
-                // 自動審査ツール
-                if (Has(Items.AutoReview))
+                // 自動審査ツール（起動している間、新しい要求を自動で許可する）
+                if (Has(Items.AutoReview) && career.autoReviewEnabled)
                     foreach (var e in new List<EventInstance>(s.Requests.Pending))
                         if (AutoReviewTool.Eligible(s, e, career.autoReviewConditions)) { e.AutoDecided = true; s.AutoAllowed++; s.Requests.Decide(e, PlayerAction.Allow); }
 
-                if (t < busyUntil) continue;
+                if (rt < busyUntil) continue;
+                if (pending != null) { pending(); pending = null; }
                 float cost = 0;
 
                 // 1) 攻撃への対応（気付いたら）
@@ -85,11 +110,19 @@ namespace NightShift.Tests
                     if (handledRuns.Contains(run)) continue;
                     float notice = k.NoticeMinutes * (Has(Items.LogAnalyzer) || Has(Items.ServerMonitor) ? 0.6f : 1f);
                     if (t < run.StartTime + notice) continue;
+                    if (nextLook.TryGetValue(run, out float nl) && t < nl) continue;
+                    // 警告が出る攻撃（身代金ウイルス・管理者乗っ取り）は気付きやすい。見落としても、警告が残るので後で気付くことがある
+                    bool alerted = id(run).StartsWith("T11") || id(run).StartsWith("T10");
+                    float chance = alerted ? Math.Max(k.NoticeChance, 0.85f) : k.NoticeChance;
+                    if (rng.NextDouble() > chance)
+                    {
+                        if (alerted) nextLook[run] = t + k.NoticeMinutes; else handledRuns.Add(run);
+                        continue;
+                    }
                     handledRuns.Add(run);
-                    // ファイルサーバー監視のアラートが出る攻撃（身代金ウイルス）は気付きやすい
-                    float chance = id(run).StartsWith("T11") ? Math.Max(k.NoticeChance, 0.85f) : k.NoticeChance;
-                    if (rng.NextDouble() > chance) continue;
-                    cost = M(k.ActionSec) + React(s, run, day);
+                    var r = run;
+                    pending = () => React(s, r, day);
+                    cost = Cost("threat", k.ActionSec);
                     break;
                 }
 
@@ -100,17 +133,20 @@ namespace NightShift.Tests
                         if (!m.IsPhish || mailsSeen.Contains(m.MailId)) continue;
                         mailsSeen.Add(m.MailId);
                         double r = rng.NextDouble();
+                        var mail = m;
                         if (r < k.PhishFall)
-                        {
-                            if (m.ActionKey == MailManager.ActionPhishForm) PhishingMail.Submitted(s, m);
-                            else PhishingMail.OpenAttachment(s, m, Has(Items.Vaccine));
-                        }
-                        else if (r < k.PhishFall + k.PhishReport && s.Day.IsUnlocked(Features.Report)) { m.Reported = true; s.Security.Report("phish", true); }
-                        cost = M(10);
+                            pending = () =>
+                            {
+                                if (mail.ActionKey == MailManager.ActionPhishForm) PhishingMail.Submitted(s, mail);
+                                else PhishingMail.OpenAttachment(s, mail, Has(Items.Vaccine));
+                            };
+                        else if (r < k.PhishFall + k.PhishReport && s.Day.IsUnlocked(Features.Report))
+                            pending = () => { mail.Reported = true; s.Security.Report("phish", true); };
+                        cost = Cost("mail", 10);
                         break;
                     }
 
-                // 3) 接続要求（セキュリティ警告 → 期限の近い順）
+                // 3) 接続要求（セキュリティ警告 → 期限の近い順）。結果は審査し終わった時点で確定する
                 if (cost <= 0 && s.Requests.Pending.Count > 0)
                 {
                     EventInstance pick = null;
@@ -118,8 +154,9 @@ namespace NightShift.Tests
                         if (pick == null || (e.NotifyAsSecurityAlert && !pick.NotifyAsSecurityAlert) || (e.NotifyAsSecurityAlert == pick.NotifyAsSecurityAlert && e.TimeoutAt < pick.TimeoutAt)) pick = e;
                     bool correct = rng.NextDouble() < k.RequestAccuracy;
                     bool allow = (pick.Expected == ExpectedAction.Allow) == correct;
-                    s.Requests.Decide(pick, allow ? PlayerAction.Allow : PlayerAction.Block);
-                    cost = M(k.RequestSec * (Has(Items.ProfilePanel) ? 0.65f : 1f));
+                    var p = pick;
+                    pending = () => { if (p.State == EventState.Pending) s.Requests.Decide(p, allow ? PlayerAction.Allow : PlayerAction.Block); };
+                    cost = Cost("request", k.RequestSec * (Has(Items.ProfilePanel) ? 0.65f : 1f));
                 }
 
                 // 4) 問い合わせ
@@ -127,26 +164,33 @@ namespace NightShift.Tests
                     foreach (var tk in s.HelpDesk.Tickets)
                     {
                         if (!tk.IsOpen) continue;
+                        var ticket = tk;
                         if (tk.Type == HelpDeskType.Binary)
                         {
                             bool ok = rng.NextDouble() < k.BinaryAccuracy;
-                            s.HelpDesk.Answer(tk, ok ? tk.CorrectIndex : 1 - tk.CorrectIndex, "tester");
-                            cost = M(k.BinarySec);
+                            pending = () => { if (ticket.IsOpen) s.HelpDesk.Answer(ticket, ok ? ticket.CorrectIndex : 1 - ticket.CorrectIndex, "tester"); };
+                            cost = Cost("ticket", k.BinarySec);
                         }
                         else
                         {
-                            s.HelpDesk.Connect(tk);
-                            if (rng.NextDouble() < k.RemoteSuccess) ApplyFix(tk);
-                            s.HelpDesk.Report(tk, "tester");
-                            if (tk.IsOpen) { ApplyFix(tk); s.HelpDesk.Report(tk, "tester"); } // 2回目で直す
-                            cost = M(k.RemoteSec * (Has(Items.RemoteKit) ? 0.7f : 1f));
+                            bool ok = rng.NextDouble() < k.RemoteSuccess;
+                            pending = () =>
+                            {
+                                if (!ticket.IsOpen) return;
+                                s.HelpDesk.Connect(ticket);
+                                if (ok) ApplyFix(ticket);
+                                s.HelpDesk.Report(ticket, "tester");
+                                if (ticket.IsOpen) { ApplyFix(ticket); s.HelpDesk.Report(ticket, "tester"); } // 2回目で直す
+                            };
+                            cost = Cost("ticket", k.RemoteSec * (Has(Items.RemoteKit) ? 0.7f : 1f));
                         }
                         break;
                     }
 
-                if (cost > 0) { busyUntil = t + cost; busyTotal += cost; }
+                if (cost > 0) { busyUntil = rt + cost; busyTotal += cost; }
             }
-            s.Complete();
+            if (pending != null) pending();
+            if (s.Phase != ShiftPhase.Complete) s.Complete();
 
             var result = s.Evaluation.Compute();
             var slip = Payroll.Compute(day, result, s.Evaluation, TestData.Db.payroll);
@@ -156,8 +200,8 @@ namespace NightShift.Tests
             {
                 Day = day, Requests = s.Requests.Processed.Count, Tickets = s.HelpDesk.Tickets.Count, Threats = s.Director.Threats.Runs.Count,
                 PeakPending = peak, Expired = ev.ExpiredLegit + ev.ExpiredBlock, MaliciousAllowed = ev.MaliciousAllow, PolicyAllowed = ev.PolicyViolation,
-                FalsePositive = ev.FalsePositive, Damage = s.Damage.Count, Fatal = !string.IsNullOrEmpty(s.FatalIncident),
-                Rank = result.Rank, Score = result.Overall, Pay = slip.total, AutoAllowed = s.AutoAllowed, BusyRatio = busyTotal / end
+                FalsePositive = ev.FalsePositive, Damage = s.Damage.Count, Fatal = !string.IsNullOrEmpty(s.FatalIncident), FatalText = s.FatalIncident,
+                Rank = result.Rank, Score = result.Overall, Pay = slip.total, AutoAllowed = s.AutoAllowed, BusyRatio = busyTotal / shiftRealSec
             };
         }
 
@@ -231,6 +275,10 @@ namespace NightShift.Tests
             var c = new Campaign { Skill = k, BuyTools = buyTools };
             int money = k.TrainingPayPerNight * 7;
             var tools = new HashSet<string>();
+            // 本番初日に、前任者の古いモニターをサブモニターとして使える（無料）
+            tools.Add(Items.Monitor1);
+            career.AddItem(Items.Monitor1);
+            career.SetFlag(Core.GameManager.PredecessorMonitorFlag);
             for (int day = 8; day <= 30; day++)
             {
                 if (buyTools)
@@ -238,7 +286,8 @@ namespace NightShift.Tests
                     {
                         if (tools.Contains(id)) continue;
                         var it = TestData.Db.FindItem(id);
-                        if (it == null || it.unlockDay > day || money < it.price) continue;
+                        if (it == null || it.unlockDay > day) continue;
+                        if (money < it.price) break; // 優先順位の高いツールのために貯める
                         if (!string.IsNullOrEmpty(it.prerequisite) && !tools.Contains(it.prerequisite)) continue;
                         money -= it.price;
                         tools.Add(id);
@@ -253,7 +302,7 @@ namespace NightShift.Tests
                 tmp.FatalIncident = n.Fatal ? "fatal" : null;
                 tmp.Evaluation.MaliciousAllow = n.MaliciousAllowed;
                 var go = EndingResolver.CheckGameOver(career, tmp);
-                if (go != null) { c.GameOver = $"{go.Id}（DAY{day}）"; break; }
+                if (go != null) { c.GameOver = $"{go.Id}（DAY{day}{(n.Fatal ? "・" + n.FatalText : n.MaliciousAllowed > 0 ? $"・不正許可{n.MaliciousAllowed}件" : "")}）"; break; }
             }
             c.Money = money;
             c.Trust = career.trust;
@@ -269,7 +318,7 @@ namespace NightShift.Tests
         }
 
         // ============================================================ レポート
-        [Test, Category("Balance"), Explicit("バランス検証用。-testCategory Balance で実行")]
+        [Test, Category("Balance"), Explicit("バランス検証用。-testCategory Balance で実行"), Timeout(3600000)]
         public void WriteBalanceReport()
         {
             var sb = new StringBuilder();
@@ -277,6 +326,7 @@ namespace NightShift.Tests
             sb.AppendLine();
             var skills = new[] { Expert, Average, Novice };
             const int Seeds = 4;
+            const int CampaignSeeds = 8;
 
             // ---- 1夜ごとの仕事量と結果（ツールなし） ----
             foreach (var withTools in new[] { false, true })
@@ -314,7 +364,7 @@ namespace NightShift.Tests
             sb.AppendLine("|---|---|---|---|---|---|---|---|---|");
             foreach (var k in skills)
                 foreach (var buy in new[] { false, true })
-                    for (int seed = 1; seed <= 3; seed++)
+                    for (int seed = 1; seed <= CampaignSeeds; seed++)
                     {
                         var c = RunCampaign(k, buy, seed);
                         float avg = 0; foreach (var n in c.Nights) avg += CareerRecord.RankValue(n.Rank);

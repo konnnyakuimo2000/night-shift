@@ -246,7 +246,10 @@ namespace NightShift.UI.Screens
     {
         public KeyCode Key;
         public Action Action;
-        void Update() { if (Input.GetKeyDown(Key)) Action?.Invoke(); }
+        int _born;
+        void Awake() => _born = Time.frameCount;
+        // 作られたフレームのキー（この画面を開いたキー）には反応しない
+        void Update() { if (Time.frameCount > _born && Input.GetKeyDown(Key)) Action?.Invoke(); }
     }
 
     // ============================================================

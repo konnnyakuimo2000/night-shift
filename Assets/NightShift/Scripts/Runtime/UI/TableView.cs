@@ -15,6 +15,8 @@ namespace NightShift.UI
     /// <summary>表形式の一覧（業務ソフトのグリッド）。行選択・ダブルクリック対応。</summary>
     public class TableView : MonoBehaviour
     {
+        // 行の高さは作ったときに決める（途中で設定を変えても、この一覧の中ではそろったまま）
+        readonly int RowH = RetroTheme.DataRowHeight;
         public List<TableColumn> Columns = new List<TableColumn>();
         public ScrollRect Scroll;
         RectTransform _content;
@@ -101,7 +103,7 @@ namespace NightShift.UI
                     r.Data = null;
                 }
             }
-            _content.sizeDelta = new Vector2(0, items.Count * RetroTheme.RowHeight);
+            _content.sizeDelta = new Vector2(0, items.Count * RowH);
             // 選択の維持
             int newIndex = -1;
             if (Selected != null)
@@ -116,8 +118,8 @@ namespace NightShift.UI
             var r = new Row();
             var go = UIFactory.Rect("Row", _content);
             go.anchorMin = new Vector2(0, 1); go.anchorMax = new Vector2(1, 1); go.pivot = new Vector2(0, 1);
-            go.offsetMin = new Vector2(0, -(index + 1) * RetroTheme.RowHeight);
-            go.offsetMax = new Vector2(0, -index * RetroTheme.RowHeight);
+            go.offsetMin = new Vector2(0, -(index + 1) * RowH);
+            go.offsetMax = new Vector2(0, -index * RowH);
             r.Go = go.gameObject;
             r.Bg = go.gameObject.AddComponent<Image>();
             r.Bg.sprite = RetroTheme.White;
@@ -126,13 +128,13 @@ namespace NightShift.UI
             if (ShowMarker)
             {
                 r.Marker = UIFactory.Label(go, "", 11, TextAnchor.MiddleCenter);
-                r.Marker.rectTransform.Place(0, 0, 14, RetroTheme.RowHeight);
+                r.Marker.rectTransform.Place(0, 0, 14, RowH);
                 x = 14;
             }
             foreach (var c in Columns)
             {
-                var t = UIFactory.Label(go, "", RetroTheme.FontSize, TextAnchor.MiddleLeft, null, Mono);
-                t.rectTransform.Place(x + 3, 0, c.Width - 5, RetroTheme.RowHeight);
+                var t = UIFactory.Label(go, "", RetroTheme.DataFontSize, TextAnchor.MiddleLeft, null, Mono);
+                t.rectTransform.Place(x + 3, 0, c.Width - 5, RowH);
                 t.horizontalOverflow = HorizontalWrapMode.Wrap;
                 t.verticalOverflow = VerticalWrapMode.Truncate;
                 EllipsisText.Attach(t);
@@ -140,7 +142,7 @@ namespace NightShift.UI
                 // 縦罫線
                 var line = UIFactory.Solid(go, new Color(0.85f, 0.85f, 0.85f), "Grid");
                 line.raycastTarget = false;
-                line.rectTransform.Place(x + c.Width - 1, 0, 1, RetroTheme.RowHeight);
+                line.rectTransform.Place(x + c.Width - 1, 0, 1, RowH);
                 x += c.Width;
             }
             var bottom = UIFactory.Solid(go, new Color(0.9f, 0.9f, 0.9f), "GridH");
@@ -211,10 +213,10 @@ namespace NightShift.UI
             float viewH = Scroll.viewport.rect.height;
             float contentH = _content.rect.height;
             if (contentH <= viewH) return;
-            float y = index * RetroTheme.RowHeight;
+            float y = index * RowH;
             float top = _content.anchoredPosition.y;
             if (y < top) _content.anchoredPosition = new Vector2(0, y);
-            else if (y + RetroTheme.RowHeight > top + viewH) _content.anchoredPosition = new Vector2(0, y + RetroTheme.RowHeight - viewH);
+            else if (y + RowH > top + viewH) _content.anchoredPosition = new Vector2(0, y + RowH - viewH);
         }
 
         public int Count => _count;

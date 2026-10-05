@@ -107,6 +107,10 @@ namespace NightShift.UI
             }
             RetroDropdown.Create(_page, 130, y, 200, scales, scaleIndex, v => { S.uiScalePercent = GameSettings.UiScales[v]; Saved("UI の拡大率を変更しました。"); });
             y += 28;
+            var large = UIFactory.Check(_page, "判断に使う文字を大きくする（一覧・入力欄の IP・端末名・社員番号など）", S.largeText,
+                v => { S.largeText = v; Saved("次に開いた画面から反映されます。"); });
+            large.GetComponent<RectTransform>().Place(0, y, 520, 20);
+            y += 28;
 
             UIFactory.Label(_page, "フレームレート:", 0, y, 120, 20);
             var fps = new List<string>();

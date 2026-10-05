@@ -11,13 +11,23 @@ namespace NightShift.Systems
     {
         public static ExpectedAction Evaluate(EventInstance e, PolicyRuleSet rules, out string reason)
         {
-            reason = "";
+            var byRules = EvaluateRules(e, rules, out reason);
             if (e.Definition != null && e.Definition.expectedAction != ExpectedAction.PolicyDerived)
             {
-                reason = "定義で指定";
-                return e.Definition.expectedAction;
+                // 攻撃など、正解が決まっている要求。振り返りで読める理由にする
+                var fixedAction = e.Definition.expectedAction;
+                if (fixedAction != byRules)
+                    reason = fixedAction == ExpectedAction.Block
+                        ? (e.IsMalicious ? "攻撃の要求（ルール上は問題なく見える。ログ・ニュース・資料の手がかりで見抜く）" : "不審な要求")
+                        : "正規の要求（例外として許可されている）";
+                return fixedAction;
             }
+            return byRules;
+        }
 
+        static ExpectedAction EvaluateRules(EventInstance e, PolicyRuleSet rules, out string reason)
+        {
+            reason = "";
             var dest = e.Destination;
             bool external = e.Zone == SourceZone.External;
 

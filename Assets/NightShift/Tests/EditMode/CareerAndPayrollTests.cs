@@ -98,8 +98,36 @@ namespace NightShift.Tests
         public void Payroll_NeverBelowMinimum()
         {
             var ev = new EvaluationManager { MaliciousAllow = 10 };
-            var slip = Payroll.Compute(20, new EvaluationResult { Overall = 0, Rank = "D" }, ev, new PayrollSettings());
+            var slip = Payroll.Compute(20, new EvaluationResult { Overall = 0, Rank = "D" }, ev, new PayrollSettings { maxDeductionPerNight = 0 });
             Assert.AreEqual(1000, slip.total);
+        }
+
+        [Test]
+        public void Payroll_DeductionIsCappedPerNight()
+        {
+            var ev = new EvaluationManager { MaliciousAllow = 10 };
+            var p = new PayrollSettings();
+            var slip = Payroll.Compute(20, new EvaluationResult { Overall = 0, Rank = "D" }, ev, p);
+            Assert.AreEqual(p.maxDeductionPerNight, slip.deduction);
+            Assert.AreEqual(p.basePayFullShift - p.maxDeductionPerNight, slip.total);
+        }
+
+        [Test]
+        public void Payroll_SeniorHelpRemovesRankBonus()
+        {
+            var ev = new EvaluationManager { SeniorHelped = true };
+            var slip = Payroll.Compute(20, new EvaluationResult { Overall = 90, Rank = "S" }, ev, new PayrollSettings());
+            Assert.AreEqual(0, slip.rankBonus);
+        }
+
+        [Test]
+        public void SeniorHelp_AfterTwoNightsOfD_ReducesHelpDesk()
+        {
+            CareerRecord.SetCurrentForTests(TestData.Career("A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "D", "D"));
+            var helped = TestData.Session(20);
+            Assert.IsTrue(helped.SeniorHelp);
+            CareerRecord.SetCurrentForTests(TestData.Career("A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "D"));
+            Assert.IsFalse(TestData.Session(20).SeniorHelp);
         }
         static int CloseRansomNight(bool wrongBackup, int encrypted)
         {

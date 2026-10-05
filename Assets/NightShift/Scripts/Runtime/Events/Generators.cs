@@ -154,7 +154,8 @@ namespace NightShift.Events
         void PlanRandom(TimelineScheduler scheduler, DayDefinition day)
         {
             var picked = new List<HelpDeskDefinition>();
-            for (int i = 0; i < day.helpDeskCount; i++)
+            int count = _s.SeniorHelp ? System.Math.Max(1, day.helpDeskCount - ShiftSession.SeniorHelpTickets) : day.helpDeskCount;
+            for (int i = 0; i < count; i++)
             {
                 bool wantYes = _s.Rng.NextDouble() < 0.4;
                 var def = Pick(day, picked, d => d.type != HelpDeskType.Binary || d.correctIsYes == wantYes)

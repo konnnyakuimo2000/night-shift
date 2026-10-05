@@ -22,6 +22,9 @@ namespace NightShift.UI.Shift
         Text _hint;
         readonly Dictionary<string, Text> _fields = new Dictionary<string, Text>();
         bool _dirty = true;
+        bool _sortByDeadline;
+        RetroButton _sortBtn;
+        float _lastMinute = -1;
 
         public static void Open(ShiftDesktop d, EventInstance focus)
         {
@@ -46,6 +49,9 @@ namespace NightShift.UI.Shift
             // ツールバー
             _tabPending = UIFactory.Button(c, "保留中の要求", 0, 0, 130, 24, () => SetTab(false), "network");
             _tabProcessed = UIFactory.Button(c, "処理済みの要求", 132, 0, 130, 24, () => SetTab(true), "doc");
+            // 期限の近い順に並べる（期限のある日だけ）
+            _sortBtn = UIFactory.Button(c, "期限の近い順(T)", 268, 0, 126, 24, ToggleSort, "clock");
+            _sortBtn.Interactable = _d.S.Day.requestsExpire;
             var mapBtn = UIFactory.Button(c, "ネットワークマップ(M)", 400, 0, 150, 24, () => NetworkMonitorView.Open(_d), "globe");
             var logBtn = UIFactory.Button(c, "ログを表示(L)", 556, 0, 120, 24, () => LogViewerView.Open(_d, null), "log");
             mapBtn.Interactable = _d.Unlocked(Data.Features.NetworkMap);
@@ -53,8 +59,8 @@ namespace NightShift.UI.Shift
 
             var lg = UIFactory.Group(c, "接続要求一覧", 0, 30, 780, 200);
             _table = TableView.CreateStretch(lg, 0, 0, 0, 0,
-                new TableColumn("受付", 48), new TableColumn("要求番号", 74), new TableColumn("利用者", 110), new TableColumn("端末", 104),
-                new TableColumn("接続元", 120), new TableColumn("接続先", 96), new TableColumn("利用システム", 122), new TableColumn("状態", 56));
+                new TableColumn("受付", 48), new TableColumn("残り", 48), new TableColumn("要求番号", 74), new TableColumn("利用者", 100), new TableColumn("端末", 100),
+                new TableColumn("接続元", 116), new TableColumn("接続先", 92), new TableColumn("利用システム", 100), new TableColumn("状態", 56));
             _table.SelectionChanged += _ => RefreshDetail();
 
             var dg = UIFactory.Group(c, "要求内容", 0, 236, 560, 210);
@@ -87,6 +93,7 @@ namespace NightShift.UI.Shift
             if (_d.Unlocked(Data.Features.NetworkMap)) _w.Accelerators[KeyCode.M] = () => NetworkMonitorView.Open(_d);
             if (_d.Unlocked(Data.Features.SystemLog)) _w.Accelerators[KeyCode.L] = () => LogViewerView.Open(_d, null);
             _w.Accelerators[KeyCode.C] = _w.RequestClose;
+            if (_d.S.Day.requestsExpire) _w.Accelerators[KeyCode.T] = ToggleSort;
             _w.Accelerators[KeyCode.UpArrow] = () => _table.MoveSelection(-1);
             _w.Accelerators[KeyCode.DownArrow] = () => _table.MoveSelection(1);
 
@@ -121,6 +128,23 @@ namespace NightShift.UI.Shift
             if (_table.Count > 0) _table.Select(0);
         }
 
+        void ToggleSort()
+        {
+            if (!_d.S.Day.requestsExpire) return;
+            _sortByDeadline = !_sortByDeadline;
+            _sortBtn.SetLatched(_sortByDeadline);
+            _dirty = true;
+            Refresh();
+        }
+
+        /// <summary>期限までの残り（ゲーム内の分）。期限のない日・処理済みは「-」</summary>
+        string Remaining(EventInstance e)
+        {
+            if (e.State != EventState.Pending || !_d.S.Day.requestsExpire) return "-";
+            int m = Mathf.Max(0, Mathf.CeilToInt(e.TimeoutAt - _d.S.Time.CurrentMinute));
+            return m <= 5 ? $"<color=#B00000><b>{m}分</b></color>" : $"{m}分";
+        }
+
         void FocusOn(EventInstance e)
         {
             bool processed = e.State != EventState.Pending;
@@ -146,9 +170,10 @@ namespace NightShift.UI.Shift
             var s = _d.S.Requests;
             var list = new List<EventInstance>(_showProcessed ? s.Processed : s.Pending);
             if (_showProcessed) list.Reverse();
+            else if (_sortByDeadline) list.Sort((a, b) => a.TimeoutAt.CompareTo(b.TimeoutAt));
             _table.SetRows(list, e => new[]
             {
-                TimeManager.Format(e.GeneratedTime), e.RequestId, e.DisplayUser, DeviceText(e), e.SourceLabel, e.DestinationLabel, e.AccessType, StateLabel(e)
+                TimeManager.Format(e.GeneratedTime), Remaining(e), e.RequestId, e.DisplayUser, DeviceText(e), e.SourceLabel, e.DestinationLabel, e.AccessType, StateLabel(e)
             });
             if (_table.Selected == null && list.Count > 0 && !_showProcessed) _table.Select(0);
             _tabPending.SetText($"保留中の要求 ({s.Pending.Count})");
@@ -170,7 +195,7 @@ namespace NightShift.UI.Shift
                 return;
             }
             Set("id", e.RequestId);
-            Set("time", TimeManager.Format(e.GeneratedTime));
+            Set("time", TimeManager.Format(e.GeneratedTime) + (e.State == EventState.Pending && _d.S.Day.requestsExpire ? $"（期限 {TimeManager.Format(e.TimeoutAt)}）" : ""));
             Set("user", e.DisplayUser);
             Set("emp", string.IsNullOrEmpty(e.DisplayEmployeeId) ? "-" : e.DisplayEmployeeId);
             Set("device", DeviceText(e));
@@ -259,6 +284,9 @@ namespace NightShift.UI.Shift
                 else if (Core.GameSettings.PressedButton(Core.GameSettings.Block)) Decide(PlayerAction.Block);
                 else if (Core.GameSettings.PressedButton(Core.GameSettings.Lookup)) LookupEmployee();
             }
+            // 残り時間の表示を、ゲーム内の1分ごとに更新する
+            int minute = Mathf.FloorToInt(_d.S.Time.CurrentMinute);
+            if (!_showProcessed && minute != _lastMinute) { _lastMinute = minute; _dirty = true; }
             if (_dirty && Time.frameCount % 5 == 0) Refresh();
             if (_d.S.Phase == ShiftPhase.Grace)
                 _w.SetStatus(0, _d.S.Day.requestsExpire

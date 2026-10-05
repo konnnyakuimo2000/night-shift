@@ -24,6 +24,8 @@ namespace NightShift.Data
 
         public const int MainStartDay = 8;
         public const int LastDay = 30;
+        /// <summary>本番の要求数・同時発生の倍率（バランス調整用）</summary>
+        public const float RequestScale = 0.85f, BurstScale = 0.8f;
 
         static readonly string[] WeekdayJa = { "日", "月", "火", "水", "木", "金", "土" };
         static string DateLabel(DateTime d) => $"{d:yyyy/MM/dd} ({WeekdayJa[(int)d.DayOfWeek]})";
@@ -314,13 +316,13 @@ namespace NightShift.Data
             t10.steps.Add(Script("停電の判定", 20, "BLACKOUT_CHECK"));
             t10.steps.Add(Script("乗っ取りの判定", 60, "ADMIN_FATAL_CHECK"));
 
-            // T11 身代金ウイルス（DAY20〜）: FILE WRITE の連続。30分以内に隔離しないと致命的（GO2）
-            var t11 = Threat("T11_RANSOMWARE", 20, LastDay, new Vector2(40, 280), "203.0.113.", "1台の端末からファイルの書き換え（.briar）が連続。30分以内に隔離しないと全社のファイルが暗号化される（V6 BRIAR ROSE・致命的）。");
+            // T11 身代金ウイルス（DAY20〜）: FILE WRITE の連続。45分以内に隔離しないと致命的（GO2）
+            var t11 = Threat("T11_RANSOMWARE", 20, LastDay, new Vector2(40, 280), "203.0.113.", "1台の端末からファイルの書き換え（.briar）が連続。45分以内に隔離しないと全社のファイルが暗号化される（V6 BRIAR ROSE・致命的）。");
             t11.chance = 0.25f;
             t11.steps.Add(Script("被害者", 0, "PICK_VICTIM"));
             t11.steps.Add(Script("感染", 0.1f, "INFECT:V6"));
-            t11.steps.Add(Script("書き換え", 1, "RANSOM_WRITE", 30, 1f));
-            t11.steps.Add(Script("暗号化の判定", 31, "RANSOM_CHECK"));
+            t11.steps.Add(Script("書き換え", 1, "RANSOM_WRITE", 45, 1f));
+            t11.steps.Add(Script("暗号化の判定", 46, "RANSOM_CHECK"));
 
             // T13 陽動（DAY25〜）: 問い合わせを一斉に出し、その間に管理サーバーへの要求
             var t13 = Threat("T13_DIVERSION", 25, LastDay, new Vector2(60, 260), "192.0.2.", "問い合わせが一斉に届き、その隙に社外から管理サーバーへの要求。セキュリティ警告を先に。");
@@ -455,9 +457,10 @@ namespace NightShift.Data
                 d.unlockedFeatures.AddRange(allFeatures);
                 d.attachments.AddRange(new[] { c.manualSystem, c.manualServer, c.manualTrouble });
                 d.randomEvents = true;
-                d.requestCount = count;
+                // 実際のプレイに近いシミュレーション（BALANCE.md）で、平均的な腕前がツールを買えば完走できる量に調整
+                d.requestCount = Mathf.RoundToInt(count * RequestScale);
                 d.violationRatio = ratio;
-                d.burstChance = burst;
+                d.burstChance = burst * BurstScale;
                 d.helpDeskCount = help;
                 d.routinePool.AddRange(routinePool);
                 d.violationPool.AddRange(violationPool);
@@ -548,7 +551,7 @@ namespace NightShift.Data
                 null, new[] { Features.UserManagement });
             var d20 = Main(20, "SLEEPING BEAUTY", "第3週", 19, 0.35f, 0.18f, 3,
                 $"{Col("身代金ウイルス（ファイルを暗号化するウイルス）", Deny)} の被害が国内でも出始めています。\n" +
-                $"1台の端末から {B("ファイルの書き換え（FILE WRITE）が続いたら、30分以内にその端末を隔離")} してください。{B("最優先です。")}\n\n" + Tasks(all),
+                $"1台の端末から {B("ファイルの書き換え（FILE WRITE）が続いたら、45分以内にその端末を隔離")} してください。{B("最優先です。")}\n\n" + Tasks(all),
                 "遅れると全社のファイルが開けなくなります。");
             var d21 = Main(21, "COMPOUND", "第3週", 20, 0.36f, 0.2f, 3,
                 "第3週のまとめです。これまでの手口が組み合わさって来ます。落ち着いて、警告の大きいものから対処してください。\n\n" + Tasks(all),

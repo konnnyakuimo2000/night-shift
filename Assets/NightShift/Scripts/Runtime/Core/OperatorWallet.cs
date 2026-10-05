@@ -137,6 +137,11 @@ namespace NightShift.Core
                 case "A": slip.rankBonus = p.rankBonusA; break;
                 case "B": slip.rankBonus = p.rankBonusB; break;
             }
+            if (ev.SeniorHelped && slip.rankBonus > 0)
+            {
+                slip.rankBonus = 0;
+                slip.deductionNotes.Add("先輩の手伝いがあったため精勤手当なし");
+            }
             if (ev.MaliciousAllow > 0)
             {
                 slip.deduction += ev.MaliciousAllow * p.deductionPerMaliciousAllow;
@@ -161,6 +166,11 @@ namespace NightShift.Core
             {
                 slip.deduction += p.transferFee;
                 slip.deductionNotes.Add("振込手数料");
+            }
+            if (p.maxDeductionPerNight > 0 && slip.deduction > p.maxDeductionPerNight)
+            {
+                slip.deduction = p.maxDeductionPerNight;
+                slip.deductionNotes.Add($"（上限 {OperatorWallet.Yen(p.maxDeductionPerNight)}）");
             }
             slip.total = Mathf.Max(p.minimumPay, slip.basePay + slip.performancePay + slip.rankBonus - slip.deduction);
             return slip;

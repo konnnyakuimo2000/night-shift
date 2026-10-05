@@ -48,7 +48,7 @@ namespace NightShift.UI.Screens
             }
         }
 
-        public static GameObject Build(RectTransform parent, DayDefinition day, EvaluationResult r, PaySlip slip, PaySlip previous, bool updated, int balance, Action onNext, Action onRestart)
+        public static GameObject Build(RectTransform parent, DayDefinition day, EvaluationResult r, PaySlip slip, PaySlip previous, bool updated, int balance, Action onNext, Action onRestart, string review = null)
         {
             var anim = new Timeline();
 
@@ -277,6 +277,10 @@ namespace NightShift.UI.Screens
             // やり直しは、その夜の記録が消えるので確認する
             Action confirmRestart = () => ScreenConfirm.Show(root.rectTransform, "やり直しの確認", $"DAY{day.dayNumber} を最初からやり直します。\n今夜の業務記録は失われます。よろしいですか？", onRestart);
             var retry = UIFactory.Button(c, $"DAY{day.dayNumber}をやり直す(R)", 798, 612, 162, 32, confirmRestart);
+            // 振り返り: どの要求の何を見落としたか（業務中は見せない正誤を、終わった後に読める）
+            Action openReview = () => ReviewPanel.Show(root.rectTransform, $"DAY{day.dayNumber} の振り返り", review ?? "");
+            var reviewBtn = UIFactory.Button(c, "振り返り(V)", 480, 612, 150, 32, openReview, "doc");
+            reviewBtn.Interactable = !string.IsNullOrEmpty(review);
             next.Interactable = retry.Interactable = false;
             anim.Add(t, 0.01f, p => { }, () =>
             {
@@ -291,12 +295,49 @@ namespace NightShift.UI.Screens
             player.OnKey = () =>
             {
                 if (!player.Finished) { player.Skip(); return; }
-                if (ScreenConfirm.IsOpen(root.rectTransform)) return;
-                if (Input.GetKeyDown(KeyCode.N)) onNext();
+                if (ScreenConfirm.IsOpen(root.rectTransform) || ReviewPanel.IsOpen(root.rectTransform)) return;
+                if (Input.GetKeyDown(KeyCode.V) && !string.IsNullOrEmpty(review)) openReview();
+                else if (Input.GetKeyDown(KeyCode.N)) onNext();
                 else if (Input.GetKeyDown(KeyCode.R)) confirmRestart();
             };
             return root.gameObject;
         }
+    }
+
+    /// <summary>評価画面の上に重ねて出す、振り返りの一覧（スクロールできる）。Esc・V・Enter で閉じる</summary>
+    public static class ReviewPanel
+    {
+        public static void Show(RectTransform parent, string title, string text)
+        {
+            if (IsOpen(parent)) return;
+            var dim = UIFactory.Solid(parent, new Color(0, 0, 0, 0.55f), "ReviewDim");
+            dim.rectTransform.Stretch();
+            dim.transform.SetAsLastSibling();
+            var box = UIFactory.Panel(dim.transform, RetroTheme.Raised, "Review");
+            box.rectTransform.anchorMin = new Vector2(0.5f, 0.5f); box.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            box.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            box.rectTransform.sizeDelta = new Vector2(820, 600);
+            var bar = UIFactory.Image(box.transform, RetroTheme.GradientSprite(RetroTheme.TitleActiveA, RetroTheme.TitleActiveB), Color.white, "Title");
+            bar.rectTransform.StretchH(3, 18, 3, 3);
+            UIFactory.Label(bar.transform, " " + title, 12, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
+            var body = UIFactory.Rect("Body", box.transform).Stretch(10, 28, 10, 48);
+            var txt = UIFactory.ScrollText(body, text, out var scroll);
+            txt.fontSize = 14;
+            ((RectTransform)scroll.transform).Stretch();
+            void Close() { if (dim != null) UnityEngine.Object.Destroy(dim.gameObject); }
+            var btn = UIFactory.Button(box.transform, "閉じる(Esc)", 0, 0, 140, 30, Close);
+            btn.Rect.anchorMin = btn.Rect.anchorMax = new Vector2(0.5f, 0);
+            btn.Rect.pivot = new Vector2(0.5f, 0);
+            btn.Rect.anchoredPosition = new Vector2(0, 10);
+            foreach (var key in new[] { KeyCode.Escape, KeyCode.V, KeyCode.Return })
+            {
+                var k = dim.gameObject.AddComponent<KeyAction>();
+                k.Key = key;
+                k.Action = Close;
+            }
+        }
+
+        public static bool IsOpen(RectTransform parent) => parent != null && parent.Find("ReviewDim") != null;
     }
 
     /// <summary>簡易タイムライン（開始時刻・長さ・進捗コールバック）</summary>

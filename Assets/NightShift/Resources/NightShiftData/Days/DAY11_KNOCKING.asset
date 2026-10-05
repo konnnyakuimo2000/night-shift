@@ -66,9 +66,9 @@ MonoBehaviour:
   backgroundLogChance: 0.25
   backgroundActivityScale: 1
   randomEvents: 1
-  requestCount: 16
+  requestCount: 14
   violationRatio: 0.32
-  burstChance: 0.14
+  burstChance: 0.112
   routinePool:
   - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}
   - {fileID: 11400000, guid: cd7c1e285ba83fd40bf228cbd113a6af, type: 2}

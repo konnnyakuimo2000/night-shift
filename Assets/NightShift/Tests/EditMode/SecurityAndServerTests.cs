@@ -101,6 +101,17 @@ namespace NightShift.Tests
         }
 
         [Test]
+        public void Report_SameSourceTwice_ScoresOnce()
+        {
+            var s = TestData.Session(13);
+            s.Security.Report("test", true, "198.51.100.7");
+            int security = s.Evaluation.SecurityActionsCorrect;
+            s.Security.Report("test again", true, "198.51.100.7");
+            Assert.AreEqual(1, s.CorrectReports);
+            Assert.AreEqual(security, s.Evaluation.SecurityActionsCorrect);
+        }
+
+        [Test]
         public void Server_KillingSuspiciousProcessIsCorrect()
         {
             var s = TestData.Session(17);

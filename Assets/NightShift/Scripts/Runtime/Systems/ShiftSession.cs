@@ -144,8 +144,13 @@ namespace NightShift.Systems
         public event Action ShiftEnded;      // 04:00
         public event Action ShiftCompleted;  // 猶予終了 → 評価へ
 
+        /// <summary>最低評価が2夜続いた翌夜: 日勤の先輩が残って、問い合わせを引き受けてくれる</summary>
+        public bool SeniorHelp { get; private set; }
+        public const int SeniorHelpTickets = 2;
+
         public ShiftSession(GameDatabase db, DayDefinition day, int seed, string operatorName = "night01")
         {
+            SeniorHelp = day.dayNumber > DefaultDataFactory.MainStartDay && Core.CareerRecord.Current.ConsecutiveRank("D", day.dayNumber - 1) >= 2;
             OperatorName = string.IsNullOrEmpty(operatorName) ? "night01" : operatorName;
             Database = db;
             Day = day;
@@ -156,7 +161,7 @@ namespace NightShift.Systems
             Network = new NetworkManager(db.nodes);
             Logs = new LogManager();
             Notifications = new NotificationManager();
-            Evaluation = new EvaluationManager();
+            Evaluation = new EvaluationManager { SeniorHelped = SeniorHelp };
             Requests = new RequestManager(this);
             HelpDesk = new HelpDeskManager(this);
             Factory = new EventFactory(this);
@@ -220,7 +225,9 @@ namespace NightShift.Systems
                     if (!Time.Paused && Day.requestsExpire) GraceRemaining -= unscaledDelta;
                     float delta = unscaledDelta / Time.RealSecondsPerGameMinute * Time.DebugTimeScale;
                     if (!Time.Paused) HelpDesk.Tick(Time.CurrentMinute, delta);
-                    if ((Day.requestsExpire && GraceRemaining <= 0) || Requests.Pending.Count == 0) Complete();
+                    // 接続要求も問い合わせも片付いたら終了。猶予がない日（研修）は、これまでどおり接続要求だけを見る
+                    bool cleared = Requests.Pending.Count == 0 && (!Day.requestsExpire || HelpDesk.OpenCount == 0);
+                    if ((Day.requestsExpire && GraceRemaining <= 0) || cleared) Complete();
                     break;
                 }
             }

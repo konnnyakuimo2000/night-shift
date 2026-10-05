@@ -79,6 +79,13 @@ namespace NightShift.UI
         public const int MenuBarHeight = 19;
         public const int StatusBarHeight = 20;
         public const int RowHeight = 17;
+        public const int LargeRowHeight = 21;
+        public const int LargeFontSize = 14;
+        static bool LargeText => Core.GameSettings.Current.largeText;
+        /// <summary>一覧の行の高さ（「文字を大きく」なら高くする）</summary>
+        public static int DataRowHeight => LargeText ? LargeRowHeight : RowHeight;
+        /// <summary>判断に使う文字（一覧・入力欄の IP・端末名・社員番号など）の大きさ</summary>
+        public static int DataFontSize => LargeText ? LargeFontSize : FontSize;
 
         // ---- sprites ----
         static Sprite _raised, _pressed, _field, _thinSunken, _etched, _white, _checker, _frame, _thinRaised;

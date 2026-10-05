@@ -28,6 +28,7 @@ namespace NightShift.Systems
         public int HelpDeskCorrect, HelpDeskIncorrect, RemoteResolved, RemoteFailed, Unresolved;
         public int TicketsTotal;
         public int RemoteReportsWrong;
+        public bool SeniorHelped;          // 先輩に手伝ってもらった夜（精勤手当なし）
         // 本番業務: 遮断・隔離・停止・報告の正誤、被害の数
         public int SecurityActionsCorrect, SecurityActionsWrong, DamageCount;
         readonly List<float> _requestResponseTimes = new List<float>();
