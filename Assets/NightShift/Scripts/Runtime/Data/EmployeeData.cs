@@ -25,8 +25,6 @@ namespace NightShift.Data
         [Tooltip("1ゲーム時間あたりの背景通信の平均回数")]
         [Min(0f)] public float activityPerHour = 6f;
         public List<ServiceWeight> serviceWeights = new List<ServiceWeight>();
-        [Tooltip("社外(VPN)から接続することがあるか")]
-        public bool usesVpn;
     }
 
     [CreateAssetMenu(menuName = "NightShift/Employee", fileName = "Employee")]

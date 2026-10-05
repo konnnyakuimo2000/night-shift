@@ -225,12 +225,5 @@ namespace NightShift.UI
             if (_switcher != null) Destroy(_switcher.gameObject);
             _switcher = null;
         }
-
-        public void CancelSwitch()
-        {
-            _switchList = null;
-            if (_switcher != null) Destroy(_switcher.gameObject);
-            _switcher = null;
-        }
     }
 }

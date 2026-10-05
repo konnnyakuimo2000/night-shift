@@ -19,7 +19,6 @@ MonoBehaviour:
   description: "\u540C\u3058\u63A5\u7D9A\u5143\u306E\u7BC4\u56F2\u30FB\u540C\u3058\u5229\u7528\u8005\u306E\u8A18\u9332\u3092\u6642\u7CFB\u5217\u306B\u4E26\u3079\u307E\u3059\uFF08\u95A2\u9023\u304C\u3042\u308B\u304B\u306E\u5224\u65AD\u306F\u3042\u306A\u305F\uFF09\u3002"
   unlockDay: 22
   prerequisite: HW_MONITOR_2
-  grantsFeature: TOOL_CORRELATOR
   consumable: 0
   maxStock: 1
   icon: clock

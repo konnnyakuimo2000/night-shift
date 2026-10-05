@@ -388,36 +388,6 @@ namespace NightShift.UI.Screens
             Done?.Invoke();
         }
     }
-
-    // ============================================================
-    public static class ComingSoonScreen
-    {
-        public static GameObject Build(RectTransform parent, int finishedDay, int nextDay, Action onRestart, Action onTitle)
-        {
-            var root = UIFactory.Solid(parent, Color.black, "ComingSoon");
-            root.rectTransform.Stretch();
-            var t1 = UIFactory.Label(root.transform, $"DAY {nextDay} — COMING SOON", 40, TextAnchor.MiddleCenter, Color.white, true);
-            t1.rectTransform.StretchH(250, 60);
-            var t2 = UIFactory.Label(root.transform, "明日は担当範囲がさらに広がる。", 16, TextAnchor.MiddleCenter, new Color(0.75f, 0.8f, 0.9f));
-            t2.rectTransform.StretchH(330, 26);
-            var t3 = UIFactory.Label(root.transform, "・サーバー運用管理  解禁予定\n・より手口の巧妙な、人間による攻撃", 13, TextAnchor.UpperCenter, new Color(0.5f, 0.55f, 0.6f));
-            t3.rectTransform.StretchH(372, 60);
-
-            var b1 = UIFactory.Button(root.transform, $"DAY{finishedDay} をもう一度(R)", onRestart, "clock");
-            b1.Rect.anchorMin = b1.Rect.anchorMax = new Vector2(0.5f, 0.5f);
-            b1.Rect.pivot = new Vector2(0.5f, 0.5f);
-            b1.Rect.sizeDelta = new Vector2(180, 28);
-            b1.Rect.anchoredPosition = new Vector2(-95, -120);
-            var b2 = UIFactory.Button(root.transform, "タイトルへ(T)", onTitle, "exit");
-            b2.Rect.anchorMin = b2.Rect.anchorMax = new Vector2(0.5f, 0.5f);
-            b2.Rect.pivot = new Vector2(0.5f, 0.5f);
-            b2.Rect.sizeDelta = new Vector2(180, 28);
-            b2.Rect.anchoredPosition = new Vector2(95, -120);
-            var k1 = root.gameObject.AddComponent<KeyAction>(); k1.Key = KeyCode.R; k1.Action = onRestart;
-            var k2 = root.gameObject.AddComponent<KeyAction>(); k2.Key = KeyCode.T; k2.Action = onTitle;
-            return root.gameObject;
-        }
-    }
 }
 
 namespace NightShift.UI.Screens

@@ -8,7 +8,6 @@ namespace NightShift.Events
     public class EventFactory
     {
         readonly ShiftSession _s;
-        int _instanceCounter;
 
         public EventFactory(ShiftSession s) { _s = s; }
 
@@ -38,7 +37,6 @@ namespace NightShift.Events
         {
             var e = new EventInstance
             {
-                InstanceId = $"EV-{++_instanceCounter:00000}",
                 Definition = def,
                 Category = def.category,
                 Kind = def.kind,

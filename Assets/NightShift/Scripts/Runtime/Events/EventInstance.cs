@@ -2,7 +2,7 @@ using NightShift.Data;
 
 namespace NightShift.Events
 {
-    public enum EventState { Pending, Allowed, Blocked, Expired, Completed }
+    public enum EventState { Pending, Allowed, Blocked, Expired }
     public enum PlayerAction { None, Allow, Block }
     public enum SourceZone { Internal, External }
 
@@ -21,7 +21,6 @@ namespace NightShift.Events
     /// <summary>実行中のイベント1件。定義（EventDefinition）とは分離する。</summary>
     public class EventInstance
     {
-        public string InstanceId;
         public string RequestId;          // REQ-0001（Connection Request の場合）
         public EventDefinition Definition;
         public EventCategory Category;

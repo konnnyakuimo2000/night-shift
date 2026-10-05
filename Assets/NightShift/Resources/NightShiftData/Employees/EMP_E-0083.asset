@@ -42,7 +42,6 @@ MonoBehaviour:
       weight: 1.5
     - serviceId: ACCOUNTING
       weight: 1.5
-    usesVpn: 0
   permissions:
   - {fileID: 11400000, guid: b919be391b48d014f9b2d40ee80a49b0, type: 2}
   - {fileID: 11400000, guid: fe8f316bbe4d4df4db8d066b92ec3ec7, type: 2}

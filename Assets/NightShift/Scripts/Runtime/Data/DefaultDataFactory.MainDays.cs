@@ -47,7 +47,6 @@ namespace NightShift.Data
                 e.vpnEnabled = !string.IsNullOrEmpty(laptop);
                 e.employment = employment;
                 e.normalAccessTargets.AddRange(targets);
-                e.normalBehavior.usesVpn = e.vpnEnabled;
                 e.normalBehavior.activityPerHour = 4f + lit;
                 foreach (var t in targets)
                     e.normalBehavior.serviceWeights.Add(new ServiceWeight { serviceId = t, weight = t == "WEB" || t == "MAIL" ? 3f : 1.5f });
@@ -91,20 +90,17 @@ namespace NightShift.Data
             routineVpn.maximumDay = LastDay;
 
             var vUnreg = Ev("V_UNREGISTERED_DEVICE", 8);
-            vUnreg.severity = Severity.Low;
             vUnreg.sourceType = SourceType.UnregisteredDevice;
             vUnreg.deviceNamePattern = "NB-PRIV{n}";
             vUnreg.destinationMode = DestinationMode.FromEmployeeNormalTargets;
 
             var vOther = Ev("V_OTHER_EMPLOYEES_PC", 8);
-            vOther.severity = Severity.Low;
             vOther.sourceType = SourceType.OtherEmployeeDevice;
             vOther.destinationMode = DestinationMode.FromEmployeeNormalTargets;
 
             EventDefinition NoPerm(string id, string missing, NetworkNodeDefinition dest, string access)
             {
                 var e = Ev(id, 8);
-                e.severity = Severity.Medium;
                 e.employeeConditions.excludedPermissions.Add(perms[missing]);
                 e.destination = dest; e.accessType = access;
                 return e;
@@ -116,7 +112,6 @@ namespace NightShift.Data
             vNoAdmin.weight = 0.5f;
 
             var vNotEmp = Ev("V_NOT_AN_EMPLOYEE", 8);
-            vNotEmp.severity = Severity.Medium;
             vNotEmp.userType = UserType.NamedAccount;
             vNotEmp.accountName = "test01";
             vNotEmp.sourceType = SourceType.UnregisteredDevice;
@@ -125,7 +120,6 @@ namespace NightShift.Data
             vNotEmp.weight = 0.6f;
 
             var vExtDirect = Ev("V_EXTERNAL_DIRECT", 8);
-            vExtDirect.severity = Severity.Medium;
             vExtDirect.sourceType = SourceType.RegisteredLaptopExternal;
             vExtDirect.employeeConditions.requireVpnEnabled = true;
             vExtDirect.employeeConditions.requireLaptop = true;
@@ -133,7 +127,6 @@ namespace NightShift.Data
             vExtDirect.destination = c.file; vExtDirect.accessType = "共有ファイル（閲覧）";
 
             var vNoVpn = Ev("V_NO_VPN_PERMISSION", 8);
-            vNoVpn.severity = Severity.Medium;
             vNoVpn.sourceType = SourceType.RegisteredDeviceExternal;
             vNoVpn.employeeConditions.requireVpnDisabled = true;
             vNoVpn.destination = c.auth; vNoVpn.accessType = "VPN接続";
@@ -141,7 +134,6 @@ namespace NightShift.Data
             var vExtAdmin = Ev("V_EXTERNAL_UNKNOWN_ADMIN", 8);
             vExtAdmin.category = EventCategory.Threat;
             vExtAdmin.notifyAsSecurityAlert = true;
-            vExtAdmin.severity = Severity.High;
             vExtAdmin.userType = UserType.Unknown;
             vExtAdmin.sourceType = SourceType.ExternalUnknown;
             vExtAdmin.deviceNamePattern = "UNKNOWN-{n}";
@@ -152,7 +144,6 @@ namespace NightShift.Data
             // T1 なりすまし（DAY9〜）: 本人の登録端末名だが、接続元IPが端末IPと違う
             var vSpoof = Ev("T1_SPOOFED_SOURCE", 9);
             vSpoof.category = EventCategory.Threat;
-            vSpoof.severity = Severity.High;
             vSpoof.sourceType = SourceType.SpoofedSource;
             vSpoof.destinationMode = DestinationMode.FromEmployeeNormalTargets;
             vSpoof.isMalicious = true;
@@ -161,7 +152,6 @@ namespace NightShift.Data
             // T2 退勤中の社員（DAY10〜）
             var vOffShift = Ev("T2_OFF_SHIFT_EMPLOYEE", 10);
             vOffShift.category = EventCategory.Threat;
-            vOffShift.severity = Severity.Medium;
             vOffShift.employeeConditions.requireOnShift = false;
             vOffShift.employeeConditions.requireOffShift = true;
             vOffShift.employeeConditions.preferUnused = false;
@@ -172,7 +162,6 @@ namespace NightShift.Data
             // T6 退職者・休職者（DAY12〜）
             var vRetired = Ev("T6_NOT_ACTIVE_EMPLOYEE", 12);
             vRetired.category = EventCategory.Threat;
-            vRetired.severity = Severity.High;
             vRetired.employeeConditions.requireOnShift = false;
             vRetired.employeeConditions.employment = EmploymentFilter.NotActive;
             vRetired.employeeConditions.preferUnused = false;
@@ -186,7 +175,6 @@ namespace NightShift.Data
             var vSelf = Ev("T4_OPERATOR_ACCOUNT", 14);
             vSelf.category = EventCategory.Threat;
             vSelf.notifyAsSecurityAlert = true;
-            vSelf.severity = Severity.High;
             vSelf.userType = UserType.OperatorAccount;
             vSelf.sourceType = SourceType.RegisteredDevice;
             vSelf.destination = c.admin; vSelf.accessType = "管理ログイン";
@@ -196,14 +184,12 @@ namespace NightShift.Data
             // T12 攻撃支援AI（DAY23〜）: 普段使うシステム・普段の時間帯まで真似る。手がかりは1つだけ
             var vAiSpoof = Ev("T12_AI_SPOOF", 23);
             vAiSpoof.category = EventCategory.Threat;
-            vAiSpoof.severity = Severity.High;
             vAiSpoof.sourceType = SourceType.SpoofedSource;
             vAiSpoof.destinationMode = DestinationMode.FromEmployeeNormalTargets;
             vAiSpoof.isMalicious = true;
             vAiSpoof.weight = 2f;
             var vAiOffShift = Ev("T12_AI_OFF_SHIFT", 24);
             vAiOffShift.category = EventCategory.Threat;
-            vAiOffShift.severity = Severity.High;
             vAiOffShift.employeeConditions.requireOnShift = false;
             vAiOffShift.employeeConditions.requireOffShift = true;
             vAiOffShift.employeeConditions.preferUnused = false;
@@ -214,7 +200,6 @@ namespace NightShift.Data
             // T15 防御AIへの偽の指示（DAY28〜）: 備考欄にAI向けの指示。ルール上は拒否
             var vInjection = Ev("T15_AI_INJECTION", 28);
             vInjection.category = EventCategory.Threat;
-            vInjection.severity = Severity.High;
             vInjection.sourceType = SourceType.SpoofedSource;
             vInjection.destinationMode = DestinationMode.FromEmployeeNormalTargets;
             vInjection.isMalicious = true;
@@ -244,7 +229,6 @@ namespace NightShift.Data
             var t3Req = Ev("T3_BRUTE_FORCE_REQUEST", 11);
             t3Req.category = EventCategory.Threat;
             t3Req.notifyAsSecurityAlert = true;
-            t3Req.severity = Severity.High;
             t3Req.sourceType = SourceType.AttackerSource;
             t3Req.deviceNamePattern = "NB-{hex}";
             t3Req.employeeConditions.requireVpnEnabled = true;
@@ -314,7 +298,6 @@ namespace NightShift.Data
             var t10Req = Ev("T10_ADMIN_TAKEOVER_REQUEST", 19);
             t10Req.category = EventCategory.Threat;
             t10Req.notifyAsSecurityAlert = true;
-            t10Req.severity = Severity.High;
             t10Req.employeeConditions.requireOnShift = false;
             t10Req.employeeConditions.requireOffShift = true;
             t10Req.employeeConditions.preferUnused = false;
@@ -349,7 +332,6 @@ namespace NightShift.Data
             var t14Req = Ev("T14_AUTONOMOUS_REQUEST", 28);
             t14Req.category = EventCategory.Threat;
             t14Req.notifyAsSecurityAlert = true;
-            t14Req.severity = Severity.High;
             t14Req.sourceType = SourceType.AttackerSource;
             t14Req.deviceNamePattern = "NB-{hex}";
             t14Req.employeeConditions.requireVpnEnabled = true;
@@ -370,7 +352,6 @@ namespace NightShift.Data
             var t14AdminReq = Ev("T14_AUTONOMOUS_ADMIN", 28);
             t14AdminReq.category = EventCategory.Threat;
             t14AdminReq.notifyAsSecurityAlert = true;
-            t14AdminReq.severity = Severity.High;
             t14AdminReq.userType = UserType.Unknown;
             t14AdminReq.sourceType = SourceType.AttackerSource;
             t14AdminReq.deviceNamePattern = "UNKNOWN-{n}";
@@ -448,7 +429,7 @@ namespace NightShift.Data
             {
                 date = NextWeekday(date);
                 var d = b.Add(ScriptableObject.CreateInstance<DayDefinition>(), "Days", $"DAY{n}_{title.Replace(" ", "")}");
-                d.dayNumber = n; d.title = title; d.weekLabel = week;
+                d.dayNumber = n; d.title = title;
                 d.dateLabel = DateLabel(date); d.clockInDateLabel = DateLabel(date.AddDays(-1));
                 d.startMinute = 0; d.endMinute = 360; d.endWarningMinute = 350;
                 d.realSecondsPerGameMinute = 1.8f; // 1夜 約11分
@@ -500,7 +481,7 @@ namespace NightShift.Data
                 Tasks(all),
                 $"本番業務の注意点は、操作マニュアルの {Col("「本番業務の心得」", Check)} を読んでおくこと。\n" +
                 "なお、前任者が残したものは自由に使ってかまいません。",
-                null, new[] { Features.Store, Features.News });
+                null, new[] { Features.Store });
             var d9 = Main(9, "FALSE FACES", "第2週", 15, 0.3f, 0.12f, 2,
                 $"最近、{B("社員の端末名を名乗る不正な接続")} が他社で報告されています。\n" +
                 $"本日から、社内の登録端末からの要求は {Col("接続元のIPアドレス", Check)} を、社員情報の {B("「端末IP」")} と照合してください。\n\n" +
@@ -620,7 +601,6 @@ namespace NightShift.Data
             // 前任者（E-0004）のアカウントからの接続。接続元は自律型攻撃AIと同じ範囲（手がかり2）
             var vPredecessor = Ev("T6_PREDECESSOR_ACCOUNT", 12);
             vPredecessor.category = EventCategory.Threat;
-            vPredecessor.severity = Severity.High;
             vPredecessor.userType = UserType.NamedAccount;
             vPredecessor.accountName = "(削除済み)";
             vPredecessor.displayEmployeeId = "E-0004";
@@ -644,7 +624,6 @@ namespace NightShift.Data
                 it.itemId = id; it.displayName = name; it.category = cat; it.price = price; it.unlockDay = day;
                 it.description = desc; it.icon = icon; it.prerequisite = pre; it.consumable = consumable;
                 it.maxStock = consumable ? maxStock : 1;
-                it.grantsFeature = consumable ? "" : id;
                 it.adCopy = ad;
                 c.db.storeItems.Add(it);
             }

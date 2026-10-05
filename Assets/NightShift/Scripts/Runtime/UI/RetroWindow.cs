@@ -16,7 +16,6 @@ namespace NightShift.UI
         public bool Closable = true;
         public bool Minimizable = true;
         public bool Maximizable = true;
-        public bool Resizable;
         public List<KeyValuePair<string, List<MenuItem>>> Menus;
         public int StatusCells;           // 0 = ステータスバーなし
         public float[] StatusWidths;      // 右側セルの幅（先頭セルは可変）

@@ -19,7 +19,6 @@ MonoBehaviour:
   description: "\u5168\u30B5\u30FC\u30D0\u30FC\u306E\u30B5\u30FC\u30D3\u30B9\u72B6\u614B\u30FB\u30D7\u30ED\u30BB\u30B9\u30FB\u767A\u884C\u5143\u30921\u753B\u9762\u306B\u8868\u793A\u3057\u307E\u3059\uFF08\u4E0D\u5BE9\u304B\u3069\u3046\u304B\u306F\u8868\u793A\u3057\u307E\u305B\u3093\uFF09\u3002"
   unlockDay: 15
   prerequisite: HW_MONITOR_2
-  grantsFeature: TOOL_SERVER_MONITOR
   consumable: 0
   maxStock: 1
   icon: server

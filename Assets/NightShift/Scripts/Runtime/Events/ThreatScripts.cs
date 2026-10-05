@@ -126,6 +126,7 @@ namespace NightShift.Events
                         string[] docs = { "見積書_0520.doc", "営業日報_5月.xls", "請求書控え.xls", "会議メモ.txt", "顧客名簿_関東.xls", "契約書_雛形.doc" };
                         string f = docs[index % docs.Length];
                         s.Logs.Add(now, s.Employees.GetIp(v9), "FILE-SRV01", v9.fullName, "SMB", "OK", $"FILE WRITE {f} → {f}.briar");
+                        s.RansomEncryptedFiles++;
                         // ファイルサーバーの監視が、書き込みの急増を知らせる（どの端末かはログで調べる）
                         if (index == 3)
                             s.Notifications.Notify(NotificationType.SecurityAlert, "ファイルサーバー監視", "FILE-SRV01 への書き込みが急増しています。", now, () => s.Ui?.OpenLogViewer());

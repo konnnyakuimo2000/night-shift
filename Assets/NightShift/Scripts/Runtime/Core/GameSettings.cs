@@ -11,8 +11,6 @@ namespace NightShift.Core
         public KeyCode key;
         public bool ctrl, alt, shift;
 
-        public KeyBinding Clone() => new KeyBinding { action = action, key = key, ctrl = ctrl, alt = alt, shift = shift };
-
         public bool SameCombo(KeyBinding o) => o != null && key != KeyCode.None && key == o.key && ctrl == o.ctrl && alt == o.alt && shift == o.shift;
 
         public string Label

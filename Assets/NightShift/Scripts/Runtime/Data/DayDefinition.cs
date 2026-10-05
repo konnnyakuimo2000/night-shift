@@ -75,8 +75,6 @@ namespace NightShift.Data
         public List<RandomEventSlot> randomSlots = new List<RandomEventSlot>();
         public List<HelpDeskDefinition> helpDesk = new List<HelpDeskDefinition>();
         public List<ThreatScenarioDefinition> threats = new List<ThreatScenarioDefinition>();
-        [Tooltip("背景イベント（ログに残らない通信も含む）として使う定義。社員の NormalBehaviorProfile から生成される")]
-        public EventDefinition backgroundTrafficTemplate;
         [Range(0f, 1f)] public float backgroundLogChance = 0.3f;
         [Tooltip("会社全体の背景通信の倍率")]
         public float backgroundActivityScale = 1f;
@@ -95,8 +93,6 @@ namespace NightShift.Data
         [Tooltip("1夜の問い合わせ（二択・リモート）の数")]
         public int helpDeskCount = 2;
         public List<HelpDeskDefinition> helpDeskPool = new List<HelpDeskDefinition>();
-        [Tooltip("週・山場の表示（例: 第2週）")]
-        public string weekLabel;
 
         [Header("チュートリアル進行")]
         [Tooltip("この時刻（ゲーム内分）より前に予定されたプレイヤー向けイベントは、前のタスクが片付くまで発生を待つ。0 で無効")]

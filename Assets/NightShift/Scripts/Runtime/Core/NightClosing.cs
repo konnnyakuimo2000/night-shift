@@ -10,6 +10,14 @@ namespace NightShift.Core
     /// </summary>
     public static class NightClosing
     {
+        public const string BackupFlag = "WRONG_BACKUP";
+        public const int BackupLostTrust = 3;
+        public const string BackupLostDamage = "共有フォルダのバックアップも一緒に暗号化され、戻せないファイルが残った";
+
+        /// <summary>身代金ウイルスに一部のファイルを暗号化され、バックアップの問い合わせを間違えていたため戻せない</summary>
+        public static bool BackupLost(ShiftSession s, CareerRecord career)
+            => s.RansomEncryptedFiles > 0 && string.IsNullOrEmpty(s.FatalIncident) && career.HasFlag(BackupFlag);
+
         public static NightRecord Close(ShiftSession s, EvaluationResult result, PaySlip slip)
         {
             var career = CareerRecord.Current;
@@ -58,6 +66,14 @@ namespace NightShift.Core
                 if (!n.damaged) delta += 2;
                 delta += result.Rank == "S" ? 3 : result.Rank == "A" ? 2 : result.Rank == "B" ? 1 : result.Rank == "D" ? -1 : 0;
                 delta += System.Math.Min(3, s.CorrectReports);
+                // バックアップの問い合わせ（A11・A21・Y6）を間違えていた: 身代金ウイルスを途中で止めても、
+                // 暗号化されたファイルをバックアップから戻せない（正しく答えていれば、バックアップから戻せる）
+                if (BackupLost(s, career))
+                {
+                    delta -= BackupLostTrust;
+                    career.ClearFlag(BackupFlag);
+                    s.Damage.Add(BackupLostDamage);
+                }
                 n.trustDelta = delta;
                 career.AddTrust(delta);
             }

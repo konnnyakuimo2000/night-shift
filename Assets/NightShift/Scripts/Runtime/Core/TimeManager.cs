@@ -10,7 +10,6 @@ namespace NightShift.Core
     {
         public float CurrentMinute { get; private set; }
         public float StartMinute { get; }
-        public float EndMinute { get; }
         public float RealSecondsPerGameMinute { get; set; }
         public float DebugTimeScale { get; set; } = 1f;
         public bool Running { get; private set; }
@@ -20,10 +19,9 @@ namespace NightShift.Core
 
         int _lastWholeMinute = -1;
 
-        public TimeManager(float start, float end, float realSecondsPerGameMinute)
+        public TimeManager(float start, float realSecondsPerGameMinute)
         {
             StartMinute = start;
-            EndMinute = end;
             CurrentMinute = start;
             RealSecondsPerGameMinute = Math.Max(0.01f, realSecondsPerGameMinute);
         }

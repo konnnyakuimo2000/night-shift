@@ -19,7 +19,6 @@ MonoBehaviour:
   description: "\u9078\u3093\u3060\u30ED\u30B0\u3068\u540C\u3058\u63A5\u7D9A\u5143\u30FB\u5229\u7528\u8005\u306E\u884C\u3092\u8272\u4ED8\u3051\u3057\u3001\u76F4\u8FD110\u5206\u306E\u4EF6\u6570\u3092\u96C6\u8A08\u3057\u307E\u3059\u3002"
   unlockDay: 8
   prerequisite: HW_MONITOR_2
-  grantsFeature: TOOL_LOG_ANALYZER
   consumable: 0
   maxStock: 1
   icon: log

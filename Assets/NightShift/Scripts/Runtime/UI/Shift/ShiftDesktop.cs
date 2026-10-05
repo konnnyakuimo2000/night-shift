@@ -24,7 +24,6 @@ namespace NightShift.UI.Shift
         RectTransform _modalLayer;
         GameObject _pause;
         DebugOverlay _overlay;
-        RetroWindow _completeWindow;
 
         public static ShiftDesktop Build(RectTransform parent, GameManager gm, ShiftSession s)
         {
@@ -168,14 +167,6 @@ namespace NightShift.UI.Shift
             foreach (var ws in _stations) ws.RefreshSwitcher();
             _taskbar?.RefreshMonitors();
             AudioFx.Click();
-        }
-
-        /// <summary>ツールが起動しているか（効果があるのは起動中だけ）</summary>
-        public bool ToolRunning(string id)
-        {
-            if (!HasTool(id)) return false;
-            foreach (var ws in _stations) if (ws.Windows.Find("tool:" + id) != null) return true;
-            return false;
         }
 
         public T FindTool<T>(string id) where T : Component
@@ -369,7 +360,6 @@ namespace NightShift.UI.Shift
         // ---------------- 入力の受け付け ----------------
         /// <summary>ブルースクリーン・停電などの演出で、メインの操作ができない</summary>
         public bool EffectBlocking { get; set; }
-        public bool IsPaused => _pause != null;
 
         /// <summary>メインモニターの業務画面への判定キー（許可・拒否など）を受け付けない状態</summary>
         public bool InputBlocked => _pause != null || ModalOpen || CurrentMonitor != 0 || EffectBlocking;

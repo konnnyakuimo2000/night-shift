@@ -17,7 +17,6 @@ namespace NightShift.UI.Shift
         RetroDropdown _type;
         RetroToggle _follow;
         bool _dirty = true;
-        int _seenCount = -1;
         List<LogEntry> _filtered = new List<LogEntry>();
         Text _detail;
 
@@ -115,7 +114,6 @@ namespace NightShift.UI.Shift
             _table.SetRows(_filtered, e => new[] { TimeManager.FormatWithSeconds(e.Time), e.Source, e.Destination, e.User, e.EventType, e.Result, DetailText(e) });
             if (_follow.Value && atBottom) _table.ScrollToBottom();
             _w.SetStatus(1, $"表示 {_filtered.Count} / 全 {_d.S.Logs.Entries.Count} 件");
-            _seenCount = _d.S.Logs.Entries.Count;
             _dirty = false;
         }
 

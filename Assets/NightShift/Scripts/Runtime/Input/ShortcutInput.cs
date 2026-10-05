@@ -61,7 +61,6 @@ namespace NightShift.Controls
             if (_frameNo == Time.frameCount) return _frame;
             _frameNo = Time.frameCount;
             _frame.Clear();
-            KeyboardCapture.Drain(_frame);
 
             bool ctrl = Ctrl, alt = Alt, shift = Shift, win = Win;
             bool text = TextFieldFocused;
@@ -108,8 +107,6 @@ namespace NightShift.Controls
             }
             return _frame;
         }
-
-        public static bool Has(List<Shortcut> list, Shortcut s) => list.Contains(s);
 
         /// <summary>キー設定画面でキー入力を待っている間 true（ゲーム側のショートカットを止める）</summary>
         public static bool Capturing;

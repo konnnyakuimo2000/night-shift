@@ -49,18 +49,6 @@ namespace NightShift.Data
             return days.Count > 0 ? days[0] : null;
         }
 
-        public NetworkNodeDefinition GetNode(string id)
-        {
-            foreach (var n in nodes) if (n != null && n.nodeId == id) return n;
-            return null;
-        }
-
-        public NetworkNodeDefinition GetNodeForService(string serviceId)
-        {
-            foreach (var n in nodes)
-                if (n != null && n.FindByService(serviceId) != null) return n;
-            return null;
-        }
 
         /// <summary>参照切れがないか（壊れたアセットでの起動を防ぐ）</summary>
         public bool IsValid()

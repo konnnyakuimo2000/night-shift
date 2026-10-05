@@ -19,7 +19,6 @@ MonoBehaviour:
   description: "\u30EA\u30E2\u30FC\u30C8\u63A5\u7D9A\u4E2D\u306EPC\u306E\u72B6\u614B\uFF08Wi-Fi\u30FBIP\u30FBDNS\u30FB\u30D7\u30EA\u30F3\u30BF\u30FC\u30FB\u30D7\u30ED\u30BB\u30B9\uFF09\u3092\u4E00\u89A7\u8868\u793A\u3057\u307E\u3059\u3002"
   unlockDay: 8
   prerequisite: HW_MONITOR_2
-  grantsFeature: TOOL_REMOTE_KIT
   consumable: 0
   maxStock: 1
   icon: remote

@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace NightShift.Core
 {
-    public enum GameState { Title, ClockIn, Login, DayIntro, Briefing, Shift, Complete, Evaluation, ComingSoon }
+    public enum GameState { Title, ClockIn, Login, DayIntro, Briefing, Shift, Complete, Evaluation }
 
     /// <summary>
     /// GameManager
@@ -77,20 +77,14 @@ namespace NightShift.Core
             if (Database != null && !string.IsNullOrEmpty(Database.companyNameJa)) MailManager.CompanyName = Database.companyNameJa;
             AudioFx.Init(gameObject);
             RetroCursor.Install(gameObject);
-            KeyboardCapture.Install();
             BuildCanvas();
         }
 
         void Start() => ShowTitle();
 
-        void OnApplicationFocus(bool focus) => KeyboardCapture.AppFocused = focus;
-
-        void OnApplicationQuit() => KeyboardCapture.Uninstall();
-
         void OnDestroy()
         {
             GameSettings.Changed -= ApplyUiScale;
-            if (Instance == this) KeyboardCapture.Uninstall();
         }
 
         void BuildCanvas()
@@ -236,7 +230,7 @@ namespace NightShift.Core
                 CurrentDay = next;
                 ShowDayStart();
             }
-            else ShowComingSoon();
+            else ShowEnding();
         }
 
         EndingResolver.GameOver _pendingGameOver;
@@ -305,8 +299,6 @@ namespace NightShift.Core
             _snapshotDay = -1;
             ShowDayStart();
         }
-
-        void ShowComingSoon() => SetScreen(ComingSoonScreen.Build(ScreenLayer, CurrentDay, CurrentDay + 1, RestartDay, ShowTitle), GameState.ComingSoon);
 
         // ---------------- Progress ----------------
         const string ProgressKey = "NightShift.ReachedDay";

@@ -21,7 +21,6 @@ namespace NightShift.Data
         public const string ServerManagement = "SERVER_MANAGEMENT";
         // ---- 本番業務（DAY8〜） ----
         public const string Store = "STORE";                       // 社内購買システム
-        public const string News = "NEWS";                         // 朝のネットニュース
         public const string IpCheck = "IP_CHECK";                  // 接続元IPと端末IPの照合（DAY9）
         public const string WorkStatus = "WORK_STATUS";            // 勤務状態のルール（DAY10）
         public const string FirewallBlock = "FIREWALL_BLOCK";      // 接続元の遮断（DAY11）
@@ -50,7 +49,6 @@ namespace NightShift.Data
                 case SecurityInfo: return "セキュリティ情報";
                 case ServerManagement: return "サーバー運用管理";
                 case Store: return "社内購買システム";
-                case News: return "ネットニュース";
                 case IpCheck: return "接続元IPの照合";
                 case WorkStatus: return "勤務状態の確認";
                 case FirewallBlock: return "接続元の遮断";

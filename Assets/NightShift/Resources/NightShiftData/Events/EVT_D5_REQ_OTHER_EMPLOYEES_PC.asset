@@ -19,7 +19,6 @@ MonoBehaviour:
   maximumDay: 8
   triggerWindow: {x: 130, y: 140}
   weight: 1
-  severity: 1
   userType: 0
   employeeConditions:
     departments: []

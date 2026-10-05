@@ -101,5 +101,34 @@ namespace NightShift.Tests
             var slip = Payroll.Compute(20, new EvaluationResult { Overall = 0, Rank = "D" }, ev, new PayrollSettings());
             Assert.AreEqual(1000, slip.total);
         }
+        static int CloseRansomNight(bool wrongBackup, int encrypted)
+        {
+            if (wrongBackup) CareerRecord.Current.SetFlag(NightClosing.BackupFlag);
+            var s = TestData.Session(20);
+            s.RansomEncryptedFiles = encrypted;
+            s.Complete();
+            var result = s.Evaluation.Compute();
+            return NightClosing.Close(s, result, Payroll.Compute(20, result, s.Evaluation, TestData.Db.payroll)).trustDelta;
+        }
+
+        [Test]
+        public void WrongBackupAnswer_CostsTrust_WhenRansomEncryptedSomeFiles()
+        {
+            int ok = CloseRansomNight(false, 2);
+            FreshCareer();
+            int wrong = CloseRansomNight(true, 2);
+            Assert.AreEqual(ok - NightClosing.BackupLostTrust, wrong);
+            Assert.IsFalse(CareerRecord.Current.HasFlag(NightClosing.BackupFlag), "罰は1回で終わる");
+        }
+
+        [Test]
+        public void WrongBackupAnswer_IsKept_UntilRansomHappens()
+        {
+            int ok = CloseRansomNight(false, 0);
+            FreshCareer();
+            int wrong = CloseRansomNight(true, 0);
+            Assert.AreEqual(ok, wrong);
+            Assert.IsTrue(CareerRecord.Current.HasFlag(NightClosing.BackupFlag));
+        }
     }
 }

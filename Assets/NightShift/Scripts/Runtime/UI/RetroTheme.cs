@@ -12,8 +12,6 @@ namespace NightShift.UI
     {
         // ---- colors ----
         public static readonly Color Face = C(212, 208, 200);
-        public static readonly Color FaceDark = C(190, 186, 178);
-        public static readonly Color Light = C(232, 230, 224);
         public static readonly Color Highlight = Color.white;
         public static readonly Color Shadow = C(128, 128, 128);
         public static readonly Color DarkShadow = C(64, 64, 64);
@@ -30,7 +28,6 @@ namespace NightShift.UI
         public static readonly Color TitleInactiveB = C(192, 192, 192);
         public static readonly Color Desktop = C(46, 74, 98);
         public static readonly Color RemoteDesktop = C(0, 112, 112);
-        public static readonly Color FieldBg = Color.white;
         public static readonly Color FieldReadOnly = C(236, 233, 226);
         public static readonly Color Tooltip = C(255, 255, 225);
         public static readonly Color Navy = C(0, 0, 128);
@@ -81,7 +78,6 @@ namespace NightShift.UI
         public const int TitleBarHeight = 18;
         public const int MenuBarHeight = 19;
         public const int StatusBarHeight = 20;
-        public const int ButtonHeight = 23;
         public const int RowHeight = 17;
 
         // ---- sprites ----

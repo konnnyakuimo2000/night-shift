@@ -19,7 +19,6 @@ MonoBehaviour:
   description: "\u62C5\u5F53\u8005\u7528\u30EF\u30FC\u30AF\u30B9\u30C6\u30FC\u30B7\u30E7\u30F3\u306E\u753B\u9762\u3002\u793E\u5185\u306E\u6255\u3044\u4E0B\u3052\u54C1\u3002\u30C4\u30FC\u30EB\u3092\u4F7F\u3046\u305F\u3081\u306E\u524D\u63D0\u3067\u3059\u3002"
   unlockDay: 8
   prerequisite: 
-  grantsFeature: HW_MONITOR_2
   consumable: 0
   maxStock: 1
   icon: pc

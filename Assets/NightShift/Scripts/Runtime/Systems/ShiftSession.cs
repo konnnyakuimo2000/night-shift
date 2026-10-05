@@ -47,6 +47,8 @@ namespace NightShift.Systems
         // ---- 本番業務の夜の記録（夜の終わりに CareerRecord へまとめる） ----
         /// <summary>この夜に出た被害（情報漏えい・改ざん・感染の拡大など）</summary>
         public readonly System.Collections.Generic.List<string> Damage = new System.Collections.Generic.List<string>();
+        /// <summary>身代金ウイルス（V6）に暗号化されたファイルの数（途中で止めた場合も数える）</summary>
+        public int RansomEncryptedFiles;
         public int CorrectReports, WrongReports, AiHandled, AutoAllowed, AiTokensUsed;
         public bool OperatorCompromised;
         public bool Overtime;
@@ -149,7 +151,7 @@ namespace NightShift.Systems
             Day = day;
             Seed = seed;
             Rng = new Random(seed);
-            Time = new TimeManager(day.startMinute, day.endMinute, day.realSecondsPerGameMinute);
+            Time = new TimeManager(day.startMinute, day.realSecondsPerGameMinute);
             Employees = new EmployeeManager(db.employees, Rng);
             Network = new NetworkManager(db.nodes);
             Logs = new LogManager();

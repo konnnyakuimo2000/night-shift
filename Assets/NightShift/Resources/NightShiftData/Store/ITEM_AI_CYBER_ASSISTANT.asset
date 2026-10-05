@@ -20,7 +20,6 @@ MonoBehaviour:
     30,000 \u30C8\u30FC\u30AF\u30F3\u307E\u3067\u3002AI \u3082\u9593\u9055\u3048\u307E\u3059\u3002"
   unlockDay: 25
   prerequisite: HW_MONITOR_2
-  grantsFeature: AI_CYBER_ASSISTANT
   consumable: 0
   maxStock: 1
   icon: debug

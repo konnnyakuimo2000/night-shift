@@ -75,7 +75,6 @@ MonoBehaviour:
   threats:
   - {fileID: 11400000, guid: 9405a2b6c2f606d4b8681180ca3cee3d, type: 2}
   - {fileID: 11400000, guid: 14f574eeaa294254a80a3e2ea2e0590f, type: 2}
-  backgroundTrafficTemplate: {fileID: 0}
   backgroundLogChance: 0.3
   backgroundActivityScale: 1
   randomEvents: 0
@@ -86,7 +85,6 @@ MonoBehaviour:
   violationPool: []
   helpDeskCount: 2
   helpDeskPool: []
-  weekLabel: 
   tutorialGateUntilMinute: 240
   tutorialGateBreathMinutes: 1.5
   tutorialGateMaxDelayMinutes: 9999

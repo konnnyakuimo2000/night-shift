@@ -20,7 +20,6 @@ MonoBehaviour:
     \u304C\u524D\u63D0\uFF09\u3002"
   unlockDay: 17
   prerequisite: TOOL_VACCINE
-  grantsFeature: TOOL_VACCINE_SERVER
   consumable: 0
   maxStock: 1
   icon: shield

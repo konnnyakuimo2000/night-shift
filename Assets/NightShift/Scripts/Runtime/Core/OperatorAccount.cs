@@ -16,7 +16,6 @@ namespace NightShift.Core
         public string UserId = GameManager.DefaultOperatorName;
         public string Password = InitialPassword;
         public bool Changed;             // 初期パスワードから変更したか
-        public int ChangedOnDay;         // 変更した日
         public bool WrittenDown;         // 付箋に書いてモニターに貼ったか
         public int ResetCount;           // 「パスワードを忘れた」で初期化した回数
         public int Strength;             // 0-4（PasswordPolicy.Evaluate）
@@ -67,7 +66,6 @@ namespace NightShift.Core
         {
             Password = newPassword;
             Changed = true;
-            ChangedOnDay = day;
             WrittenDown = writtenDown;
             Strength = PasswordPolicy.Evaluate(newPassword, UserId, out Weaknesses);
             Save();

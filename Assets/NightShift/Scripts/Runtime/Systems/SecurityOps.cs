@@ -20,8 +20,6 @@ namespace NightShift.Systems
         readonly HashSet<string> _hostileIps = new HashSet<string>();   // 攻撃に使われた接続元（評価用）
 
         public IReadOnlyList<string> Blocked => _blocked;
-        public IEnumerable<string> Isolated => _isolated;
-        public IEnumerable<string> Suspended => _suspended;
         public event Action Changed;
 
         public SecurityOps(ShiftSession s) { _s = s; }

@@ -17,8 +17,6 @@ namespace NightShift.Data
         public int unlockDay = 8;
         [Tooltip("先に持っている必要がある商品（例: ツールはサブモニターが前提）")]
         public string prerequisite;
-        [Tooltip("付与する機能ID（Features / ツールID）。消耗品は空")]
-        public string grantsFeature;
         [Tooltip("使うとなくなる（缶コーヒー・追加トークン・定義ファイル更新）")]
         public bool consumable;
         [Tooltip("消耗品を持てる数")]

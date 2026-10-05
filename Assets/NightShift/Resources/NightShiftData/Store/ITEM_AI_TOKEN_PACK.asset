@@ -19,7 +19,6 @@ MonoBehaviour:
   description: "\u4ECA\u591C\u4F7F\u3048\u308B\u30C8\u30FC\u30AF\u30F3\u3092 +20,000\u3002"
   unlockDay: 25
   prerequisite: AI_CYBER_ASSISTANT
-  grantsFeature: 
   consumable: 1
   maxStock: 3
   icon: debug

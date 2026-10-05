@@ -48,15 +48,6 @@ namespace NightShift.UI
             return rt;
         }
 
-        public static RectTransform AnchorBottomRight(this RectTransform rt, float right, float bottom, float w, float h)
-        {
-            rt.anchorMin = rt.anchorMax = new Vector2(1, 0);
-            rt.pivot = new Vector2(1, 0);
-            rt.anchoredPosition = new Vector2(-right, bottom);
-            rt.sizeDelta = new Vector2(w, h);
-            return rt;
-        }
-
         public static RectTransform AnchorTopRight(this RectTransform rt, float right, float top, float w, float h)
         {
             rt.anchorMin = rt.anchorMax = new Vector2(1, 1);
@@ -342,13 +333,6 @@ namespace NightShift.UI
             var fit = content.gameObject.AddComponent<ContentSizeFitter>();
             fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             return vl;
-        }
-
-        public static void SetHeight(GameObject go, float h)
-        {
-            var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
-            le.minHeight = h;
-            le.preferredHeight = h;
         }
 
         /// <summary>水平の区切り線（凹み）</summary>

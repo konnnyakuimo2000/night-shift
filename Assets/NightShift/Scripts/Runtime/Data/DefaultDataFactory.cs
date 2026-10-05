@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static partial class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 28;
+        public const int DataVersion = 29;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -106,7 +106,6 @@ namespace NightShift.Data
                 e.laptopDeviceId = laptop ?? "";
                 e.vpnEnabled = !string.IsNullOrEmpty(laptop);
                 e.normalAccessTargets.AddRange(targets);
-                e.normalBehavior.usesVpn = e.vpnEnabled;
                 e.normalBehavior.activityPerHour = 4f + lit;
                 foreach (var t in targets)
                     e.normalBehavior.serviceWeights.Add(new ServiceWeight { serviceId = t, weight = t == "WEB" || t == "MAIL" ? 3f : 1.5f });
@@ -208,7 +207,6 @@ namespace NightShift.Data
             EventDefinition Unregistered(string id, Vector2 w)
             {
                 var e = Ev(id, w);
-                e.severity = Severity.Low;
                 e.sourceType = SourceType.UnregisteredDevice;
                 e.deviceNamePattern = "NB-PRIV{n}";
                 e.employeeConditions.requiredPermissions.Add(perms["FILE_ACCESS"]);
@@ -219,7 +217,6 @@ namespace NightShift.Data
             EventDefinition OtherDevice(string id, Vector2 w, NetworkNodeDefinition dest, string access, string service)
             {
                 var e = Ev(id, w);
-                e.severity = Severity.Low;
                 e.sourceType = SourceType.OtherEmployeeDevice;
                 e.employeeConditions.requiredNormalTargets.Add(service);
                 e.destination = dest; e.accessType = access;
@@ -229,7 +226,6 @@ namespace NightShift.Data
             EventDefinition NotAnEmployee(string id, Vector2 w, string name, string empId, SourceType source, string devicePattern, NetworkNodeDefinition dest, string access)
             {
                 var e = Ev(id, w);
-                e.severity = Severity.Medium;
                 e.userType = UserType.NamedAccount;
                 e.accountName = name;
                 e.displayEmployeeId = empId;
@@ -241,7 +237,6 @@ namespace NightShift.Data
             EventDefinition NoPermission(string id, Vector2 w, string dept, string missingPerm, NetworkNodeDefinition dest, string access)
             {
                 var e = Ev(id, w);
-                e.severity = Severity.Medium;
                 if (!string.IsNullOrEmpty(dept)) e.employeeConditions.departments.Add(dept);
                 e.employeeConditions.excludedPermissions.Add(perms[missingPerm]);
                 e.destination = dest; e.accessType = access;
@@ -252,7 +247,6 @@ namespace NightShift.Data
                 var e = Ev(id, w);
                 e.category = EventCategory.Threat;
                 e.notifyAsSecurityAlert = true;
-                e.severity = Severity.High;
                 e.userType = UserType.Unknown;
                 e.sourceType = SourceType.ExternalUnknown;
                 e.deviceNamePattern = "UNKNOWN-{n}";
@@ -319,7 +313,6 @@ namespace NightShift.Data
             d6VpnLegit.destination = auth; d6VpnLegit.accessType = "VPN接続";
             // VPN を使わずに社外から社内のシステムへ（VPN許可のある社員でも拒否）
             var d6DirectFile = Ev("D6_REQ_DIRECT_FILE_FROM_OUTSIDE", new Vector2(75, 85));
-            d6DirectFile.severity = Severity.Medium;
             d6DirectFile.sourceType = SourceType.RegisteredLaptopExternal;
             d6DirectFile.employeeConditions.requireVpnEnabled = true;
             d6DirectFile.employeeConditions.requireLaptop = true;
@@ -327,13 +320,11 @@ namespace NightShift.Data
             d6DirectFile.destination = file; d6DirectFile.accessType = "共有ファイル（閲覧）";
             // VPN利用が「不可」の社員
             var d6NoVpn = Ev("D6_REQ_NO_VPN", new Vector2(110, 120));
-            d6NoVpn.severity = Severity.Medium;
             d6NoVpn.sourceType = SourceType.RegisteredDeviceExternal;
             d6NoVpn.employeeConditions.requireVpnDisabled = true;
             d6NoVpn.destination = auth; d6NoVpn.accessType = "VPN接続";
             // 最後の問題: サーバー管理者の社員が自宅から直接「管理ログイン」→ 管理者でも VPN接続 以外は拒否
             var d6Final = Ev("D6_REQ_FINAL_ADMIN_FROM_HOME", new Vector2(195, 204));
-            d6Final.severity = Severity.Medium;
             d6Final.sourceType = SourceType.RegisteredLaptopExternal;
             d6Final.employeeConditions.requireOnShift = false; // 退勤後に自宅から
             d6Final.employeeConditions.requireVpnEnabled = true;
@@ -344,7 +335,6 @@ namespace NightShift.Data
             var d6ScanAdminReq = Ev("D6_REQ_SCANNER_ADMIN", Vector2.zero, "Threats");
             d6ScanAdminReq.category = EventCategory.Threat;
             d6ScanAdminReq.notifyAsSecurityAlert = true;
-            d6ScanAdminReq.severity = Severity.High;
             d6ScanAdminReq.userType = UserType.Unknown;
             d6ScanAdminReq.sourceType = SourceType.AttackerSource;
             d6ScanAdminReq.deviceNamePattern = "UNKNOWN-{n}";
@@ -368,7 +358,6 @@ namespace NightShift.Data
             threatReq.destination = admin; threatReq.accessType = "管理ログイン";
             threatReq.isMalicious = true;
             threatReq.notifyAsSecurityAlert = true;
-            threatReq.severity = Severity.High;
             threatReq.timeoutMinutes = 35;
 
             var threat = b.Add(ScriptableObject.CreateInstance<ThreatScenarioDefinition>(), "Threats", "THREAT_WebProbeToAdmin");

@@ -6,7 +6,6 @@ namespace NightShift.Data
 {
     public enum EventCategory { Normal, HelpDesk, Threat }
     public enum EventKind { BackgroundTraffic, ConnectionRequest, LogEntry }
-    public enum Severity { Info, Low, Medium, High }
 
     public enum UserType
     {
@@ -74,7 +73,6 @@ namespace NightShift.Data
         [Tooltip("発生時間帯（ゲーム内分。00:00=0, 04:00=240）")]
         public Vector2 triggerWindow = new Vector2(0, 240);
         [Min(0f)] public float weight = 1f;
-        public Severity severity = Severity.Info;
 
         [Header("利用者")]
         public UserType userType = UserType.Employee;

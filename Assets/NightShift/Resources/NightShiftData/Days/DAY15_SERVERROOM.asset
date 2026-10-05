@@ -67,7 +67,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d69455dc0821a2a44b11037f1d9c1132, type: 2}
   - {fileID: 11400000, guid: 1b298415e0c0af7498b0b05ed89213fe, type: 2}
   - {fileID: 11400000, guid: ef2087437c6f3ec43a8fa5d1532b8c0a, type: 2}
-  backgroundTrafficTemplate: {fileID: 0}
   backgroundLogChance: 0.25
   backgroundActivityScale: 1
   randomEvents: 1
@@ -140,7 +139,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 995161c47f62c4246a5f3c0705e8a8d1, type: 2}
   - {fileID: 11400000, guid: b81d2afcc377cff42a8e8f08fa92c233, type: 2}
   - {fileID: 11400000, guid: b90f9f588d7025049a6091e6b01d904b, type: 2}
-  weekLabel: "\u7B2C3\u9031"
   tutorialGateUntilMinute: 0
   tutorialGateBreathMinutes: 2
   tutorialGateMaxDelayMinutes: 30
@@ -171,7 +169,6 @@ MonoBehaviour:
   - NETWORK_MAP
   - SECURITY_INFO
   - STORE
-  - NEWS
   - IP_CHECK
   - WORK_STATUS
   - FIREWALL_BLOCK

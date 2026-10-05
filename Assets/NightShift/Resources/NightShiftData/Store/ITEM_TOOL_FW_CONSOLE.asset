@@ -19,7 +19,6 @@ MonoBehaviour:
   description: "IP\u30A2\u30C9\u30EC\u30B9\u306E\u7BC4\u56F2\uFF08\u4F8B: 198.51.100.*\uFF09\u3092\u307E\u3068\u3081\u3066\u906E\u65AD\u3067\u304D\u307E\u3059\u3002"
   unlockDay: 11
   prerequisite: HW_MONITOR_2
-  grantsFeature: TOOL_FW_CONSOLE
   consumable: 0
   maxStock: 1
   icon: firewall

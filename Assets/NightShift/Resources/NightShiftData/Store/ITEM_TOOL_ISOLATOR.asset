@@ -19,7 +19,6 @@ MonoBehaviour:
   description: "\u793E\u54E1PC\u3092\u4E00\u89A7\u304B\u3089\u9078\u3093\u3067\u3001\u30DC\u30BF\u30F31\u3064\u3067\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u304B\u3089\u9694\u96E2\u3057\u307E\u3059\u3002"
   unlockDay: 16
   prerequisite: HW_MONITOR_2
-  grantsFeature: TOOL_ISOLATOR
   consumable: 0
   maxStock: 1
   icon: lock

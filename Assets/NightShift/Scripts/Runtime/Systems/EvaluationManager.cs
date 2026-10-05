@@ -84,16 +84,6 @@ namespace NightShift.Systems
             }
         }
 
-        public float AverageRequestResponse
-        {
-            get
-            {
-                if (_requestResponseTimes.Count == 0) return 0;
-                float s = 0; foreach (var t in _requestResponseTimes) s += t;
-                return s / _requestResponseTimes.Count;
-            }
-        }
-
         static int Clamp(float v) => (int)Math.Round(Math.Max(0, Math.Min(100, v)));
 
         public EvaluationResult Compute()
