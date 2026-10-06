@@ -46,7 +46,7 @@ namespace NightShift.Tests
             }
         }
 
-        IEnumerator Setup()
+        IEnumerator Setup(bool clean = true)
         {
             for (int i = 0; i < 10 && GameManager.Instance == null; i++) yield return null;
             _gm = GameManager.Instance ?? new GameObject("NightShift.GameManager").AddComponent<GameManager>();
@@ -61,7 +61,7 @@ namespace NightShift.Tests
             _gm.Canvas.planeDistance = 10;
             _dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "Screenshots"));
             Directory.CreateDirectory(_dir);
-            foreach (var f in Directory.GetFiles(_dir, "*.png")) File.Delete(f);
+            if (clean) foreach (var f in Directory.GetFiles(_dir, "*.png")) File.Delete(f);
         }
 
         void Clear()
@@ -242,6 +242,61 @@ namespace NightShift.Tests
                     yield return Shot($"{ending.Id}_{ending.Title}_2新聞", 5f);
                 }
                 else yield return Shot($"{ending.Id}_{ending.Title}", 5f);
+            }
+        }
+        /// <summary>ストアと各ツールの画面（ツールを全部持たせた一時的な記録で撮る。セーブには書き込まない）</summary>
+        [UnityTest, Category("Screenshots"), Explicit("画面の確認用"), Timeout(600000)]
+        public IEnumerator CaptureStoreAndTools()
+        {
+            _original = CareerRecord.Current;
+            CareerRecord.SaveDisabled = true;
+            try
+            {
+                yield return Setup(false);
+                var db = _gm.Database;
+                var career = new CareerRecord { seed = 7, trust = 70 };
+                career.vaccineDefinitionDay = 20;
+                CareerRecord.SetCurrentForTests(career);
+
+                // ストア（買う前: モニター1台目だけ持っている）
+                career.AddItem(Items.Monitor1);
+                var d = NewDesktop(25, null, 30f);
+                StoreView.Open(d);
+                yield return Shot("S01_ストア", 1f);
+
+                // ツールを全部持たせて、サブモニターで1つずつ起動する
+                foreach (var it in db.storeItems)
+                    if (it != null && !it.consumable && !career.Owns(it.itemId)) career.AddItem(it.itemId);
+                string[][] tools =
+                {
+                    new[] { Items.ProfilePanel, "社員情報パネル" }, new[] { Items.AutoReview, "自動審査ツール" }, new[] { Items.LogAnalyzer, "ログ解析" },
+                    new[] { Items.FwConsole, "遮断コンソール" }, new[] { Items.MailInspector, "メール差出人チェッカー" }, new[] { Items.RemoteKit, "リモート診断キット" },
+                    new[] { Items.Isolator, "端末隔離ツール" }, new[] { Items.ServerMonitor, "サーバー監視ダッシュボード" }, new[] { Items.Correlator, "相関タイムライン" },
+                    new[] { Items.Vaccine, "VACCINE99" }, new[] { Items.SocAi, "SOC-AI" },
+                };
+                int n = 1;
+                foreach (var t in tools)
+                {
+                    d = NewDesktop(25, null, 150f);
+                    // 情報を出すツールのために、保留中の要求を1つ選んでおく
+                    if (d.S.Requests.Pending.Count > 0) d.SelectRequest(d.S.Requests.Pending[0]);
+                    d.RebuildMonitors();
+                    var ws = d.Stations[0];
+                    d.ShowMonitor(1);
+                    Tools.Launch(ws, t[0]);
+                    yield return Shot($"T{n:00}_{t[1]}", 1.2f);
+                    n++;
+                }
+                // サブモニター全体（デスクトップのアイコン）
+                d = NewDesktop(25, null, 30f);
+                d.RebuildMonitors();
+                d.ShowMonitor(1);
+                yield return Shot("T00_サブモニター", 1f);
+            }
+            finally
+            {
+                CareerRecord.SetCurrentForTests(_original);
+                CareerRecord.SaveDisabled = false;
             }
         }
     }

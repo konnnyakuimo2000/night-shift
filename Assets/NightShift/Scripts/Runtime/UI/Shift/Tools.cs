@@ -178,7 +178,7 @@ namespace NightShift.UI.Shift
         {
             if (_warning == null) return;
             bool ipOff = !CareerRecord.Current.autoReviewConditions.Contains(Conditions[IpMatchIndex]);
-            _warning.text = ipOff ? "⚠ IP の照合がオフです。接続元を偽ったなりすまし接続も、自動で許可されます。" : "";
+            _warning.text = ipOff ? "⚠IPの照合がオフです。接続元を偽ったなりすまし接続も、自動で許可されます。" : "";
         }
 
         void SetEnabled(bool v, string message)
