@@ -39,7 +39,16 @@ namespace NightShift.UI.Shift
     public class VaccineTool : ToolWindow
     {
         Text _status, _defs, _scanLabel, _result;
-        Image _progress;
+        Image _progress, _resultIcon;
+        ToolSpinner _spinner;
+        ToolPulse _shieldPulse;
+        static readonly string[] Paths =
+        {
+            "C:\\WINDOWS\\SYSTEM\\KERNEL32.DLL", "C:\\WINDOWS\\SYSTEM\\USER32.DLL", "C:\\WINDOWS\\EXPLORER.EXE",
+            "C:\\WINDOWS\\SYSTEM\\MSVCRT.DLL", "C:\\PROGRA~1\\NEXUS\\NXAGENT.EXE", "C:\\WINDOWS\\TEMP\\~DF12A3.TMP",
+            "C:\\MY DOCUMENTS\\見積書_0520.DOC", "C:\\WINDOWS\\SYSTEM\\WINSOCK.DLL", "C:\\AUTOEXEC.BAT", "C:\\CONFIG.SYS",
+            "D:\\SHARE\\営業日報_5月.XLS", "C:\\WINDOWS\\SYSTEM\\SVCHOST.EXE", "C:\\WINDOWS\\START MENU\\STARTUP"
+        };
         FlatButton _ws, _remote, _server;
         string _scanTarget;
         float _scanStart = -1, _scanDoneAt = -1;
@@ -51,6 +60,11 @@ namespace NightShift.UI.Shift
             var top = ToolStyle.Box(p, 0, 1, y, 84);
             var shield = UIFactory.Image(top, RetroTheme.BigIcon("shield"), Color.white, "Shield");
             shield.rectTransform.Place(0, 6, 48, 48);
+            _shieldPulse = shield.gameObject.AddComponent<ToolPulse>();
+            // 検査中は虫眼鏡が回る
+            var spin = UIFactory.Rect("Spinner", top);
+            spin.AnchorTopRight(4, 4, 48, 48);
+            _spinner = ToolSpinner.Create(spin, "search", 32, 7);
             _status = ToolStyle.Text(top, "", 62, 4, 400, 24, 16, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
             _defs = ToolStyle.Text(top, "", 62, 32, 420, 20, 12, ToolStyle.Muted, TextAnchor.MiddleLeft);
 
@@ -66,8 +80,10 @@ namespace NightShift.UI.Shift
             var rg = ToolStyle.Box(p, 0, 1, y + 222, 0, "検査結果");
             var resBg = UIFactory.Image(rg, RetroTheme.Field, Color.white, "ResultBg");
             resBg.rectTransform.Stretch();
+            _resultIcon = UIFactory.Image(resBg.transform, RetroTheme.BigIcon("info"), Color.white, "ResultIcon");
+            _resultIcon.rectTransform.Place(8, 8, 32, 32);
             _result = ToolStyle.Text(resBg.transform, "まだ検査していません。", 13, ToolStyle.Ink);
-            _result.rectTransform.Stretch(8, 6, 8, 6);
+            _result.rectTransform.Stretch(50, 10, 8, 6);
         }
 
         FlatButton ScanButton(RectTransform row, int i, string label, System.Action a)
@@ -86,6 +102,7 @@ namespace NightShift.UI.Shift
             _scanStart = S.Time.CurrentMinute;
             _scanDoneAt = _scanStart + minutes;
             _result.text = "検査中…";
+            _resultIcon.sprite = RetroTheme.BigIcon("search");
             W.SetStatus(0, "検査中…");
         }
 
@@ -104,12 +121,15 @@ namespace NightShift.UI.Shift
             {
                 float k = Mathf.InverseLerp(_scanStart, _scanDoneAt, S.Time.CurrentMinute);
                 _progress.fillAmount = k;
-                _scanLabel.text = $"検査中… {Mathf.RoundToInt(k * 100)}%（終了予定 {TimeManager.Format(_scanDoneAt)}）";
+                // 当時のウイルス対策ソフトのように、調べているファイル名が次々に流れる
+                _scanLabel.text = $"{Mathf.RoundToInt(k * 100)}%　{Paths[Random.Range(0, Paths.Length)]}";
+                _spinner.Running = true;
                 if (S.Time.CurrentMinute >= _scanDoneAt) Finish();
             }
             else
             {
                 _progress.fillAmount = 0;
+                _spinner.Running = false;
                 _scanLabel.text = career.Owns(Items.VaccineServer) ? "" : "サーバーの検査には「VACCINE 99 Server」が必要です。";
             }
         }
@@ -148,6 +168,8 @@ namespace NightShift.UI.Shift
             _result.text = found.Count == 0
                 ? "<color=#1F7F40><b>ウイルスは見つかりませんでした。</b></color>\n（定義ファイルに載っているウイルスだけを調べています）"
                 : "<color=#B02020><b>ウイルスを見つけました。</b></color>\n" + string.Join("\n", found);
+            _resultIcon.sprite = RetroTheme.BigIcon(found.Count == 0 ? "check" : "warning");
+            ToolFx.Flash(_resultIcon);
             W.SetStatus(0, "検査が終わりました。");
             if (found.Count == 0 && S.Security.Infections != null)
             {
@@ -168,6 +190,11 @@ namespace NightShift.UI.Shift
         Image _meter;
         RetroToggle _auto;
         FlatButton _approve, _reject;
+        ToolSpinner _spinner;
+        ToolLed _autoLed;
+        Text _thinking;
+        bool _busy;
+        readonly List<FlatButton> _asks = new List<FlatButton>();
         EventInstance _proposal;
         bool _proposalAllow;
         readonly StringBuilder _log = new StringBuilder();
@@ -201,12 +228,20 @@ namespace NightShift.UI.Shift
             _auto = UIFactory.Check(row, "全自動モード（承認なしで実行・消費 1.5 倍）", false, null);
             _auto.GetComponent<RectTransform>().Place(0, 108, 420, 22);
             if (_auto.LabelText != null) _auto.LabelText.fontSize = 12;
+            _autoLed = ToolLed.Create(row, 330, 113, 12);
 
             var cg = ToolStyle.Box(p, 0, 1, y + 68, 0, "SOC-AI とのやりとり", ToolStyle.Pad + 186);
             var chatBg = UIFactory.Image(cg, RetroTheme.Field, Color.white, "ChatBg");
             chatBg.rectTransform.Stretch();
             _chat = ToolStyle.Text(chatBg.transform, "", 12, ToolStyle.Ink, TextAnchor.LowerLeft);
             _chat.rectTransform.Stretch(8, 6, 8, 6);
+            // 考えている間: 虫眼鏡が回り「考えています…」
+            var spin = UIFactory.Rect("Spinner", chatBg.transform);
+            spin.AnchorTopRight(8, 6, 44, 44);
+            _spinner = ToolSpinner.Create(spin, "search", 32, 6);
+            spin.gameObject.SetActive(false);
+            _thinking = ToolStyle.Text(chatBg.transform, "", 12, ToolStyle.Muted, TextAnchor.MiddleRight, true);
+            _thinking.rectTransform.AnchorTopRight(56, 18, 200, 20);
             S.Requests.Created += OnCreated;
             Say("SOC-AI です。使えるプラグイン: " + Plugins());
             RefreshProposal();
@@ -217,11 +252,33 @@ namespace NightShift.UI.Shift
             var b = FlatButton.Create(row, $"{label}\n<size=11>{cost:N0} トークン</size>", () =>
             {
                 if (requires != null && !CareerRecord.Current.Owns(requires)) { Say("このプラグインはありません（ツールが必要です）。"); AudioFx.Error(); return; }
+                if (_busy) { AudioFx.Error(); return; }
                 if (!Spend(cost)) return;
-                a();
+                Think(a);
             }, ToolStyle.Violet, false);
             ToolStyle.Cell(b.Rect, i, 3, 0, 48);
             b.Label.fontSize = 13;
+            _asks.Add(b);
+        }
+
+        /// <summary>少し考えてから答える（その間は虫眼鏡が回り、ほかの依頼はできない）</summary>
+        void Think(System.Action a)
+        {
+            _busy = true;
+            foreach (var b in _asks) b.Interactable = false;
+            _spinner.transform.gameObject.SetActive(true);
+            _spinner.Running = true;
+            _thinking.text = "考えています…";
+            ToolFx.Flash(_tokens);
+            Screens.Delay.Run(gameObject, 1.2f, () =>
+            {
+                _busy = false;
+                foreach (var b in _asks) b.Interactable = true;
+                _spinner.Running = false;
+                _spinner.transform.gameObject.SetActive(false);
+                _thinking.text = "";
+                a();
+            });
         }
 
         protected override void OnClosed() { if (D != null && D.S != null) D.S.Requests.Created -= OnCreated; }
@@ -306,6 +363,7 @@ namespace NightShift.UI.Shift
             S.AiHandled++;
             S.Requests.Decide(e, allow ? PlayerAction.Allow : PlayerAction.Block);
             Say($"[全自動] {e.RequestId} を{(allow ? "許可" : "拒否")}（{why}）");
+            if (_autoLed) _autoLed.Pulse(0.4f);
         }
 
         void InvestigateLogs()
@@ -336,6 +394,7 @@ namespace NightShift.UI.Shift
             if (_tokens == null) return;
             _tokens.text = $"残りトークン　{Mathf.Max(0, Left):N0} / {Budget:N0}";
             _meter.fillAmount = Budget > 0 ? Mathf.Clamp01((float)Left / Budget) : 0;
+            if (_auto != null && _auto.Value) _autoLed.Set(ToolFx.LedAmber, 1.5f); else _autoLed.Off();
             if (_proposal != null && _proposal.State != EventState.Pending) { _proposal = null; RefreshProposal(); }
         }
     }

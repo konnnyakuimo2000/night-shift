@@ -92,6 +92,9 @@ namespace NightShift.UI.Shift
         Text _rUser, _rId, _rDevice, _rIp, _rDest, _rTime;
         Text _eName, _eId, _eDevice, _eIp, _eDept, _eWork, _eEmployment, _eVpn, _ePerms;
         GameObject _notFound, _empFields;
+        Image _photo;
+        RectTransform _left, _right;
+        object _last;
 
         protected override void Build(RectTransform p)
         {
@@ -101,6 +104,7 @@ namespace NightShift.UI.Shift
             _body = UIFactory.Rect("Body", p).Stretch(0, y, 0, 0).gameObject;
             var left = ToolStyle.Box(_body.transform, 0, 0.5f, 0, 0, "接続要求の内容");
             var right = ToolStyle.Box(_body.transform, 0.5f, 1, 0, 0, "社員名簿");
+            _left = left; _right = right;
             // 見比べる項目は同じ高さに並べる（利用者↔氏名、端末↔登録端末、接続元↔端末IP）
             _rUser = ToolStyle.Field(left, "利用者", 0, 0, 300);
             _rId = ToolStyle.Field(left, "社員番号", 0, 28, 300, 96, true);
@@ -111,10 +115,15 @@ namespace NightShift.UI.Shift
 
             _empFields = UIFactory.Rect("Fields", right).Stretch().gameObject;
             var f = _empFields.transform;
-            _eName = ToolStyle.Field(f, "氏名", 0, 0, 300);
-            _eId = ToolStyle.Field(f, "社員番号", 0, 28, 300, 96, true);
-            _eDevice = ToolStyle.Field(f, "登録端末", 0, 56, 300, 96, true);
-            _eIp = ToolStyle.Field(f, "端末IP", 0, 84, 300, 96, true);
+            _eName = ToolStyle.Field(f, "氏名", 0, 0, 220);
+            _eId = ToolStyle.Field(f, "社員番号", 0, 28, 220, 96, true);
+            _eDevice = ToolStyle.Field(f, "登録端末", 0, 56, 220, 96, true);
+            _eIp = ToolStyle.Field(f, "端末IP", 0, 84, 220, 96, true);
+            // 社員名簿の顔写真
+            var frame = UIFactory.Image(f, RetroTheme.Field, Color.white, "PhotoFrame");
+            frame.rectTransform.AnchorTopRight(0, 0, 68, 84);
+            _photo = UIFactory.Image(frame.transform, RetroTheme.White, Color.white, "Photo");
+            _photo.rectTransform.Stretch(2, 2, 2, 2);
             _eDept = ToolStyle.Field(f, "部署・役職", 0, 124, 300);
             _eWork = ToolStyle.Field(f, "勤務", 0, 152, 300);
             _eEmployment = ToolStyle.Field(f, "在籍", 0, 180, 300);
@@ -132,6 +141,13 @@ namespace NightShift.UI.Shift
             var e = D.SelectedRequest;
             Show(_empty, _body, e != null);
             if (e == null) return;
+            if (!ReferenceEquals(e, _last))
+            {
+                // 選び直したら、名簿を照合しているように光が走る
+                _last = e;
+                ToolFx.Sweep(_left, 0.5f);
+                ToolFx.Sweep(_right, 0.7f);
+            }
             _rUser.text = e.DisplayUser;
             _rId.text = e.DisplayEmployeeId;
             _rDevice.text = e.Device;
@@ -144,12 +160,13 @@ namespace NightShift.UI.Shift
             if (emp == null) return;
             _eName.text = emp.DisplayName;
             _eId.text = emp.employeeId;
-            _eDevice.text = emp.deviceId + (string.IsNullOrEmpty(emp.laptopDeviceId) ? "" : $"（VPN端末 {emp.laptopDeviceId}）");
+            _eDevice.text = emp.deviceId;
+            _photo.sprite = emp.nameRedacted ? RetroTheme.White : PortraitPainter.Get(emp);
             _eIp.text = D.Unlocked(Features.IpCheck) ? S.Employees.GetIp(emp) : Locked;
             _eDept.text = $"{emp.department} / {emp.position}";
             _eWork.text = D.Unlocked(Features.WorkStatus) ? $"{(emp.onShift ? "勤務中" : "退勤")}（{emp.workHours}）" : Locked;
             _eEmployment.text = D.Unlocked(Features.EmploymentStatus) ? EmployeeData.EmploymentLabel(emp.employment) : Locked;
-            _eVpn.text = emp.vpnEnabled ? "利用できる" : "利用できない";
+            _eVpn.text = (emp.vpnEnabled ? "利用できる" : "利用できない") + (string.IsNullOrEmpty(emp.laptopDeviceId) ? "" : $"（VPN端末 {emp.laptopDeviceId}）");
             if (D.Unlocked(Features.EmployeePermissions))
             {
                 var perms = new List<string>();
@@ -174,6 +191,7 @@ namespace NightShift.UI.Shift
         FlatButton _toggle;
         Text _count, _state;
         GameObject _warning;
+        ToolLed _led;
         protected override float RefreshInterval => 0.5f;
 
         static CareerRecord Career => CareerRecord.Current;
@@ -203,7 +221,8 @@ namespace NightShift.UI.Shift
             }
 
             var sg = ToolStyle.Box(p, 0.58f, 1, y, 268, "自動許可");
-            _state = ToolStyle.Text(sg, "", 0, 0, 220, 22, 15, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _led = ToolLed.Create(sg, 0, 5, 12);
+            _state = ToolStyle.Text(sg, "", 18, 0, 200, 22, 15, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
             _count = ToolStyle.Text(sg, "", 0, 28, 220, 20, 12, ToolStyle.Muted);
             _toggle = ToolStyle.Button(sg, "", 0, 58, 10, 38, Toggle, ToolStyle.Green);
             _toggle.Rect.StretchH(58, 38);
@@ -242,7 +261,8 @@ namespace NightShift.UI.Shift
         {
             if (_state == null) return;
             bool on = On;
-            _state.text = on ? "<color=#1F7F40>● 動作中</color>" : "<color=#667080>○ 停止中</color>";
+            _state.text = on ? "<color=#1F7F40>動作中</color>" : "<color=#667080>停止中</color>";
+            if (on) _led.Set(ToolFx.LedGreen, 0); else _led.Off();
             _toggle.SetText(on ? "自動許可を止める" : "自動許可を始める");
             _toggle.SetAccent(on ? ToolStyle.Red : ToolStyle.Green, true);
             _warning.SetActive(!Career.autoReviewConditions.Contains(Conditions[IpMatchIndex]));
@@ -263,6 +283,8 @@ namespace NightShift.UI.Shift
             S.AutoAllowed++;
             S.Requests.Decide(e, PlayerAction.Allow);
             S.Logs.Add(S.Time.CurrentMinute, e.SourceIp, e.DestinationLabel, RequestManager.UserLabel(e), "CONN-REQ", "AUTO-ALLOWED", e.RequestId + " 自動審査ツール");
+            if (_led) _led.Pulse(0.4f);
+            if (_count) ToolFx.Flash(_count);
         }
 
         /// <summary>自動許可の対象か（社内・非管理系・警告なし ＋ 有効にした条件をすべて満たす）</summary>
@@ -302,8 +324,10 @@ namespace NightShift.UI.Shift
             {
                 int left = Mathf.Max(0, Mathf.CeilToInt(e.TimeoutAt - now));
                 bool auto = Eligible(S, e, Career.autoReviewConditions);
-                return new ToolList.Row($"{e.RequestId}　{e.DisplayUser}", $"{e.SourceLabel} → {e.DestinationLabel}　・{(auto ? "自動の対象" : "手動で審査")}",
-                    expire ? $"残り {left} 分" : null, left <= 5 ? Tone.Bad : left <= 15 ? Tone.Warn : Tone.Info);
+                var row = new ToolList.Row($"{e.RequestId}　{e.DisplayUser}", $"{e.SourceLabel} → {e.DestinationLabel}　・{(auto ? "自動の対象" : "手動で審査")}",
+                    expire ? $"残り {left} 分" : null, left <= 5 ? Tone.Bad : left <= 15 ? Tone.Warn : Tone.Info, e.NotifyAsSecurityAlert ? "warning" : "network");
+                row.Blink = expire && left <= 5;
+                return row;
             });
             _count.text = $"今夜の自動許可: {S.AutoAllowed} 件";
         }
@@ -315,6 +339,7 @@ namespace NightShift.UI.Shift
         GameObject _empty, _body;
         Text _who, _total, _recent, _fails;
         ToolList _rows;
+        int _lastRecent = -1, _lastFails = -1;
 
         protected override void Build(RectTransform p)
         {
@@ -362,8 +387,11 @@ namespace NightShift.UI.Shift
             _total.text = $"{list.Count} 件";
             _recent.text = $"{recent} 件";
             _fails.text = $"{fails} 件";
+            if (_lastRecent >= 0 && recent > _lastRecent) ToolFx.Flash(_recent);
+            if (_lastFails >= 0 && fails > _lastFails) ToolFx.Flash(_fails);
+            _lastRecent = recent; _lastFails = fails;
             _rows.SetItems(list, e => new ToolList.Row($"{TimeManager.Format(e.Time)}　{e.EventType}", $"{e.Source} → {e.Destination}　{e.User}　{e.Detail}",
-                e.Result, e.Result == "FAIL" ? Tone.Warn : Tone.Neutral));
+                e.Result, e.Result == "FAIL" ? Tone.Warn : Tone.Neutral, e.Result == "FAIL" ? "warning" : "log"));
         }
     }
 
@@ -372,15 +400,20 @@ namespace NightShift.UI.Shift
     {
         InputField _range;
         ToolList _list;
+        ToolLed _led;
+        Text _auto;
+        int _lastAuto = -1;
 
         protected override void Build(RectTransform p)
         {
             float y = ToolStyle.Header(p, "遮断コンソール", "接続元のIPや範囲を、まとめて遮断します。遮断した接続元からの要求は自動で拒否されます。", "firewall", ToolStyle.Red);
-            var ig = ToolStyle.Box(p, 0, 1, y, 120, "遮断する接続元");
+            var ig = ToolStyle.Box(p, 0, 1, y, 146, "遮断する接続元");
             _range = ToolStyle.Input(ig, 0, 0, 280, 34);
             ToolStyle.Button(ig, "遮断する", 290, 0, 140, 34, BlockNow, ToolStyle.Red);
             ToolStyle.Text(ig, "選んだ接続要求・ログの接続元が自動で入ります。\n末尾を「*」にすると範囲で遮断します（例: 198.51.100.*）。", 0, 42, 440, 36, 11, ToolStyle.Muted);
-            var lg = ToolStyle.Box(p, 0, 1, y + 130, 0, "遮断中の接続元");
+            _led = ToolLed.Create(ig, 0, 88, 12);
+            _auto = ToolStyle.Text(ig, "", 18, 84, 420, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            var lg = ToolStyle.Box(p, 0, 1, y + 156, 0, "遮断中の接続元");
             _list = ToolList.Create(lg, ToolStyle.Red, "まだ何も遮断していません。");
             W.SetStatus(0, "選んだ要求の接続元の範囲は自動で入力されます。");
             D.SelectionChanged += Prefill;
@@ -409,7 +442,15 @@ namespace NightShift.UI.Shift
         protected override void Refresh()
         {
             if (_list == null) return;
-            _list.SetItems(new List<string>(S.Security.Blocked), x => new ToolList.Row(x, x.EndsWith("*") ? "範囲で遮断" : "1つの接続元を遮断", "遮断中", Tone.Bad));
+            _list.SetItems(new List<string>(S.Security.Blocked), x => new ToolList.Row(x, x.EndsWith("*") ? "範囲で遮断" : "1つの接続元を遮断", "遮断中", Tone.Bad, "lock"));
+            // 遮断した接続元から来て、自動で拒否された要求の数（増えたらランプが光る）
+            int n = 0;
+            foreach (var e in S.Requests.Processed)
+                if (e.AutoDecided && e.State == EventState.Blocked && S.Security.IsBlocked(e.SourceIp)) n++;
+            _auto.text = $"遮断で自動拒否した要求: {n} 件";
+            if (n > 0) _led.Set(ToolFx.LedRed, 0); else _led.Off();
+            if (_lastAuto >= 0 && n > _lastAuto) { _led.Pulse(0.6f); ToolFx.Flash(_auto); }
+            _lastAuto = n;
         }
     }
 
@@ -418,6 +459,8 @@ namespace NightShift.UI.Shift
     {
         GameObject _empty, _body;
         Text _subject, _addr, _server, _domain;
+        RectTransform _box;
+        object _last;
 
         protected override void Build(RectTransform p)
         {
@@ -426,6 +469,9 @@ namespace NightShift.UI.Shift
                 "メインモニターでメールを開く", "差出人の本当のアドレスが、ここに大きく出ます");
             _body = UIFactory.Rect("Body", p).Stretch(0, y, 0, 0).gameObject;
             var b = ToolStyle.Box(_body.transform, 0, 1, 0, 0);
+            _box = b;
+            var env = UIFactory.Image(b, RetroTheme.BigIcon("mail"), Color.white, "Envelope");
+            env.rectTransform.AnchorTopRight(0, 30, 32, 32);
             _subject = ToolStyle.Field(b, "件名", 0, 0, 480, 70);
             ToolStyle.Text(b, "差出人アドレス", 0, 34, 300, 18, 12, ToolStyle.Muted, TextAnchor.MiddleLeft, true);
             _addr = ToolStyle.Text(b, "", 0, 54, 500, 34, 22, ToolStyle.Ink, TextAnchor.MiddleLeft, true, true);
@@ -439,6 +485,7 @@ namespace NightShift.UI.Shift
             var m = D.SelectedMail;
             Show(_empty, _body, m != null);
             if (m == null) return;
+            if (!ReferenceEquals(m, _last)) { _last = m; ToolFx.Sweep(_box, 0.6f); }
             _subject.text = m.Subject;
             string addr = string.IsNullOrEmpty(m.FromAddress) ? "(なし)" : m.FromAddress;
             int at = addr.IndexOf('@');
@@ -458,7 +505,9 @@ namespace NightShift.UI.Shift
         RectTransform[] _tiles;
         readonly List<GameObject> _badges = new List<GameObject>();
         ToolList _procs;
+        ToolLed _link;
         static readonly string[] Labels = { "Wi-Fi", "IP アドレス", "DNS", "インターネット", "プリンター", "修正プログラム", "画面ロック", "接続" };
+        static readonly string[] Icons = { "wifi", "network", "globe", "internet", "printer", "shield", "lock", "remote" };
 
         protected override void Build(RectTransform p)
         {
@@ -467,12 +516,18 @@ namespace NightShift.UI.Shift
                 "メインモニターの「ITサポート受付管理」で問い合わせを開く", "「リモート接続」を押す", "PCの状態がここにまとめて出ます");
             _body = UIFactory.Rect("Body", p).Stretch(0, y, 0, 0).gameObject;
             var top = ToolStyle.Box(_body.transform, 0, 1, 0, 180);
-            _host = ToolStyle.Text(top, "", 0, 0, 540, 22, 15, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _link = ToolLed.Create(top, 0, 5, 12);
+            _link.Set(ToolFx.LedGreen, 3f);
+            _host = ToolStyle.Text(top, "", 18, 0, 400, 22, 15, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            var traffic = ToolMeter.Create(top, 14);
+            traffic.Rect.AnchorTopRight(0, 0, 130, 22);
+            traffic.Level = 0.35f; traffic.Jitter = 0.3f;
+            ToolStyle.Text(top, "通信量", 11, ToolStyle.Muted, TextAnchor.MiddleRight).rectTransform.AnchorTopRight(136, 2, 60, 18);
             var grid = UIFactory.Rect("Grid", top).Stretch(0, 28, 0, 0);
             _vals = new Text[Labels.Length];
             _tiles = new RectTransform[Labels.Length];
             for (int i = 0; i < Labels.Length; i++)
-                _vals[i] = ToolStyle.Tile(grid, i % 4, 4, (i / 4) * 64, 56, Labels[i], out _tiles[i]);
+                _vals[i] = ToolStyle.Tile(grid, i % 4, 4, (i / 4) * 64, 56, Labels[i], out _tiles[i], Icons[i]);
             var pg = ToolStyle.Box(_body.transform, 0, 1, 190, 0, "動いているプログラム");
             _procs = ToolList.Create(pg, ToolStyle.Purple, "プログラムの情報はありません。");
         }
@@ -493,6 +548,8 @@ namespace NightShift.UI.Shift
             _host.text = $"{pc.Hostname}　<size=12><color=#666E7C>{pc.UserDisplay}</color></size>";
             foreach (var b in _badges) if (b) Destroy(b);
             _badges.Clear();
+            var wifiIcon = _tiles[0].Find("Icon")?.GetComponent<Image>();
+            if (wifiIcon) wifiIcon.sprite = RetroTheme.Icon(pc.WifiConnected ? "wifi" : "wifi_off");
             SetTile(0, pc.WifiConnected ? "接続" : "切断", pc.WifiConnected ? "OK" : "NG", pc.WifiConnected ? Tone.Ok : Tone.Bad);
             SetTile(1, string.IsNullOrEmpty(pc.IPAddress) ? "-" : pc.IPAddress, pc.DHCPEnabled ? "自動" : "手動", Tone.Neutral);
             SetTile(2, string.IsNullOrEmpty(pc.DNS) ? "-" : pc.DNS, pc.DnsAuto ? "自動" : "手動", Tone.Neutral);
@@ -504,7 +561,7 @@ namespace NightShift.UI.Shift
             SetTile(7, "リモート接続中", "接続中", Tone.Info);
             var procs = new List<RemotePC.VirtualProcess>();
             foreach (var pr in pc.RunningProcesses) if (!pr.System) procs.Add(pr);
-            _procs.SetItems(procs, pr => new ToolList.Row(pr.Name, $"{pr.MemoryKb:N0} KB"));
+            _procs.SetItems(procs, pr => new ToolList.Row(pr.Name, $"{pr.MemoryKb:N0} KB", null, Tone.Neutral, "run"));
         }
     }
 
@@ -574,7 +631,7 @@ namespace NightShift.UI.Shift
             _list.SetItems(list, e =>
             {
                 bool iso = S.Security.IsIsolated(e.deviceId);
-                return new ToolList.Row($"{e.deviceId}　{e.DisplayName}", $"{S.Employees.GetIp(e)}　{e.department}", iso ? "隔離中" : "接続中", iso ? Tone.Warn : Tone.Neutral);
+                return new ToolList.Row($"{e.deviceId}　{e.DisplayName}", $"{S.Employees.GetIp(e)}　{e.department}", iso ? "隔離中" : "接続中", iso ? Tone.Warn : Tone.Neutral, iso ? "lock" : "pc");
             });
             RefreshSelection();
         }
@@ -619,12 +676,19 @@ namespace NightShift.UI.Shift
                 var card = UIFactory.Image(_content, ToolStyle.Outline, Color.white, "Server");
                 ToolStyle.Cell(card.rectTransform, col, 2, colY[col], h, 10);
                 var c = card.transform;
-                ToolStyle.Text(c, st.Id, 12, 10, 260, 20, 14, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+                var sic = UIFactory.Image(c, RetroTheme.Icon("server"), Color.white, "Icon");
+                sic.rectTransform.Place(12, 12, 16, 16);
+                ToolStyle.Text(c, st.Id, 32, 10, 200, 20, 14, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
                 ToolStyle.BadgeRight(c, st.StatusLabel, StatusTone(st.StatusLabel), 10, 10);
+                var load = ToolMeter.Create(c, 10);
+                load.Rect.AnchorTopRight(80, 10, 64, 18);
+                load.Level = st.StatusLabel == "復元中" ? 0.75f : 0.2f;
                 float y = 40;
                 foreach (var svc in st.Services)
                 {
-                    ToolStyle.Text(c, svc.Name, 12, y, 220, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft);
+                    var led = ToolLed.Create(c, 12, y + 4, 12);
+                    if (svc.Running) led.Set(ToolFx.LedGreen, 0); else led.Set(ToolFx.LedRed, 1f);
+                    ToolStyle.Text(c, svc.Name, 30, y, 200, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft);
                     ToolStyle.BadgeRight(c, svc.Running ? "実行中" : "停止", svc.Running ? Tone.Ok : Tone.Bad, 10, y);
                     y += 24;
                 }

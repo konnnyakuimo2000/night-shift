@@ -42,7 +42,7 @@ namespace NightShift.UI.Shift
         void Build()
         {
             var p = ToolStyle.Page(_w);
-            float y = ToolStyle.Header(p, "社内購買", "仕事に使う機材・ツールを買えます。代金は給与から精算されます（会社は1円も出しません）。", "folder", Accent);
+            float y = ToolStyle.Header(p, "社内購買", "仕事に使う機材・ツールを買えます。代金は給与から精算されます（会社は1円も出しません）。", "folder", Accent, false);
             _balance = ToolStyle.Text(p, "", 0, 0, 260, 28, 18, Color.white, TextAnchor.MiddleRight, true);
             _balance.rectTransform.AnchorTopRight(18, 8, 300, 26);
             var balLabel = ToolStyle.Text(p, "所持金", 0, 0, 100, 16, 11, new Color(1, 1, 1, 0.8f), TextAnchor.MiddleRight);
@@ -145,7 +145,9 @@ namespace NightShift.UI.Shift
                 else if (it.consumable && career.ItemCount(it.itemId) > 0) { badge = $"所持 {career.ItemCount(it.itemId)} 個"; tone = Tone.Ok; }
                 else if (it.unlockDay == day) { badge = "NEW"; tone = Tone.Info; }
                 else if (balance < it.price) { badge = "所持金が足りない"; tone = Tone.Warn; }
-                return new ToolList.Row(it.displayName, $"{CategoryLabel(it.category)}　・　{OperatorWallet.Yen(it.price)}", badge, tone);
+                var row = new ToolList.Row(it.displayName, $"{CategoryLabel(it.category)}　・　{OperatorWallet.Yen(it.price)}", badge, tone, it.icon);
+                row.Blink = badge == "NEW";
+                return row;
             });
             _balance.text = OperatorWallet.Yen(balance);
             foreach (var b in _filters)
@@ -212,6 +214,8 @@ namespace NightShift.UI.Shift
                 _w.SetStatus(0, $"「{it.displayName}」を注文しました。");
                 _d.OnInventoryChanged();
                 Refresh();
+                ToolFx.Flash(_balance);
+                ToolFx.Flash(_icon);
             }, "folder");
         }
     }

@@ -4,6 +4,7 @@ using System.IO;
 using NightShift.Core;
 using NightShift.Data;
 using NightShift.Systems;
+using NightShift.UI;
 using NightShift.UI.Screens;
 using NightShift.UI.Shift;
 using NUnit.Framework;
@@ -280,6 +281,14 @@ namespace NightShift.Tests
                     d = NewDesktop(25, null, 150f);
                     // 情報を出すツールのために、保留中の要求を1つ選んでおく
                     if (d.S.Requests.Pending.Count > 0) d.SelectRequest(d.S.Requests.Pending[0]);
+                    // 社員情報パネル用: 名簿にいる社員の要求を選ぶ（顔写真が出る）
+                    if (t[0] == Items.ProfilePanel)
+                    {
+                        var all = new System.Collections.Generic.List<NightShift.Events.EventInstance>(d.S.Requests.Pending);
+                        all.AddRange(d.S.Requests.Processed);
+                        var withEmp = all.Find(x => x.Employee != null);
+                        if (withEmp != null) d.SelectRequest(withEmp);
+                    }
                     // ログ解析・メール差出人チェッカー用: 社外からのログの行と、偽メールを選んでおく
                     foreach (var l in d.S.Logs.Entries) if (l.Source != null && l.Source.StartsWith("203.")) { d.SelectLog(l); break; }
                     if (t[0] == Items.MailInspector) d.SelectMail(PhishingMail.Send(d.S, false));
@@ -296,6 +305,63 @@ namespace NightShift.Tests
                 d.RebuildMonitors();
                 d.ShowMonitor(1);
                 yield return Shot("T00_サブモニター", 1f);
+            }
+            finally
+            {
+                CareerRecord.SetCurrentForTests(_original);
+                CareerRecord.SaveDisabled = false;
+            }
+        }
+        /// <summary>ツールの動き（連続した画像。あとで GIF にする）: 検査中の VACCINE・考えている SOC-AI・サーバーの負荷メーター</summary>
+        [UnityTest, Category("Screenshots"), Explicit("画面の確認用"), Timeout(600000)]
+        public IEnumerator CaptureToolAnimations()
+        {
+            _original = CareerRecord.Current;
+            CareerRecord.SaveDisabled = true;
+            try
+            {
+                yield return Setup(false);
+                var db = _gm.Database;
+                var career = new CareerRecord { seed = 7, trust = 70, vaccineDefinitionDay = 20 };
+                foreach (var it in db.storeItems) if (it != null && !it.consumable) career.AddItem(it.itemId);
+                CareerRecord.SetCurrentForTests(career);
+
+                FlatButton FindButton(string startsWith)
+                {
+                    foreach (var b in UnityEngine.Object.FindObjectsByType<FlatButton>(FindObjectsSortMode.None))
+                        if (b.Label != null && b.Label.text.StartsWith(startsWith)) return b;
+                    return null;
+                }
+
+                // VACCINE 99: 検査中（虫眼鏡が回り、ファイル名が流れ、進行状況バーが伸びる）
+                var d = NewDesktop(25, null, 30f);
+                d.RebuildMonitors();
+                d.ShowMonitor(1);
+                Tools.Launch(d.Stations[0], Items.Vaccine);
+                yield return Shot("A_vaccine_00", 0.5f);
+                FindButton("ワークステーション")?.OnClick?.Invoke();
+                for (int i = 1; i <= 14; i++)
+                {
+                    d.S.Tick(0.6f);
+                    yield return Shot($"A_vaccine_{i:00}", 0.12f);
+                }
+
+                // SOC-AI: 考えている間
+                d = NewDesktop(25, null, 90f);
+                if (d.S.Requests.Pending.Count > 0) d.SelectRequest(d.S.Requests.Pending[0]);
+                d.RebuildMonitors();
+                d.ShowMonitor(1);
+                Tools.Launch(d.Stations[0], Items.SocAi);
+                yield return Shot("A_socai_00", 0.5f);
+                FindButton("選んだ要求を審査")?.OnClick?.Invoke();
+                for (int i = 1; i <= 12; i++) yield return Shot($"A_socai_{i:00}", 0.12f);
+
+                // サーバー監視: 負荷メーターとランプ
+                d = NewDesktop(25, null, 30f);
+                d.RebuildMonitors();
+                d.ShowMonitor(1);
+                Tools.Launch(d.Stations[0], Items.ServerMonitor);
+                for (int i = 0; i <= 12; i++) yield return Shot($"A_server_{i:00}", i == 0 ? 0.8f : 0.12f);
             }
             finally
             {

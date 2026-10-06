@@ -82,7 +82,7 @@ namespace NightShift.UI
         }
 
         /// <summary>製品の見出し（グラデーションの帯・ロゴ・名前・「何をするソフトか」）。下に続く中身の y を返す</summary>
-        public static float Header(Transform p, string title, string tagline, string icon, Color accent)
+        public static float Header(Transform p, string title, string tagline, string icon, Color accent, bool running = true)
         {
             var band = UIFactory.Image(p, RetroTheme.GradientSprite(accent, Color.Lerp(accent, Color.white, 0.5f)), Color.white, "Header");
             band.rectTransform.StretchH(0, HeaderHeight);
@@ -99,6 +99,14 @@ namespace NightShift.UI
             var sh2 = tag.gameObject.AddComponent<Shadow>();
             sh2.effectColor = new Color(0, 0, 0, 0.35f);
             sh2.effectDistance = new Vector2(1, -1);
+            // 動作中のランプ（ソフトが常駐して動いている）
+            if (running)
+            {
+                var led = ToolLed.CreateRight(band.transform, 14, 22, 12);
+                led.Set(ToolFx.LedGreen, 0.6f);
+                var lt = Text(band.transform, "動作中", 11, Color.white, TextAnchor.MiddleRight, true);
+                lt.rectTransform.AnchorTopRight(30, 19, 60, 18);
+            }
             // 見出しの下の溝
             var a = UIFactory.Solid(p, RetroTheme.Shadow, "HeaderRule");
             a.rectTransform.StretchH(HeaderHeight, 1);
@@ -187,14 +195,22 @@ namespace NightShift.UI
         }
 
         /// <summary>状態の欄（へこんだ白い枠に、項目・値・バッジ）。値の Text を返す</summary>
-        public static Text Tile(Transform p, int i, int n, float y, float h, string label, out RectTransform tile)
+        public static Text Tile(Transform p, int i, int n, float y, float h, string label, out RectTransform tile, string icon = null)
         {
             var bg = UIFactory.Image(p, RetroTheme.Field, Color.white, "Tile");
             Cell(bg.rectTransform, i, n, y, h);
             tile = bg.rectTransform;
             Text(bg.transform, label, 8, 5, 400, 16, 11, Muted, TextAnchor.MiddleLeft);
+            float left = 8;
+            if (icon != null)
+            {
+                var ic = UIFactory.Image(bg.transform, RetroTheme.Icon(icon), Color.white, "Icon");
+                ic.raycastTarget = false;
+                ic.rectTransform.Place(8, 27, 16, 16);
+                left = 28;
+            }
             var v = Text(bg.transform, "", 12, Ink, TextAnchor.MiddleLeft, true);
-            v.rectTransform.StretchH(24, 22, 8, 6);
+            v.rectTransform.StretchH(24, 22, left, 6);
             v.horizontalOverflow = HorizontalWrapMode.Overflow;
             return v;
         }
@@ -464,9 +480,11 @@ namespace NightShift.UI
     {
         public struct Row
         {
-            public string Title, Sub, Badge;
+            public string Title, Sub, Badge, Icon;
             public Tone Tone;
-            public Row(string title, string sub, string badge = null, Tone tone = Tone.Neutral) { Title = title; Sub = sub; Badge = badge; Tone = tone; }
+            public bool Blink;   // 状態の表示を点滅させる（NEW など）
+            public Row(string title, string sub, string badge = null, Tone tone = Tone.Neutral, string icon = null)
+            { Title = title; Sub = sub; Badge = badge; Tone = tone; Icon = icon; Blink = false; }
         }
 
         public const float RowHeight = 38;
@@ -524,16 +542,28 @@ namespace NightShift.UI
                 line.raycastTarget = false;
                 line.rectTransform.anchorMin = new Vector2(0, 0); line.rectTransform.anchorMax = new Vector2(1, 0);
                 line.rectTransform.offsetMin = new Vector2(0, 0); line.rectTransform.offsetMax = new Vector2(0, 1);
+                float left = 6;
+                if (!string.IsNullOrEmpty(r.Icon))
+                {
+                    var ic = UIFactory.Image(bg.transform, RetroTheme.Icon(r.Icon), Color.white, "Icon");
+                    ic.raycastTarget = false;
+                    ic.rectTransform.Place(6, 11, 16, 16);
+                    left = 28;
+                }
                 var title = ToolStyle.Text(bg.transform, r.Title, 12, Color.black, TextAnchor.MiddleLeft, true);
-                title.rectTransform.StretchH(3, 18, 6, 110);
+                title.rectTransform.StretchH(3, 18, left, 110);
                 title.raycastTarget = false;
                 EllipsisText.Attach(title);
                 var sub = ToolStyle.Text(bg.transform, r.Sub ?? "", 11, ToolStyle.Muted, TextAnchor.MiddleLeft);
-                sub.rectTransform.StretchH(20, 16, 6, 110);
+                sub.rectTransform.StretchH(20, 16, left, 110);
                 sub.raycastTarget = false;
                 EllipsisText.Attach(sub);
                 _titles.Add(title); _subs.Add(sub);
-                if (!string.IsNullOrEmpty(r.Badge)) ToolStyle.BadgeRight(bg.transform, r.Badge, r.Tone, 6, 10);
+                if (!string.IsNullOrEmpty(r.Badge))
+                {
+                    var badge = ToolStyle.BadgeRight(bg.transform, r.Badge, r.Tone, 6, 10);
+                    if (r.Blink) badge.gameObject.AddComponent<ToolBlink>();
+                }
                 var click = bg.gameObject.AddComponent<ClickHandler>();
                 click.OnClick = () => Select(_data[idx]);
             }
