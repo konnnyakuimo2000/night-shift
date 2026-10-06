@@ -111,6 +111,13 @@ namespace NightShift.Tests
             var db = _gm.Database;
             CareerRecord.SetCurrentForTests(new CareerRecord { seed = 7, trust = 70 });
 
+            // タイトル（デバッグモードの開始日の選択）・デバッグパネル
+            Clear(); _gm.ShowTitle();
+            yield return Shot("D01_タイトル", 1f);
+            var dbg = NewDesktop(20, null, 60f);
+            DebugPanelView.Open(dbg);
+            yield return Shot("D02_デバッグパネル", 1f);
+
             // 朝のネットニュース（ふつう／改ざん・停電の翌朝）
             Clear(); NewsScreen.Build(_gm.ScreenLayer, db, db.GetDay(8), () => { });
             yield return Shot("E01_ニュース_DAY8", 7f);

@@ -164,7 +164,7 @@ namespace NightShift.UI.Shift
             }
         }
 
-        void RebuildMonitors()
+        public void RebuildMonitors()
         {
             int need = MonitorCount - 1;
             while (_stations.Count < need)

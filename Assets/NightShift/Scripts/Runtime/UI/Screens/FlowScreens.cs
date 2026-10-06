@@ -38,7 +38,7 @@ namespace NightShift.UI.Screens
     // ============================================================
     public static class TitleScreen
     {
-        public static GameObject Build(RectTransform parent, Action onClockIn, Action onContinue, int reachedDay, Action onQuit, int dayCount = 0, Action<int> onStartDay = null)
+        public static GameObject Build(RectTransform parent, Action onClockIn, Action onContinue, int reachedDay, Action onQuit, int dayCount = 0, Action<int, int> onStartDay = null, string[] presets = null)
         {
             var root = UIFactory.Solid(parent, new Color(0.02f, 0.03f, 0.08f), "TitleScreen");
             root.rectTransform.Stretch();
@@ -101,21 +101,21 @@ namespace NightShift.UI.Screens
                 var row = UIFactory.Rect("DebugDays", root.transform);
                 row.anchorMin = row.anchorMax = new Vector2(0.5f, 0.5f);
                 row.pivot = new Vector2(0.5f, 1f);
-                row.sizeDelta = new Vector2(dayCount * 66 + 120, 26);
+                row.sizeDelta = new Vector2(640, 26);
                 row.anchoredPosition = new Vector2(0, by - 8);
-                var lbl = UIFactory.Label(row, "DEBUG 開始日:", 0, 0, 110, 24, 12, TextAnchor.MiddleRight);
+                var lbl = UIFactory.Label(row, "DEBUG", 0, 0, 52, 24, 12, TextAnchor.MiddleRight);
                 lbl.color = new Color(1f, 0.6f, 0.4f);
-                for (int i = 1; i <= dayCount; i++)
-                {
-                    int day = i;
-                    UIFactory.Button(row, $"DAY{day}", 116 + (i - 1) * 66, 0, 62, 24, () => onStartDay(day));
-                }
+                var days = new List<string>();
+                for (int i = 1; i <= dayCount; i++) days.Add($"DAY{i}");
+                var dayDd = RetroDropdown.Create(row, 58, 2, 90, days, Mathf.Clamp(reachedDay, 1, dayCount) - 1);
+                var presetDd = RetroDropdown.Create(row, 154, 2, 330, new List<string>(presets ?? new[] { "今の記録のまま" }), 0);
+                UIFactory.Button(row, "この日から開始", 490, 0, 140, 24, () => onStartDay(dayDd.Index + 1, presetDd.Index), "clock");
                 var toggle = row.gameObject.AddComponent<SettingVisibility>();
                 toggle.Refresh();
             }
             host.SetAsLastSibling();
 
-            var foot = UIFactory.Label(root.transform, $"BETA v{Application.version}  —  DAY 1-7 Tutorial  —  マウス＋キーボードでプレイ / {Core.GameSettings.KeyLabel(Core.GameSettings.Pause)}: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
+            var foot = UIFactory.Label(root.transform, $"BETA v{Application.version}  —  DAY 1-30  —  マウス＋キーボードでプレイ / {Core.GameSettings.KeyLabel(Core.GameSettings.Pause)}: 一時停止", 11, TextAnchor.MiddleCenter, new Color(0.4f, 0.45f, 0.5f));
             foot.rectTransform.anchorMin = new Vector2(0, 0); foot.rectTransform.anchorMax = new Vector2(1, 0);
             foot.rectTransform.pivot = new Vector2(0.5f, 0);
             foot.rectTransform.offsetMin = new Vector2(0, 14); foot.rectTransform.offsetMax = new Vector2(0, 32);

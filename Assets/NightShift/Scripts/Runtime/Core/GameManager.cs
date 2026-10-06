@@ -135,7 +135,7 @@ namespace NightShift.Core
         {
             DisposeShift();
             int resume = ResumeDay;
-            SetScreen(TitleScreen.Build(ScreenLayer, StartNewGame, resume > 0 ? ContinueGame : (System.Action)null, resume, Quit, Database.days.Count, StartFromDay), GameState.Title);
+            SetScreen(TitleScreen.Build(ScreenLayer, StartNewGame, resume > 0 ? ContinueGame : (System.Action)null, resume, Quit, Database.days.Count, StartFromDay, DebugPresets), GameState.Title);
         }
 
         public void ShowClockIn() => SetScreen(ClockInScreen.Build(ScreenLayer, Database.GetDay(CurrentDay), OperatorName, Database.companyNameJa, name =>
@@ -492,10 +492,30 @@ namespace NightShift.Core
             ShowClockIn();
         }
 
-        /// <summary>デバッグモード: 任意の日から開始（アカウント・所持金はそのまま）</summary>
-        void StartFromDay(int day)
+        /// <summary>デバッグ: タイトルから始めるときの状態</summary>
+        public static readonly string[] DebugPresets =
+        {
+            "今の記録のまま", "新規（記録・所持金を初期化）", "ツールを全部持っている＋¥100,000", "会社の信用が低い（30）",
+            "前の2夜がD（先輩の手伝い）", "前任者の手がかり3つ"
+        };
+
+        /// <summary>デバッグモード: 任意の日から開始（preset: DebugPresets の番号。記録・所持金を書き換える）</summary>
+        void StartFromDay(int day, int preset)
         {
             if (Database.FindDay(day) == null) return;
+            var career = CareerRecord.Current;
+            switch (preset)
+            {
+                case 1: CareerRecord.StartNew(); Wallet.ResetAll(); break;
+                case 2: UI.Shift.DebugPanelView.GrantAllTools(career, Database, day); Wallet.DebugAddMoney(100000); break;
+                case 3: career.trust = 30; career.Save(); break;
+                case 4: UI.Shift.DebugPanelView.SetPreviousRanks(career, day, "D", 2); break;
+                case 5:
+                    foreach (var id in new[] { "C1", "C2", "C3" }) if (!career.clues.Contains(id)) career.clues.Add(id);
+                    career.Save();
+                    break;
+            }
+            _snapshotDay = -1;
             CurrentDay = day;
             Account = OperatorAccount.Load();
             try { OperatorName = PlayerPrefs.GetString(NameKey, OperatorName); } catch { }
@@ -529,6 +549,51 @@ namespace NightShift.Core
             if (Database.FindDay(day) == null) return;
             CurrentDay = day;
             RestartDay();
+        }
+
+        /// <summary>デバッグ: ゲームオーバー・エンディングの画面を確認する（本当の記録には残さない）</summary>
+        public void DebugPreview(string id)
+        {
+            DisposeShift();
+            ClearScreen();
+            var real = CareerRecord.Current;
+            bool saveWas = CareerRecord.SaveDisabled;
+            var c = new CareerRecord { seed = real.seed, trust = 80 };
+            for (int d = DefaultDataFactory.MainStartDay; d <= DefaultDataFactory.LastDay; d++) c.nights.Add(new NightRecord { day = d, rank = "A" });
+            CareerRecord.SetCurrentForTests(c);
+            CareerRecord.SaveDisabled = true;
+            void Back()
+            {
+                CareerRecord.SetCurrentForTests(real);
+                CareerRecord.SaveDisabled = saveWas;
+                ShowTitle();
+            }
+            if (id.StartsWith("GO"))
+            {
+                var s = new ShiftSession(Database, Database.GetDay(20), 1, OperatorName);
+                switch (id)
+                {
+                    case "GO1": foreach (var n in c.nights) if (n.day >= 18 && n.day <= 20) n.rank = "D"; break;
+                    case "GO2": s.FatalIncident = "全社のファイルが暗号化された（BRIAR ROSE）"; break;
+                    case "GO3": c.accountCompromised = 3; break;
+                    case "GO4": foreach (var n in c.nights) if (n.day >= 14 && n.day <= 20) n.overtime = true; break;
+                }
+                var go = EndingResolver.CheckGameOver(c, s);
+                if (go == null) { Back(); return; }
+                SetScreen(GameOverScreen.Build(ScreenLayer, go, OperatorName, Back, Back, Back), GameState.Complete);
+                return;
+            }
+            var outcome = FinalOutcome.Defended;
+            switch (id)
+            {
+                case "END1": outcome = FinalOutcome.Critical; break;
+                case "END2": c.trust = 20; break;
+                case "END3": foreach (var n in c.nights) n.rank = "S"; c.clues.AddRange(new[] { "C1", "C2", "C3", "C4" }); break;
+                case "END4": foreach (var n in c.nights) { n.rank = "S"; n.correctReports = 1; } break;
+                case "END6": foreach (var n in c.nights) n.rank = "C"; outcome = FinalOutcome.PartialDamage; break;
+            }
+            var ending = EndingResolver.Resolve(c, outcome);
+            SetScreen(EndingScreen.Build(ScreenLayer, ending, outcome, OperatorName, Wallet, Back), GameState.Complete);
         }
 
         public void RestartDay()

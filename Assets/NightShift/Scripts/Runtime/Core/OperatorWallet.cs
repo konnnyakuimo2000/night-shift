@@ -86,6 +86,13 @@ namespace NightShift.Core
         }
 
         /// <summary>ストア用（後で使う）。残高が足りなければ false。</summary>
+        /// <summary>デバッグ用: 所持金を増やす</summary>
+        public void DebugAddMoney(int amount)
+        {
+            spent -= amount;
+            Save();
+        }
+
         public bool TrySpend(int amount)
         {
             if (amount <= 0 || amount > Balance) return false;
