@@ -80,7 +80,29 @@ namespace NightShift.UI.Shift
         {
             if (_noteLayer == null) return;
             foreach (Transform t in _noteLayer) Destroy(t.gameObject);
-            StickyNote.Create(_noteLayer, Game.Account, 24, 24, Game.Account.Changed ? -4 : 3);
+            var note = StickyNote.Create(_noteLayer, Game.Account, 24, 24, Game.Account.Changed ? -4 : 3);
+            // 自分で貼った付箋は、クリックではがせる
+            if (note != null && Game.Account.Changed)
+            {
+                var hit = note.gameObject.AddComponent<UnityEngine.UI.Image>();
+                hit.color = new Color(0, 0, 0, 0);
+                note.gameObject.AddComponent<ClickHandler>().OnClick = ToggleStickyNote;
+            }
+        }
+
+        /// <summary>新しいパスワードの付箋を貼る／はがす（貼ると、IDを悪用されやすくなる）</summary>
+        public void ToggleStickyNote()
+        {
+            var acc = Game.Account;
+            if (!acc.Changed)
+            {
+                MessageBox.Show(this, "付箋", "まだ初期パスワードのままです。\n先にパスワードを変更してください。", "lock");
+                return;
+            }
+            if (acc.WrittenDown)
+                ShowModal("付箋", "モニターに貼ったパスワードの付箋をはがしますか？", "lock", "はがす", () => { acc.SetWrittenDown(false); RefreshStickyNote(); }, "やめる", null);
+            else
+                ShowModal("付箋", "新しいパスワードを付箋に書いて、モニターに貼りますか？\n（忘れにくくなりますが、見られると ID を悪用されやすくなります）", "warning", "貼る", () => { acc.SetWrittenDown(true); RefreshStickyNote(); }, "やめる", null);
         }
 
         // ---------------- Flow ----------------

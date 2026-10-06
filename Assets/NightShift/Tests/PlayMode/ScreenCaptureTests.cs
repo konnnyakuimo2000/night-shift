@@ -216,7 +216,6 @@ namespace NightShift.Tests
                 (Career("B", 20), FinalOutcome.Defended),
                 (Career("S", 90, 0, true), FinalOutcome.Defended),
                 (Career("S", 90, 1), FinalOutcome.Defended),
-                (Career("B", 70), FinalOutcome.Defended),
                 (Career("C", 70), FinalOutcome.PartialDamage),
             };
             foreach (var (career, outcome) in cases)

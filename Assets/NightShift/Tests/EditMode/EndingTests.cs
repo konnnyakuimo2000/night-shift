@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace NightShift.Tests
 {
-    /// <summary>本編エンド（END1〜6）とゲームオーバー（GO1〜4）の判定。ENDINGS.md の表の順番どおりか</summary>
+    /// <summary>本編エンド（END1〜4・END6）とゲームオーバー（GO1〜4）の判定。ENDINGS.md の表の順番どおりか</summary>
     public class EndingTests : NightShiftTest
     {
         static CareerRecord Career(string rank, int nights = 23)
@@ -58,9 +58,9 @@ namespace NightShift.Tests
         }
 
         [Test]
-        public void RankB_IsPromotion()
+        public void RankB_IsContractRenewal()
         {
-            Assert.AreEqual("END5", EndingResolver.Resolve(Career("B"), FinalOutcome.Defended).Id);
+            Assert.AreEqual("END6", EndingResolver.Resolve(Career("B"), FinalOutcome.Defended).Id);
         }
 
         [Test]

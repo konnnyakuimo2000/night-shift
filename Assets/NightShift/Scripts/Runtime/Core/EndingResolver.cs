@@ -93,13 +93,6 @@ namespace NightShift.Core
                     Headline = "外資系セキュリティ会社、国内の夜間監視要員を採用",
                     Text = "最後の夜の対応の記録が業界で噂になり、外資系のセキュリティ会社から誘いが来た。\nあなたはブラック企業を辞め、新しい職場で朝を迎えることにした。"
                 };
-            if (final == FinalOutcome.Defended && rank >= 3f)
-                return new Ending
-                {
-                    Id = "END5", Title = "正社員登用（という名の…）", Kind = "NORMAL+",
-                    Headline = $"【社内報】夜間IT運用担当を正社員に登用",
-                    Text = "会社から正社員登用の通知が届いた。ただし「管理職扱いのため残業代なし」「夜勤は引き続き担当」。\n給与明細の額は、ほとんど変わらなかった。会社にとっては、最高の結末だった。"
-                };
             return new Ending
             {
                 Id = "END6", Title = "契約更新", Kind = "NORMAL",

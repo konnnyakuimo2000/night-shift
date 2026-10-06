@@ -45,7 +45,7 @@ namespace NightShift.UI.Screens
         public static readonly string[][] AllEndings =
         {
             new[] { "END1", "全責任" }, new[] { "END2", "倒産" }, new[] { "END3", "真夜中の答え合わせ" },
-            new[] { "END4", "引き抜き" }, new[] { "END5", "正社員登用（という名の…）" }, new[] { "END6", "契約更新" }
+            new[] { "END4", "引き抜き" }, new[] { "END6", "契約更新" }
         };
         public static readonly string[][] AllGameOvers =
         {

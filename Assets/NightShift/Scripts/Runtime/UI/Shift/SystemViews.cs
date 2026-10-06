@@ -36,6 +36,7 @@ namespace NightShift.UI.Shift
                 MenuItem.Sep(),
                 new MenuItem("   メール（業務連絡・マニュアル）", () => MailboxView.Open(d)) { Icon = "mail" },
                 new MenuItem("   パスワードの変更", () => PasswordChangeView.Open(d)) { Icon = "lock" },
+                new MenuItem(d.Game.Account.WrittenDown ? "   パスワードの付箋をはがす" : "   パスワードを付箋に書いて貼る", d.ToggleStickyNote, null, d.Game.Account.Changed) { Icon = "doc" },
                 MenuItem.Sep(),
                 new MenuItem("6. システム設定", () => SettingsView.Open(d)) { Icon = "gear" },
                 new MenuItem("7. 業務終了", () => TryEndShift(d)) { Icon = "exit" },
@@ -286,6 +287,8 @@ namespace NightShift.UI.Shift
             SettingsPanel.Build(w.Content, extra =>
             {
                 UIFactory.Button(extra, "パスワードの変更(P)...", 0, 0, 200, 26, () => PasswordChangeView.Open(d), "lock");
+                var noteBtn = UIFactory.Button(extra, "付箋を貼る／はがす...", 210, 0, 180, 26, d.ToggleStickyNote, "doc");
+                noteBtn.Interactable = d.Game.Account.Changed;
             });
             w.Accelerators[KeyCode.P] = () => PasswordChangeView.Open(d);
         }

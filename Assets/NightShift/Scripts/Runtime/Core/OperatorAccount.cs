@@ -76,6 +76,14 @@ namespace NightShift.Core
             Save();
         }
 
+        /// <summary>パスワードを付箋に書いてモニターに貼る／はがす（変更した後はいつでも選べる）</summary>
+        public void SetWrittenDown(bool v)
+        {
+            if (!Changed) return;
+            WrittenDown = v;
+            Save();
+        }
+
         public void Apply(string newPassword, bool writtenDown, int day)
         {
             Password = newPassword;
