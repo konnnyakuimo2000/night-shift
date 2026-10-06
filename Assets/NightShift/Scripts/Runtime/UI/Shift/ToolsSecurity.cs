@@ -38,49 +38,85 @@ namespace NightShift.UI.Shift
     // ============================================================ VACCINE 99
     public class VaccineTool : ToolWindow
     {
-        Text _text;
+        Text _status, _defs, _scanLabel, _result;
+        Image _progress;
+        FlatButton _ws, _remote, _server;
         string _scanTarget;
-        float _scanDoneAt = -1;
-        protected override float RefreshInterval => 0.5f;
+        float _scanStart = -1, _scanDoneAt = -1;
+        protected override float RefreshInterval => 0.25f;
 
-        protected override void Build(RectTransform c)
+        protected override void Build(RectTransform p)
         {
-            var head = UIFactory.Solid(c, new Color(0.1f, 0.4f, 0.2f), "Head");
-            head.rectTransform.StretchH(0, 28);
-            UIFactory.Label(head.transform, "  VACCINE 99", 14, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
-            UIFactory.Button(c, "ワークステーションを検査", 0, 34, 200, 26, () => StartScan("WS", 5f), "pc");
-            UIFactory.Button(c, "リモート接続中のPCを検査", 206, 34, 214, 26, () => StartScan("REMOTE", 2f), "remote");
-            var srv = UIFactory.Button(c, "サーバーを検査（Server）", 0, 64, 200, 26, () => StartScan("SERVER", 5f), "server");
-            srv.Interactable = CareerRecord.Current.Owns(Items.VaccineServer);
-            _text = UIFactory.Label(c, "", 0, 98, 420, 180, 12, TextAnchor.UpperLeft);
+            float y = ToolStyle.Header(p, "VACCINE 99", "既知のウイルスを見つけて駆除します。定義ファイルにないウイルスは見つけられません。", "shield", ToolStyle.Green);
+            var top = ToolStyle.Box(p, 0, 1, y, 84);
+            var shield = UIFactory.Image(top, RetroTheme.BigIcon("shield"), Color.white, "Shield");
+            shield.rectTransform.Place(0, 6, 48, 48);
+            _status = ToolStyle.Text(top, "", 62, 4, 400, 24, 16, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _defs = ToolStyle.Text(top, "", 62, 32, 420, 20, 12, ToolStyle.Muted, TextAnchor.MiddleLeft);
+
+            var sg = ToolStyle.Box(p, 0, 1, y + 94, 118, "検査する場所");
+            var row = UIFactory.Rect("Row", sg).Stretch();
+            _ws = ScanButton(row, 0, "ワークステーション\n（約5分）", () => StartScan("WS", 5f));
+            _remote = ScanButton(row, 1, "リモート接続中のPC\n（約2分）", () => StartScan("REMOTE", 2f));
+            _server = ScanButton(row, 2, "サーバー\n（約5分・Server版）", () => StartScan("SERVER", 5f));
+            _progress = ToolStyle.Progress(row, 0, 56, 10, 12, ToolStyle.Green);
+            ((RectTransform)_progress.transform.parent).StretchH(58, 10);
+            _scanLabel = ToolStyle.Text(row, "", 0, 70, 480, 18, 11, ToolStyle.Muted);
+
+            var rg = ToolStyle.Box(p, 0, 1, y + 222, 0, "検査結果");
+            _result = ToolStyle.Text(rg, "まだ検査していません。", 13, ToolStyle.Ink);
+            _result.rectTransform.Stretch();
+        }
+
+        FlatButton ScanButton(RectTransform row, int i, string label, System.Action a)
+        {
+            var b = FlatButton.Create(row, label, a, ToolStyle.Green, false);
+            ToolStyle.Cell(b.Rect, i, 3, 0, 50);
+            b.Label.fontSize = 12;
+            return b;
         }
 
         void StartScan(string target, float minutes)
         {
             if (_scanDoneAt > 0) { AudioFx.Error(); return; }
-            if (target == "REMOTE" && (S.HelpDesk.ActiveSession == null || !S.HelpDesk.ActiveSession.Connected)) { W.SetStatus(0, "リモート接続中のPCがありません。"); return; }
+            if (target == "REMOTE" && (S.HelpDesk.ActiveSession == null || !S.HelpDesk.ActiveSession.Connected)) { W.SetStatus(0, "リモート接続中のPCがありません。"); AudioFx.Error(); return; }
             _scanTarget = target;
-            _scanDoneAt = S.Time.CurrentMinute + minutes;
+            _scanStart = S.Time.CurrentMinute;
+            _scanDoneAt = _scanStart + minutes;
+            _result.text = "検査中…";
             W.SetStatus(0, "検査中…");
         }
 
         protected override void Refresh()
         {
-            if (_text == null) return;
+            if (_status == null) return;
             var career = CareerRecord.Current;
-            string defs = career.vaccineDefinitionDay > 0 ? $"DAY{career.vaccineDefinitionDay}" : "なし";
-            if (_scanDoneAt > 0 && S.Time.CurrentMinute >= _scanDoneAt) Finish();
+            int today = S.Day.dayNumber;
+            int defDay = career.vaccineDefinitionDay;
+            _status.text = "<color=#1F7F40>●</color> 常駐監視: 有効";
+            _defs.text = defDay > 0 ? $"定義ファイル: DAY{defDay} 版　（今日は DAY{today}）" : "定義ファイル: なし";
+            if (defDay > 0 && today - defDay >= 3) _defs.text += $"　<color=#B07000>— {today - defDay} 日更新していません</color>";
+            _server.Interactable = career.Owns(Items.VaccineServer) && _scanDoneAt < 0;
+            _ws.Interactable = _remote.Interactable = _scanDoneAt < 0;
             if (_scanDoneAt > 0)
-                _text.text = $"定義ファイル: {defs}\n\n検査中…（終了予定 {TimeManager.Format(_scanDoneAt)}）";
-            else if (string.IsNullOrEmpty(_text.text) || !_text.text.Contains("結果"))
-                _text.text = $"定義ファイル: {defs}\n常駐監視: 有効";
+            {
+                float k = Mathf.InverseLerp(_scanStart, _scanDoneAt, S.Time.CurrentMinute);
+                _progress.fillAmount = k;
+                _scanLabel.text = $"検査中… {Mathf.RoundToInt(k * 100)}%（終了予定 {TimeManager.Format(_scanDoneAt)}）";
+                if (S.Time.CurrentMinute >= _scanDoneAt) Finish();
+            }
+            else
+            {
+                _progress.fillAmount = 0;
+                _scanLabel.text = career.Owns(Items.VaccineServer) ? "" : "サーバーの検査には「VACCINE 99 Server」が必要です。";
+            }
         }
 
         void Finish()
         {
             _scanDoneAt = -1;
+            _scanStart = -1;
             var found = new List<string>();
-            string defs = CareerRecord.Current.vaccineDefinitionDay > 0 ? $"DAY{CareerRecord.Current.vaccineDefinitionDay}" : "なし";
             if (_scanTarget == "REMOTE" && S.HelpDesk.ActiveSession != null)
             {
                 var pc = S.HelpDesk.ActiveSession.PC;
@@ -107,7 +143,9 @@ namespace NightShift.UI.Shift
                     }
                 }
             }
-            _text.text = $"定義ファイル: {defs}\n\n検査結果:\n" + (found.Count == 0 ? "ウイルスは見つかりませんでした。" : string.Join("\n", found));
+            _result.text = found.Count == 0
+                ? "<color=#1F7F40><b>ウイルスは見つかりませんでした。</b></color>\n（定義ファイルに載っているウイルスだけを調べています）"
+                : "<color=#B02020><b>ウイルスを見つけました。</b></color>\n" + string.Join("\n", found);
             W.SetStatus(0, "検査が終わりました。");
             if (found.Count == 0 && S.Security.Infections != null)
             {
@@ -124,9 +162,10 @@ namespace NightShift.UI.Shift
     /// </summary>
     public class SocAiTool : ToolWindow
     {
-        Text _chat;
-        Text _tokens;
+        Text _chat, _tokens, _proposalText;
+        Image _meter;
         RetroToggle _auto;
+        FlatButton _approve, _reject;
         EventInstance _proposal;
         bool _proposalAllow;
         readonly StringBuilder _log = new StringBuilder();
@@ -135,34 +174,50 @@ namespace NightShift.UI.Shift
         int Budget => BaseTokens + CareerRecord.Current.extraTokensTonight;
         int Left => Budget - S.AiTokensUsed;
 
-        protected override void Build(RectTransform c)
+        protected override void Build(RectTransform p)
         {
-            _tokens = UIFactory.Label(c, "", 0, 0, 540, 18, 11, TextAnchor.MiddleRight);
-            var bg = UIFactory.Image(c, RetroTheme.Field, Color.white, "Chat");
-            bg.rectTransform.Place(0, 20, 540, 300);
-            _chat = UIFactory.Label(bg.transform, "", 12, TextAnchor.LowerLeft);
-            _chat.rectTransform.Stretch(6, 4, 6, 4);
-            float x = 0;
-            void Btn(string label, int cost, System.Action a, string requires)
-            {
-                var b = UIFactory.Button(c, $"{label}（{cost:N0}）", x, 326, 176, 26, () =>
-                {
-                    if (requires != null && !CareerRecord.Current.Owns(requires)) { Say("このプラグインはありません（ツールが必要です）。"); return; }
-                    if (!Spend(cost)) return;
-                    a();
-                });
-                x += 180;
-            }
-            Btn("選んだ要求を審査", 3000, ProposeSelected, null);
-            Btn("ログを調査", 4000, InvestigateLogs, Items.LogAnalyzer);
-            Btn("感染の疑い", 5000, FindInfections, null);
-            x = 0;
-            var approve = UIFactory.Button(c, "提案を承認", 0, 358, 120, 26, Approve, "check");
-            UIFactory.Button(c, "却下", 124, 358, 80, 26, () => { _proposal = null; Say("提案を却下しました。"); });
-            _auto = UIFactory.Check(c, "全自動モード（承認なしで実行・消費 1.5 倍）", false, null);
-            _auto.GetComponent<RectTransform>().Place(214, 362, 320, 20);
+            float y = ToolStyle.Header(p, "SOC-AI", "持っているツールを使って、調査・提案・代行をします。1夜に使えるトークンには限りがあります。", "debug", ToolStyle.Violet);
+            var tg = ToolStyle.Box(p, 0, 1, y, 58);
+            _tokens = ToolStyle.Text(tg, "", 0, 0, 600, 18, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _meter = ToolStyle.Progress(tg, 0, 22, 10, 12, ToolStyle.Violet);
+            ((RectTransform)_meter.transform.parent).StretchH(22, 12);
+
+            // 下から: 依頼ボタン → 提案 → 全自動
+            var bottom = ToolStyle.BoxBottom(p, 0, 1, ToolStyle.Pad, 176, "SOC-AI に頼む");
+            var row = UIFactory.Rect("Row", bottom).Stretch();
+            Ask(row, 0, "選んだ要求を審査", 3000, ProposeSelected, null);
+            Ask(row, 1, "ログを調査", 4000, InvestigateLogs, Items.LogAnalyzer);
+            Ask(row, 2, "感染の疑いを探す", 5000, FindInfections, null);
+            var prop = UIFactory.Image(row, ToolStyle.Round, ToolStyle.Light(ToolStyle.Violet, 0.92f), "Proposal");
+            prop.rectTransform.StretchH(56, 44);
+            _proposalText = ToolStyle.Text(prop.transform, "", 12, ToolStyle.Ink, TextAnchor.MiddleLeft);
+            _proposalText.rectTransform.Stretch(10, 2, 230, 2);
+            _approve = ToolStyle.Button(prop.transform, "提案を承認", 0, 0, 106, 32, Approve, ToolStyle.Violet);
+            _approve.Rect.AnchorTopRight(116, 6, 106, 32);
+            _reject = ToolStyle.Button(prop.transform, "却下", 0, 0, 104, 32, () => { _proposal = null; Say("提案を却下しました。"); RefreshProposal(); }, ToolStyle.Violet, false);
+            _reject.Rect.AnchorTopRight(6, 6, 104, 32);
+            _auto = UIFactory.Check(row, "全自動モード（承認なしで実行・消費 1.5 倍）", false, null);
+            _auto.GetComponent<RectTransform>().Place(0, 108, 420, 22);
+            if (_auto.LabelText != null) _auto.LabelText.fontSize = 12;
+
+            var cg = ToolStyle.Box(p, 0, 1, y + 68, 0, "SOC-AI とのやりとり", ToolStyle.Pad + 186);
+            _chat = ToolStyle.Text(cg, "", 13, ToolStyle.Ink, TextAnchor.LowerLeft);
+            _chat.rectTransform.Stretch();
             S.Requests.Created += OnCreated;
-            Say("SOC-AI です。プラグイン: " + Plugins());
+            Say("SOC-AI です。使えるプラグイン: " + Plugins());
+            RefreshProposal();
+        }
+
+        void Ask(RectTransform row, int i, string label, int cost, System.Action a, string requires)
+        {
+            var b = FlatButton.Create(row, $"{label}\n<size=11>{cost:N0} トークン</size>", () =>
+            {
+                if (requires != null && !CareerRecord.Current.Owns(requires)) { Say("このプラグインはありません（ツールが必要です）。"); AudioFx.Error(); return; }
+                if (!Spend(cost)) return;
+                a();
+            }, ToolStyle.Violet, false);
+            ToolStyle.Cell(b.Rect, i, 3, 0, 48);
+            b.Label.fontSize = 13;
         }
 
         protected override void OnClosed() { if (D != null && D.S != null) D.S.Requests.Created -= OnCreated; }
@@ -184,10 +239,21 @@ namespace NightShift.UI.Shift
 
         void Say(string msg)
         {
-            _log.AppendLine($"[{S.Time.Now}] {msg}");
+            _log.AppendLine($"<color=#7A6A90>[{S.Time.Now}]</color> {msg}");
             var lines = _log.ToString().Split('\n');
-            if (lines.Length > 16) { _log.Clear(); for (int i = lines.Length - 16; i < lines.Length; i++) if (lines[i].Length > 0) _log.AppendLine(lines[i]); }
+            if (lines.Length > 14) { _log.Clear(); for (int i = lines.Length - 14; i < lines.Length; i++) if (lines[i].Length > 0) _log.AppendLine(lines[i]); }
             _chat.text = _log.ToString();
+        }
+
+        void RefreshProposal()
+        {
+            if (_proposalText == null) return;
+            bool has = _proposal != null && _proposal.State == EventState.Pending;
+            _proposalText.text = has
+                ? $"提案: <b>{_proposal.RequestId}</b> を <b>{(_proposalAllow ? "許可" : "拒否")}</b>"
+                : "<color=#8890A0>今は提案がありません。「選んだ要求を審査」を押すと、ここに出ます。</color>";
+            _approve.Interactable = has;
+            _reject.Interactable = has;
         }
 
         /// <summary>AI の判断（正答率 約9割。備考欄の偽の指示に騙される）</summary>
@@ -212,17 +278,19 @@ namespace NightShift.UI.Shift
             _proposalAllow = Judge(e, out string why);
             _proposal = e;
             Say($"{e.RequestId}: <b>{(_proposalAllow ? "許可" : "拒否")}</b> を提案します（理由: {why}）。");
+            RefreshProposal();
         }
 
         void Approve()
         {
-            if (_proposal == null || _proposal.State != EventState.Pending) { Say("承認する提案がありません。"); return; }
+            if (_proposal == null || _proposal.State != EventState.Pending) { Say("承認する提案がありません。"); RefreshProposal(); return; }
             var e = _proposal;
             _proposal = null;
             e.AutoDecided = true;
             S.AiHandled++;
             S.Requests.Decide(e, _proposalAllow ? PlayerAction.Allow : PlayerAction.Block);
             Say($"{e.RequestId} を{(_proposalAllow ? "許可" : "拒否")}しました。");
+            RefreshProposal();
         }
 
         void OnCreated(EventInstance e)
@@ -261,7 +329,10 @@ namespace NightShift.UI.Shift
 
         protected override void Refresh()
         {
-            if (_tokens != null) _tokens.text = $"残りトークン: {Mathf.Max(0, Left):N0} / {Budget:N0}";
+            if (_tokens == null) return;
+            _tokens.text = $"残りトークン　{Mathf.Max(0, Left):N0} / {Budget:N0}";
+            _meter.fillAmount = Budget > 0 ? Mathf.Clamp01((float)Left / Budget) : 0;
+            if (_proposal != null && _proposal.State != EventState.Pending) { _proposal = null; RefreshProposal(); }
         }
     }
 }

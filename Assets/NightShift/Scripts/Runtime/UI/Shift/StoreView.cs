@@ -7,25 +7,31 @@ using UnityEngine.UI;
 namespace NightShift.UI.Shift
 {
     /// <summary>
-    /// 社内購買システム（DAY8〜）。業務に使う機材・ツールを自腹で買う（費用は給与から精算）。
-    /// 業務時間中は利用できない（業務開始前に買う）。
+    /// 社内購買（DAY8〜）。業務に使う機材・ツールを自腹で買う（費用は給与から精算）。
+    /// 業務時間中は注文できない（業務開始前に買う）。見た目は通販カタログ風（ToolStyle）。
     /// </summary>
     public class StoreView : MonoBehaviour
     {
         public const string Id = "store";
+        static readonly Color Accent = ToolStyle.Navy;
         ShiftDesktop _d;
         RetroWindow _w;
-        TableView _table;
-        Text _desc, _balance;
-        RetroButton _buy;
+        ToolList _list;
+        Text _balance, _name, _price, _desc, _ad, _owned;
+        Image _icon;
+        RectTransform _catBadge;
+        GameObject _detail, _reasonHost;
+        Text _reason;
+        FlatButton _buy;
+        readonly List<FlatButton> _filters = new List<FlatButton>();
+        StoreCategory? _filter;
 
         public static void Open(ShiftDesktop d)
         {
             if (!d.Require(Features.Store)) return;
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = "社内購買システム", Icon = "folder", Width = 760, Height = 520,
-                Menus = ShiftDesktop.StandardMenus(d), StatusCells = 1
+                Id = Id, Title = "社内購買", Icon = "folder", Width = 860, Height = 600, StatusCells = 1
             }, out bool created);
             if (!created) return;
             var v = w.gameObject.AddComponent<StoreView>();
@@ -35,40 +41,87 @@ namespace NightShift.UI.Shift
 
         void Build()
         {
-            var c = _w.Content;
-            var head = UIFactory.Solid(c, RetroTheme.Navy, "Head");
-            head.rectTransform.StretchH(0, 30);
-            UIFactory.Label(head.transform, "  NEXUS 社内購買システム　― 業務用品のご注文（費用は給与から精算されます）", 13, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
+            var p = ToolStyle.Page(_w);
+            float y = ToolStyle.Header(p, "社内購買", "仕事に使う機材・ツールを買えます。代金は給与から精算されます（会社は1円も出しません）。", "folder", Accent);
+            _balance = ToolStyle.Text(p, "", 0, 0, 260, 28, 18, Color.white, TextAnchor.MiddleRight, true);
+            _balance.rectTransform.AnchorTopRight(18, 8, 300, 26);
+            var balLabel = ToolStyle.Text(p, "所持金", 0, 0, 100, 16, 11, new Color(1, 1, 1, 0.8f), TextAnchor.MiddleRight);
+            balLabel.rectTransform.AnchorTopRight(18, 34, 200, 16);
 
-            var lg = UIFactory.Group(c, "商品一覧", 0, 36, 740, 260);
-            _table = TableView.CreateStretch(lg, 0, 0, 0, 0,
-                new TableColumn("区分", 70), new TableColumn("品名", 260), new TableColumn("価格", 90), new TableColumn("所持", 70), new TableColumn("入荷", 70));
-            _table.SelectionChanged += _ => RefreshDetail();
+            if (_d.ShiftStarted)
+            {
+                var host = UIFactory.Rect("Notice", p);
+                host.StretchH(y, 34, ToolStyle.Pad, ToolStyle.Pad);
+                var t = ToolStyle.Banner(host, "業務時間中は注文できません。次の夜、業務を始める前（業務連絡を読んでいる間）に注文してください。", Tone.Warn, 0, 0, 10, 34);
+                ((RectTransform)t.transform.parent).Stretch();
+                y += 44;
+            }
 
-            var dg = UIFactory.Group(c, "商品の説明", 0, 302, 540, 130);
-            _desc = UIFactory.Label(dg, "", 12, TextAnchor.UpperLeft);
-            _desc.rectTransform.Stretch();
+            // 種類で絞り込む
+            var chips = UIFactory.Rect("Filters", p);
+            chips.StretchH(y, 30, ToolStyle.Pad, ToolStyle.Pad);
+            float x = 0;
+            void Chip(string label, StoreCategory? cat)
+            {
+                var b = ToolStyle.Button(chips, label, x, 0, 96, 28, () => { _filter = cat; Refresh(); }, Accent, false);
+                b.name = cat.HasValue ? cat.Value.ToString() : "All";
+                _filters.Add(b);
+                x += 102;
+            }
+            Chip("すべて", null);
+            Chip("機材", StoreCategory.Hardware);
+            Chip("ツール", StoreCategory.Tool);
+            Chip("対策ソフト", StoreCategory.Security);
+            Chip("AI", StoreCategory.AI);
+            Chip("消耗品", StoreCategory.Consumable);
+            y += 40;
 
-            var bg = UIFactory.Group(c, "ご注文", 546, 302, 194, 130);
-            _balance = UIFactory.Label(bg, "", 0, 0, 180, 40, 12, TextAnchor.UpperLeft);
-            _buy = UIFactory.Button(bg, "注文する(B)", 0, 46, 180, 30, Buy, "check");
-            UIFactory.Button(bg, "閉じる(C)", 0, 82, 180, 24, _w.RequestClose, "exit");
+            var lg = ToolStyle.Box(p, 0, 0.52f, y, 0, "商品");
+            _list = ToolList.Create(lg, Accent, "この種類の商品はありません。");
+            _list.SelectionChanged += _ => RefreshDetail();
+
+            var dg = ToolStyle.Box(p, 0.52f, 1, y, 0);
+            _detail = UIFactory.Rect("Detail", dg).Stretch().gameObject;
+            var d = _detail.transform;
+            _icon = UIFactory.Image(d, null, Color.white, "Icon");
+            _icon.rectTransform.Place(0, 2, 32, 32);
+            _name = ToolStyle.Text(d, "", 44, 0, 330, 22, 16, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _price = ToolStyle.Text(d, "", 44, 22, 200, 26, 20, Accent, TextAnchor.MiddleLeft, true);
+            _catBadge = null;
+            _owned = ToolStyle.Text(d, "", 0, 56, 360, 18, 12, ToolStyle.Muted, TextAnchor.MiddleLeft, true);
+            _desc = ToolStyle.Text(d, "", 13, ToolStyle.Ink);
+            _desc.rectTransform.StretchH(82, 150, 0, 0);
+            _ad = ToolStyle.Text(d, "", 12, new Color(0.55f, 0.35f, 0.1f));
+            _ad.fontStyle = FontStyle.Italic;
+            _ad.rectTransform.StretchH(236, 40, 0, 0);
+            var bottom = UIFactory.Rect("Bottom", d);
+            bottom.anchorMin = new Vector2(0, 0); bottom.anchorMax = new Vector2(1, 0); bottom.pivot = new Vector2(0, 0);
+            bottom.offsetMin = new Vector2(0, 0); bottom.offsetMax = new Vector2(0, 96);
+            _reasonHost = UIFactory.Rect("Reason", bottom).gameObject;
+            ((RectTransform)_reasonHost.transform).StretchH(0, 40);
+            _reason = ToolStyle.Banner(_reasonHost.transform, "", Tone.Warn, 0, 0, 10, 40);
+            ((RectTransform)_reason.transform.parent).Stretch();
+            _buy = ToolStyle.Button(bottom, "購入する(B)", 0, 0, 10, 44, Buy, Accent);
+            _buy.Rect.StretchH(50, 44);
+
             _w.Accelerators[KeyCode.B] = Buy;
             _w.Accelerators[KeyCode.C] = _w.RequestClose;
+            _w.SetStatus(0, "商品を選ぶと、右に説明と購入ボタンが出ます。");
             Refresh();
-            if (_table.Count > 0) _table.Select(0);
+            var items = Items();
+            if (items.Count > 0) _list.Select(items[0]);
         }
 
         List<StoreItemDefinition> Items()
         {
             var list = new List<StoreItemDefinition>();
             foreach (var it in _d.Game.Database.storeItems)
-                if (it != null && it.unlockDay <= _d.S.Day.dayNumber) list.Add(it);
+                if (it != null && it.unlockDay <= _d.S.Day.dayNumber && (!_filter.HasValue || it.category == _filter.Value)) list.Add(it);
             list.Sort((a, b) => a.unlockDay != b.unlockDay ? a.unlockDay.CompareTo(b.unlockDay) : a.price.CompareTo(b.price));
             return list;
         }
 
-        static string CategoryLabel(StoreCategory c)
+        public static string CategoryLabel(StoreCategory c)
         {
             switch (c)
             {
@@ -82,17 +135,24 @@ namespace NightShift.UI.Shift
 
         void Refresh()
         {
-            var sel = _table.Selected;
             var career = CareerRecord.Current;
             int day = _d.S.Day.dayNumber;
-            _table.SetRows(Items(), it => new[]
+            int balance = _d.Game.Wallet.Balance;
+            _list.SetItems(Items(), it =>
             {
-                CategoryLabel(it.category), it.displayName, OperatorWallet.Yen(it.price),
-                it.consumable ? $"{career.ItemCount(it.itemId)} 個" : career.Owns(it.itemId) ? "購入済み" : "-",
-                it.unlockDay == day ? "NEW" : ""
+                string badge = null; Tone tone = Tone.Neutral;
+                if (!it.consumable && career.Owns(it.itemId)) { badge = "購入済み"; tone = Tone.Ok; }
+                else if (it.consumable && career.ItemCount(it.itemId) > 0) { badge = $"所持 {career.ItemCount(it.itemId)} 個"; tone = Tone.Ok; }
+                else if (it.unlockDay == day) { badge = "NEW"; tone = Tone.Info; }
+                else if (balance < it.price) { badge = "所持金が足りない"; tone = Tone.Warn; }
+                return new ToolList.Row(it.displayName, $"{CategoryLabel(it.category)}　・　{OperatorWallet.Yen(it.price)}", badge, tone);
             });
-            if (sel != null) _table.SelectData(sel);
-            _balance.text = $"所持金: <b>{OperatorWallet.Yen(_d.Game.Wallet.Balance)}</b>";
+            _balance.text = OperatorWallet.Yen(balance);
+            foreach (var b in _filters)
+            {
+                bool on = (_filter.HasValue ? _filter.Value.ToString() : "All") == b.name;
+                b.SetAccent(Accent, on);
+            }
             RefreshDetail();
         }
 
@@ -100,7 +160,7 @@ namespace NightShift.UI.Shift
         string Reason(StoreItemDefinition it)
         {
             var career = CareerRecord.Current;
-            if (_d.ShiftStarted) return "業務時間中は注文できません。業務開始前に注文してください。";
+            if (_d.ShiftStarted) return "業務時間中は注文できません。";
             if (!it.consumable && career.Owns(it.itemId)) return "購入済みです。";
             if (it.consumable && career.ItemCount(it.itemId) >= it.maxStock) return "これ以上は持てません。";
             if (!string.IsNullOrEmpty(it.prerequisite) && !career.Owns(it.prerequisite))
@@ -108,21 +168,34 @@ namespace NightShift.UI.Shift
                 var pre = _d.Game.Database.FindItem(it.prerequisite);
                 return $"先に「{(pre != null ? pre.displayName : it.prerequisite)}」が必要です。";
             }
-            if (_d.Game.Wallet.Balance < it.price) return "所持金が足りません。";
+            if (_d.Game.Wallet.Balance < it.price) return $"所持金が {OperatorWallet.Yen(it.price - _d.Game.Wallet.Balance)} 足りません。";
             return null;
         }
 
         void RefreshDetail()
         {
-            if (!(_table.Selected is StoreItemDefinition it)) { _desc.text = ""; _buy.Interactable = false; return; }
+            var it = _list.Selected as StoreItemDefinition;
+            _detail.SetActive(it != null);
+            if (it == null) return;
+            var career = CareerRecord.Current;
+            _icon.sprite = RetroTheme.BigIcon(it.icon);
+            _name.text = it.displayName;
+            _price.text = OperatorWallet.Yen(it.price);
+            if (_catBadge) Destroy(_catBadge.gameObject);
+            _catBadge = ToolStyle.BadgeRight(_detail.transform, CategoryLabel(it.category), Tone.Info, 0, 2);
+            _owned.text = it.consumable ? $"所持 {career.ItemCount(it.itemId)} 個（最大 {it.maxStock} 個）" : career.Owns(it.itemId) ? "購入済み" : "未購入";
+            _desc.text = (it.description ?? "").Replace(' ', '\u00A0'); // 日本語の中の半角スペースで不自然に改行しないように
+            _ad.text = string.IsNullOrEmpty(it.adCopy) ? "" : $"「{it.adCopy}」";
             string reason = Reason(it);
-            _desc.text = $"<b>{it.displayName}</b>　{OperatorWallet.Yen(it.price)}\n\n{it.description}" + (reason != null ? $"\n\n<color=#B00000>{reason}</color>" : "");
+            _reasonHost.SetActive(reason != null);
+            _reason.text = reason ?? "";
             _buy.Interactable = reason == null;
+            _buy.SetText(reason == null ? $"購入する（{OperatorWallet.Yen(it.price)}）(B)" : "購入できません");
         }
 
         void Buy()
         {
-            if (!(_table.Selected is StoreItemDefinition it)) { AudioFx.Error(); return; }
+            if (!(_list.Selected is StoreItemDefinition it)) { AudioFx.Error(); return; }
             string reason = Reason(it);
             if (reason != null) { AudioFx.Error(); _w.SetStatus(0, reason); return; }
             MessageBox.Confirm(_d, "ご注文の確認", $"「{it.displayName}」を {OperatorWallet.Yen(it.price)} で注文します。\n代金は給与から精算されます。よろしいですか？", () =>

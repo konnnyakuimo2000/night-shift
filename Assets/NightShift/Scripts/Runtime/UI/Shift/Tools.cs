@@ -12,6 +12,7 @@ namespace NightShift.UI.Shift
     /// <summary>
     /// サブモニターで動くツール（TOOL_CATALOG.md）。原則「手間を減らすだけ・判断はしない」。
     /// 例外は 自動審査ツール（条件をすべて満たす簡単な要求だけ自動で許可）、VACCINE 99（既知のウイルスだけ検出）、SOC-AI（提案・代行）。
+    /// 見た目は業務システムと違う「市販ソフト」風（ToolStyle）: 何をするツールかを見出しに書き、選んでいないときは手順を案内する。
     /// </summary>
     public static class Tools
     {
@@ -21,18 +22,18 @@ namespace NightShift.UI.Shift
             if (!d.HasTool(id)) { AudioFx.Error(); return; }
             switch (id)
             {
-                case Items.ProfilePanel: Open<ProfilePanelTool>(ws, id, "社員情報パネル", "people", 420, 380); break;
-                case Items.AutoReview: Open<AutoReviewTool>(ws, id, "自動審査ツール", "check", 520, 490); break;
-                case Items.LogAnalyzer: Open<LogAnalyzerTool>(ws, id, "ログ解析", "log", 520, 360); break;
-                case Items.FwConsole: Open<FirewallConsoleTool>(ws, id, "遮断コンソール", "firewall", 380, 330); break;
-                case Items.MailInspector: Open<MailInspectorTool>(ws, id, "メール差出人チェッカー", "mail", 460, 220); break;
-                case Items.RemoteKit: Open<RemoteKitTool>(ws, id, "リモート診断キット", "remote", 400, 380); break;
-                case Items.Isolator: Open<IsolatorTool>(ws, id, "端末隔離ツール", "lock", 440, 380); break;
-                case Items.ServerMonitor: Open<ServerMonitorTool>(ws, id, "サーバー監視ダッシュボード", "server", 560, 420); break;
-                case Items.Correlator: Open<CorrelatorTool>(ws, id, "相関タイムライン", "clock", 600, 420); break;
-                case Items.Vaccine: Open<VaccineTool>(ws, id, "VACCINE 99", "shield", 440, 330); break;
-                case Items.VaccineServer: Open<VaccineTool>(ws, Items.Vaccine, "VACCINE 99", "shield", 440, 330); break;
-                case Items.SocAi: Open<SocAiTool>(ws, id, "SOC-AI", "debug", 560, 470); break;
+                case Items.ProfilePanel: Open<ProfilePanelTool>(ws, id, "社員情報パネル", "people", 680, 470); break;
+                case Items.AutoReview: Open<AutoReviewTool>(ws, id, "自動審査ツール", "check", 640, 620); break;
+                case Items.LogAnalyzer: Open<LogAnalyzerTool>(ws, id, "ログ解析", "log", 620, 540); break;
+                case Items.FwConsole: Open<FirewallConsoleTool>(ws, id, "遮断コンソール", "firewall", 480, 470); break;
+                case Items.MailInspector: Open<MailInspectorTool>(ws, id, "メール差出人チェッカー", "mail", 540, 360); break;
+                case Items.RemoteKit: Open<RemoteKitTool>(ws, id, "リモート診断キット", "remote", 600, 540); break;
+                case Items.Isolator: Open<IsolatorTool>(ws, id, "端末隔離ツール", "lock", 520, 540); break;
+                case Items.ServerMonitor: Open<ServerMonitorTool>(ws, id, "サーバー監視ダッシュボード", "server", 700, 580); break;
+                case Items.Correlator: Open<CorrelatorTool>(ws, id, "相関タイムライン", "clock", 700, 560); break;
+                case Items.Vaccine: Open<VaccineTool>(ws, id, "VACCINE 99", "shield", 540, 500); break;
+                case Items.VaccineServer: Open<VaccineTool>(ws, Items.Vaccine, "VACCINE 99", "shield", 540, 500); break;
+                case Items.SocAi: Open<SocAiTool>(ws, id, "SOC-AI", "debug", 660, 640); break;
             }
         }
 
@@ -58,13 +59,13 @@ namespace NightShift.UI.Shift
         public void Init(ShiftDesktop d, RetroWindow w, string id)
         {
             D = d; W = w; ToolId = id;
-            Build(w.Content);
+            Build(ToolStyle.Page(w));
             d.SelectionChanged += Refresh;
             w.Closed += () => { if (D != null) D.SelectionChanged -= Refresh; OnClosed(); };
             Refresh();
         }
 
-        protected abstract void Build(RectTransform c);
+        protected abstract void Build(RectTransform page);
         protected abstract void Refresh();
         protected virtual void OnClosed() { }
 
@@ -74,43 +75,88 @@ namespace NightShift.UI.Shift
             if (_timer >= RefreshInterval) { _timer = 0; Refresh(); }
         }
 
-        protected static string Ok(bool v) => v ? "○" : "×";
+        /// <summary>何も選ばれていないときの案内と、選ばれたときの中身を切り替える</summary>
+        protected static void Show(GameObject empty, GameObject body, bool hasData)
+        {
+            if (empty) empty.SetActive(!hasData);
+            if (body) body.SetActive(hasData);
+        }
+
+        protected static string Locked => "<color=#8890A0>（まだ使えません）</color>";
     }
 
     // ============================================================ 社員情報パネル
     public class ProfilePanelTool : ToolWindow
     {
-        Text _text;
-        protected override void Build(RectTransform c)
+        GameObject _empty, _body;
+        Text _rUser, _rId, _rDevice, _rIp, _rDest, _rTime;
+        Text _eName, _eId, _eDevice, _eIp, _eDept, _eWork, _eEmployment, _eVpn, _ePerms;
+        GameObject _notFound, _empFields;
+
+        protected override void Build(RectTransform p)
         {
-            _text = UIFactory.Label(c, "", 12, TextAnchor.UpperLeft);
-            _text.rectTransform.Stretch(6, 4, 6, 4);
-            W.SetStatus(0, "メインモニターで接続要求を選ぶと表示します。見比べるのはあなたです。");
+            float y = ToolStyle.Header(p, "社員情報パネル", "選んだ接続要求の内容と、社員名簿の情報を左右に並べます。見比べて判断するのはあなたです。", "people", ToolStyle.Teal);
+            _empty = ToolStyle.EmptyState(UIFactory.Rect("EmptyHost", p).Stretch(0, y, 0, 0), "接続要求が選ばれていません",
+                "メインモニターの「ネットワーク接続監視」で要求を選ぶ", "ここに、要求の内容と社員名簿の情報が並びます");
+            _body = UIFactory.Rect("Body", p).Stretch(0, y, 0, 0).gameObject;
+            var left = ToolStyle.Box(_body.transform, 0, 0.5f, 0, 0, "接続要求の内容");
+            var right = ToolStyle.Box(_body.transform, 0.5f, 1, 0, 0, "社員名簿");
+            // 見比べる項目は同じ高さに並べる（利用者↔氏名、端末↔登録端末、接続元↔端末IP）
+            _rUser = ToolStyle.Field(left, "利用者", 0, 0, 300);
+            _rId = ToolStyle.Field(left, "社員番号", 0, 28, 300, 96, true);
+            _rDevice = ToolStyle.Field(left, "端末", 0, 56, 300, 96, true);
+            _rIp = ToolStyle.Field(left, "接続元", 0, 84, 300, 96, true);
+            _rDest = ToolStyle.Field(left, "接続先", 0, 124, 300);
+            _rTime = ToolStyle.Field(left, "受付時刻", 0, 152, 300, 96, true);
+
+            _empFields = UIFactory.Rect("Fields", right).Stretch().gameObject;
+            var f = _empFields.transform;
+            _eName = ToolStyle.Field(f, "氏名", 0, 0, 300);
+            _eId = ToolStyle.Field(f, "社員番号", 0, 28, 300, 96, true);
+            _eDevice = ToolStyle.Field(f, "登録端末", 0, 56, 300, 96, true);
+            _eIp = ToolStyle.Field(f, "端末IP", 0, 84, 300, 96, true);
+            _eDept = ToolStyle.Field(f, "部署・役職", 0, 124, 300);
+            _eWork = ToolStyle.Field(f, "勤務", 0, 152, 300);
+            _eEmployment = ToolStyle.Field(f, "在籍", 0, 180, 300);
+            _eVpn = ToolStyle.Field(f, "VPN", 0, 208, 300);
+            ToolStyle.Text(f, "権限", 0, 238, 96, 20, 12, ToolStyle.Muted, TextAnchor.MiddleLeft);
+            _ePerms = ToolStyle.Text(f, "", 96, 238, 210, 80, 12, ToolStyle.Ink);
+            _notFound = UIFactory.Rect("NotFound", right).Stretch().gameObject;
+            ToolStyle.Badge(_notFound.transform, "該当なし", Tone.Neutral, 0, 0);
+            ToolStyle.Text(_notFound.transform, "社員名簿に、この利用者は見つかりません。", 0, 28, 300, 40, 13, ToolStyle.Ink);
+            W.SetStatus(0, "メインモニターで接続要求を選ぶと表示します。");
         }
 
         protected override void Refresh()
         {
             var e = D.SelectedRequest;
-            if (e == null) { _text.text = "接続要求を選んでください。"; return; }
-            var sb = new StringBuilder();
-            sb.AppendLine($"<b>{e.RequestId}</b>　利用者: {e.DisplayUser}（{e.DisplayEmployeeId}）");
-            sb.AppendLine($"要求の端末: {e.Device}　接続元: {e.SourceLabel}");
-            sb.AppendLine("――――――――――――――――――");
+            Show(_empty, _body, e != null);
+            if (e == null) return;
+            _rUser.text = e.DisplayUser;
+            _rId.text = e.DisplayEmployeeId;
+            _rDevice.text = e.Device;
+            _rIp.text = $"{e.SourceIp}（{(e.Zone == SourceZone.External ? "社外" : "社内")}）";
+            _rDest.text = $"{e.DestinationLabel}　{e.AccessType}";
+            _rTime.text = TimeManager.Format(e.GeneratedTime);
             var emp = e.Employee;
-            if (emp == null) { sb.AppendLine("社員名簿に該当する社員はいません。"); _text.text = sb.ToString(); return; }
-            sb.AppendLine($"<b>{emp.DisplayName}</b>（{emp.employeeId}）　{emp.department} / {emp.position}");
-            sb.AppendLine($"登録端末: {emp.deviceId}");
-            if (D.Unlocked(Features.IpCheck)) sb.AppendLine($"端末IP: {S.Employees.GetIp(emp)}");
-            if (D.Unlocked(Features.WorkStatus)) sb.AppendLine($"勤務状態: {(emp.onShift ? "勤務中" : "退勤")}　勤務時間: {emp.workHours}");
-            if (D.Unlocked(Features.EmploymentStatus)) sb.AppendLine($"在籍状態: {EmployeeData.EmploymentLabel(emp.employment)}");
-            sb.AppendLine($"VPN利用: {(emp.vpnEnabled ? "許可" : "不可")}　VPN端末: {(string.IsNullOrEmpty(emp.laptopDeviceId) ? "-" : emp.laptopDeviceId)}");
+            _notFound.SetActive(emp == null);
+            _empFields.SetActive(emp != null);
+            if (emp == null) return;
+            _eName.text = emp.DisplayName;
+            _eId.text = emp.employeeId;
+            _eDevice.text = emp.deviceId + (string.IsNullOrEmpty(emp.laptopDeviceId) ? "" : $"（VPN端末 {emp.laptopDeviceId}）");
+            _eIp.text = D.Unlocked(Features.IpCheck) ? S.Employees.GetIp(emp) : Locked;
+            _eDept.text = $"{emp.department} / {emp.position}";
+            _eWork.text = D.Unlocked(Features.WorkStatus) ? $"{(emp.onShift ? "勤務中" : "退勤")}（{emp.workHours}）" : Locked;
+            _eEmployment.text = D.Unlocked(Features.EmploymentStatus) ? EmployeeData.EmploymentLabel(emp.employment) : Locked;
+            _eVpn.text = emp.vpnEnabled ? "利用できる" : "利用できない";
             if (D.Unlocked(Features.EmployeePermissions))
             {
                 var perms = new List<string>();
-                foreach (var p in emp.permissions) if (p != null) perms.Add(p.displayName);
-                sb.AppendLine("権限: " + string.Join("・", perms));
+                foreach (var pm in emp.permissions) if (pm != null) perms.Add(pm.displayName);
+                _ePerms.text = string.Join("・", perms);
             }
-            _text.text = sb.ToString();
+            else _ePerms.text = Locked;
         }
     }
 
@@ -122,72 +168,87 @@ namespace NightShift.UI.Shift
             "社員として登録されている", "自分の登録端末からの接続", "必要な権限が ○", "普段使うシステムへの接続",
             "勤務中の社員", "接続元IPが登録端末のIPと一致", "在籍中（退職・休職でない）"
         };
-        TableView _queue;
-        RetroToggle _enabled;
-        Text _count;
+        public const int IpMatchIndex = 5;
 
+        ToolList _queue;
+        FlatButton _toggle;
+        Text _count, _state;
+        GameObject _warning;
         protected override float RefreshInterval => 0.5f;
 
-        protected override void Build(RectTransform c)
+        static CareerRecord Career => CareerRecord.Current;
+        static bool On => Career.autoReviewEnabled && Career.autoReviewConditions.Count > 0;
+
+        protected override void Build(RectTransform p)
         {
-            var career = CareerRecord.Current;
-            var g = UIFactory.Group(c, "自動で許可する条件（すべて満たした要求だけ）", 0, 0, 500, 214);
-            UIFactory.Label(g, "☑ 社内からの接続（常に必須）　※社外・管理系・VPN・セキュリティ警告は常に手動", 0, 0, 490, 18, 11);
+            float y = ToolStyle.Header(p, "自動審査ツール", "選んだ条件をすべて満たす簡単な要求だけを、自動で許可します。許可した要求の責任はあなたにあります。", "check", ToolStyle.Green);
+            var cg = ToolStyle.Box(p, 0, 0.58f, y, 268, "自動で許可する条件（すべて満たした要求だけ）");
+            ToolStyle.Text(cg, "社内からの接続・管理系以外・警告なし は、いつも必須です", 0, 0, 340, 16, 11, ToolStyle.Muted);
             for (int i = 0; i < Conditions.Length; i++)
             {
                 string cond = Conditions[i];
                 bool available = i < 6 || D.Unlocked(Features.EmploymentStatus);
-                var t = UIFactory.Check(g, cond + (available ? "" : "（DAY12〜）") + (i == IpMatchIndex ? "（推奨）" : ""), career.autoReviewConditions.Contains(cond), v =>
+                var t = UIFactory.Check(cg, cond + (available ? "" : "（DAY12〜）"), Career.autoReviewConditions.Contains(cond), v =>
                 {
-                    if (v) { if (!career.autoReviewConditions.Contains(cond)) career.autoReviewConditions.Add(cond); }
-                    else career.autoReviewConditions.Remove(cond);
+                    if (v) { if (!Career.autoReviewConditions.Contains(cond)) Career.autoReviewConditions.Add(cond); }
+                    else Career.autoReviewConditions.Remove(cond);
                     // 条件を全部外したら、自動許可も止める
-                    if (career.autoReviewConditions.Count == 0 && _enabled != null && _enabled.Value) SetEnabled(false, "条件がないため、自動許可を停止しました。");
-                    UpdateWarning();
+                    if (Career.autoReviewConditions.Count == 0 && Career.autoReviewEnabled) SetEnabled(false, "条件がないため、自動許可を停止しました。");
+                    RefreshState();
                 });
-                t.GetComponent<RectTransform>().Place(0, 22 + i * 22, 300, 20);
+                t.GetComponent<RectTransform>().Place(0, 22 + i * 28, 280, 22);
+                if (t.LabelText != null) t.LabelText.fontSize = 13;
                 if (!available) t.Interactable = false;
+                if (i == IpMatchIndex) ToolStyle.BadgeRight(cg, "推奨", Tone.Info, 0, 23 + i * 28);
             }
-            _enabled = UIFactory.Check(g, "自動許可を有効にする", career.autoReviewEnabled && career.autoReviewConditions.Count > 0, v =>
-            {
-                if (v && career.autoReviewConditions.Count == 0) { AudioFx.Error(); SetEnabled(false, "条件を1つ以上選んでから有効にしてください。"); return; }
-                SetEnabled(v, v ? "自動許可を開始しました。許可した要求の責任は、あなたにあります。" : "自動許可を停止しました。");
-            });
-            _enabled.GetComponent<RectTransform>().Place(320, 22, 170, 20);
-            _count = UIFactory.Label(g, "", 320, 50, 170, 40, 11, TextAnchor.UpperLeft);
-            // IP の照合を外すと、IP を偽ったなりすまし接続も通してしまう
-            _warning = UIFactory.Label(g, "", 320, 94, 170, 80, 11, TextAnchor.UpperLeft, new Color(0.7f, 0, 0));
-            UpdateWarning();
 
-            var q = UIFactory.Group(c, "要求キュー（期限の近い順）", 0, 220, 500, 200);
-            _queue = TableView.CreateStretch(q, 0, 0, 0, 0,
-                new TableColumn("要求", 70), new TableColumn("利用者", 110), new TableColumn("接続元", 104), new TableColumn("接続先", 100), new TableColumn("残り", 60));
+            var sg = ToolStyle.Box(p, 0.58f, 1, y, 268, "自動許可");
+            _state = ToolStyle.Text(sg, "", 0, 0, 220, 22, 15, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _count = ToolStyle.Text(sg, "", 0, 28, 220, 20, 12, ToolStyle.Muted);
+            _toggle = ToolStyle.Button(sg, "", 0, 58, 10, 38, Toggle, ToolStyle.Green);
+            _toggle.Rect.StretchH(58, 38);
+            var warn = UIFactory.Rect("Warn", sg);
+            warn.StretchH(108, 92);
+            _warning = warn.gameObject;
+            var banner = ToolStyle.Banner(warn, "IP の照合がオフです。\n接続元を偽ったなりすまし接続も、自動で許可されます。", Tone.Warn, 0, 0, 10, 92);
+            ((RectTransform)banner.transform.parent).Stretch();
+
+            var qg = ToolStyle.Box(p, 0, 1, y + 278, 0, "待っている要求（期限の近い順）");
+            _queue = ToolList.Create(qg, ToolStyle.Green, "待っている要求はありません。");
             S.Requests.Created += OnCreated;
-            W.SetStatus(0, _enabled.Value ? "自動許可した要求の責任は、あなたにあります。" : "条件を選んでから「自動許可を有効にする」を押してください。");
+            RefreshState();
+            W.SetStatus(0, On ? "自動許可した要求の責任は、あなたにあります。" : "条件を選んでから「自動許可を始める」を押してください。");
             ProcessPending();
         }
 
         protected override void OnClosed() { if (D != null && D.S != null) D.S.Requests.Created -= OnCreated; }
 
-        void OnCreated(EventInstance e) { if (e.State == EventState.Pending) TryAuto(e); }
-
-        public const int IpMatchIndex = 5;
-        Text _warning;
-
-        void UpdateWarning()
+        void Toggle()
         {
-            if (_warning == null) return;
-            bool ipOff = !CareerRecord.Current.autoReviewConditions.Contains(Conditions[IpMatchIndex]);
-            _warning.text = ipOff ? "⚠IPの照合がオフです。接続元を偽ったなりすまし接続も、自動で許可されます。" : "";
+            if (On) { SetEnabled(false, "自動許可を停止しました。"); return; }
+            if (Career.autoReviewConditions.Count == 0) { AudioFx.Error(); W.SetStatus(0, "条件を1つ以上選んでから始めてください。"); return; }
+            SetEnabled(true, "自動許可を始めました。許可した要求の責任は、あなたにあります。");
         }
 
         void SetEnabled(bool v, string message)
         {
-            CareerRecord.Current.autoReviewEnabled = v;
-            if (_enabled.Value != v) _enabled.SetValue(v, false);
+            Career.autoReviewEnabled = v;
             W.SetStatus(0, message);
+            RefreshState();
             if (v) ProcessPending();
         }
+
+        void RefreshState()
+        {
+            if (_state == null) return;
+            bool on = On;
+            _state.text = on ? "<color=#1F7F40>● 動作中</color>" : "<color=#667080>○ 停止中</color>";
+            _toggle.SetText(on ? "自動許可を止める" : "自動許可を始める");
+            _toggle.SetAccent(on ? ToolStyle.Red : ToolStyle.Green, true);
+            _warning.SetActive(!Career.autoReviewConditions.Contains(Conditions[IpMatchIndex]));
+        }
+
+        void OnCreated(EventInstance e) { if (e.State == EventState.Pending) TryAuto(e); }
 
         void ProcessPending()
         {
@@ -196,8 +257,8 @@ namespace NightShift.UI.Shift
 
         void TryAuto(EventInstance e)
         {
-            if (_enabled == null || !_enabled.Value || CareerRecord.Current.autoReviewConditions.Count == 0) return;
-            if (!Eligible(S, e, CareerRecord.Current.autoReviewConditions)) return;
+            if (!On) return;
+            if (!Eligible(S, e, Career.autoReviewConditions)) return;
             e.AutoDecided = true;
             S.AutoAllowed++;
             S.Requests.Decide(e, PlayerAction.Allow);
@@ -236,7 +297,14 @@ namespace NightShift.UI.Shift
             var list = new List<EventInstance>(S.Requests.Pending);
             list.Sort((a, b) => a.TimeoutAt.CompareTo(b.TimeoutAt));
             float now = S.Time.CurrentMinute;
-            _queue.SetRows(list, e => new[] { e.RequestId, e.DisplayUser, e.SourceLabel, e.DestinationLabel, S.Day.requestsExpire ? $"{Mathf.Max(0, Mathf.CeilToInt(e.TimeoutAt - now))} 分" : "-" });
+            bool expire = S.Day.requestsExpire;
+            _queue.SetItems(list, e =>
+            {
+                int left = Mathf.Max(0, Mathf.CeilToInt(e.TimeoutAt - now));
+                bool auto = Eligible(S, e, Career.autoReviewConditions);
+                return new ToolList.Row($"{e.RequestId}　{e.DisplayUser}", $"{e.SourceLabel} → {e.DestinationLabel}　・{(auto ? "自動の対象" : "手動で審査")}",
+                    expire ? $"残り {left} 分" : null, left <= 5 ? Tone.Bad : left <= 15 ? Tone.Warn : Tone.Info);
+            });
             _count.text = $"今夜の自動許可: {S.AutoAllowed} 件";
         }
     }
@@ -244,20 +312,40 @@ namespace NightShift.UI.Shift
     // ============================================================ ログ解析
     public class LogAnalyzerTool : ToolWindow
     {
-        Text _summary;
-        TableView _rows;
-        protected override void Build(RectTransform c)
+        GameObject _empty, _body;
+        Text _who, _total, _recent, _fails;
+        ToolList _rows;
+
+        protected override void Build(RectTransform p)
         {
-            _summary = UIFactory.Label(c, "", 0, 0, 500, 48, 12, TextAnchor.UpperLeft);
-            var g = UIFactory.Group(c, "同じ接続元・同じ利用者の記録", 0, 52, 500, 250);
-            _rows = TableView.CreateStretch(g, 0, 0, 0, 0, new TableColumn("時刻", 70), new TableColumn("接続元", 110), new TableColumn("利用者", 110), new TableColumn("結果", 60), new TableColumn("詳細", 140));
+            float y = ToolStyle.Header(p, "ログ解析", "選んだログの行と、同じ接続元・同じ利用者の記録を集めて数えます。", "log", ToolStyle.Indigo);
+            _empty = ToolStyle.EmptyState(UIFactory.Rect("EmptyHost", p).Stretch(0, y, 0, 0), "ログの行が選ばれていません",
+                "メインモニターの「システムログの検索・参照」で行を選ぶ", "同じ接続元・同じ利用者の記録が、ここに新しい順に集まります");
+            _body = UIFactory.Rect("Body", p).Stretch(0, y, 0, 0).gameObject;
+            var top = ToolStyle.Box(_body.transform, 0, 1, 0, 104);
+            _who = ToolStyle.Text(top, "", 0, 0, 560, 20, 14, ToolStyle.Ink, TextAnchor.MiddleLeft);
+            var tiles = UIFactory.Rect("Tiles", top).Stretch();
+            _total = StatCell(tiles, 0, "該当する記録");
+            _recent = StatCell(tiles, 1, "直近10分");
+            _fails = StatCell(tiles, 2, "失敗");
+            var lg = ToolStyle.Box(_body.transform, 0, 1, 114, 0, "同じ接続元・同じ利用者の記録（新しい順）");
+            _rows = ToolList.Create(lg, ToolStyle.Indigo, "記録はありません。");
             W.SetStatus(0, "メインモニターのシステムログで行を選ぶと表示します。");
+        }
+
+        Text StatCell(RectTransform parent, int i, string label)
+        {
+            var bg = UIFactory.Image(parent, ToolStyle.Round, ToolStyle.Light(ToolStyle.Indigo, 0.9f), "Stat");
+            ToolStyle.Cell(bg.rectTransform, i, 3, 28, 52);
+            ToolStyle.Text(bg.transform, label, 10, 4, 200, 16, 11, ToolStyle.Muted, TextAnchor.MiddleLeft, true);
+            return ToolStyle.Text(bg.transform, "-", 10, 20, 200, 28, 20, ToolStyle.Indigo, TextAnchor.MiddleLeft, true);
         }
 
         protected override void Refresh()
         {
             var sel = D.SelectedLog;
-            if (sel == null) { _summary.text = "ログの行を選んでください。"; _rows.SetRows(new List<LogEntry>(), x => new string[0]); return; }
+            Show(_empty, _body, sel != null);
+            if (sel == null) return;
             var list = new List<LogEntry>();
             int recent = 0, fails = 0;
             float now = S.Time.CurrentMinute;
@@ -270,8 +358,12 @@ namespace NightShift.UI.Shift
                 if (e.Result == "FAIL") fails++;
             }
             list.Reverse();
-            _summary.text = $"接続元 <b>{sel.Source}</b> / 利用者 {sel.User}\n該当 {list.Count} 件（直近10分 <b>{recent}</b> 件・失敗 {fails} 件）";
-            _rows.SetRows(list, e => new[] { TimeManager.Format(e.Time), e.Source, e.User, e.Result, e.Detail });
+            _who.text = $"接続元 <b>{sel.Source}</b>　　利用者 <b>{sel.User}</b>";
+            _total.text = $"{list.Count} 件";
+            _recent.text = $"{recent} 件";
+            _fails.text = $"{fails} 件";
+            _rows.SetItems(list, e => new ToolList.Row($"{TimeManager.Format(e.Time)}　{e.EventType}", $"{e.Source} → {e.Destination}　{e.User}　{e.Detail}",
+                e.Result, e.Result == "FAIL" ? Tone.Warn : Tone.Neutral));
         }
     }
 
@@ -279,23 +371,28 @@ namespace NightShift.UI.Shift
     public class FirewallConsoleTool : ToolWindow
     {
         InputField _range;
-        TableView _list;
-        protected override void Build(RectTransform c)
+        ToolList _list;
+
+        protected override void Build(RectTransform p)
         {
-            UIFactory.Label(c, "範囲（例: 198.51.100.*）:", 0, 0, 160, 22);
-            _range = UIFactory.Input(c, 160, 0, 120);
-            UIFactory.Button(c, "遮断", 286, 0, 74, 22, () =>
-            {
-                string t = (_range.text ?? "").Trim();
-                if (t.Length < 4) { AudioFx.Error(); return; }
-                W.SetStatus(0, S.Security.Block(t));
-                Refresh();
-            }, "firewall");
-            var g = UIFactory.Group(c, "遮断リスト", 0, 30, 360, 230);
-            _list = TableView.CreateStretch(g, 0, 0, 0, 0, new TableColumn("接続元・範囲", 300));
+            float y = ToolStyle.Header(p, "遮断コンソール", "接続元のIPや範囲を、まとめて遮断します。遮断した接続元からの要求は自動で拒否されます。", "firewall", ToolStyle.Red);
+            var ig = ToolStyle.Box(p, 0, 1, y, 120, "遮断する接続元");
+            _range = ToolStyle.Input(ig, 0, 0, 280, 34);
+            ToolStyle.Button(ig, "遮断する", 290, 0, 140, 34, BlockNow, ToolStyle.Red);
+            ToolStyle.Text(ig, "選んだ接続要求・ログの接続元が自動で入ります。\n末尾を「*」にすると範囲で遮断します（例: 198.51.100.*）。", 0, 42, 440, 36, 11, ToolStyle.Muted);
+            var lg = ToolStyle.Box(p, 0, 1, y + 130, 0, "遮断中の接続元");
+            _list = ToolList.Create(lg, ToolStyle.Red, "まだ何も遮断していません。");
             W.SetStatus(0, "選んだ要求の接続元の範囲は自動で入力されます。");
             D.SelectionChanged += Prefill;
             Prefill();
+        }
+
+        void BlockNow()
+        {
+            string t = (_range.text ?? "").Trim();
+            if (t.Length < 4) { AudioFx.Error(); W.SetStatus(0, "遮断する接続元を入力してください。"); return; }
+            W.SetStatus(0, S.Security.Block(t));
+            Refresh();
         }
 
         protected override void OnClosed() { if (D != null) D.SelectionChanged -= Prefill; }
@@ -312,119 +409,254 @@ namespace NightShift.UI.Shift
         protected override void Refresh()
         {
             if (_list == null) return;
-            _list.SetRows(new List<string>(S.Security.Blocked), x => new[] { x });
+            _list.SetItems(new List<string>(S.Security.Blocked), x => new ToolList.Row(x, x.EndsWith("*") ? "範囲で遮断" : "1つの接続元を遮断", "遮断中", Tone.Bad));
         }
     }
 
     // ============================================================ メール差出人チェッカー
     public class MailInspectorTool : ToolWindow
     {
-        Text _text;
-        protected override void Build(RectTransform c)
+        GameObject _empty, _body;
+        Text _subject, _addr, _server, _domain;
+
+        protected override void Build(RectTransform p)
         {
-            _text = UIFactory.Label(c, "", 14, TextAnchor.UpperLeft);
-            _text.rectTransform.Stretch(6, 4, 6, 4);
+            float y = ToolStyle.Header(p, "メール差出人チェッカー", "表示名ではなく、本当の差出人アドレスと送信元サーバーを大きく表示します。", "mail", ToolStyle.Orange);
+            _empty = ToolStyle.EmptyState(UIFactory.Rect("EmptyHost", p).Stretch(0, y, 0, 0), "メールが選ばれていません",
+                "メインモニターでメールを開く", "差出人の本当のアドレスが、ここに大きく出ます");
+            _body = UIFactory.Rect("Body", p).Stretch(0, y, 0, 0).gameObject;
+            var b = ToolStyle.Box(_body.transform, 0, 1, 0, 0);
+            _subject = ToolStyle.Field(b, "件名", 0, 0, 480, 70);
+            ToolStyle.Text(b, "差出人アドレス", 0, 34, 300, 18, 12, ToolStyle.Muted, TextAnchor.MiddleLeft, true);
+            _addr = ToolStyle.Text(b, "", 0, 54, 500, 34, 22, ToolStyle.Ink, TextAnchor.MiddleLeft, true, true);
+            _addr.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _domain = ToolStyle.Text(b, "", 0, 92, 500, 20, 12, ToolStyle.Muted);
+            _server = ToolStyle.Field(b, "送信元サーバー", 0, 124, 480, 110, true);
         }
 
         protected override void Refresh()
         {
             var m = D.SelectedMail;
-            if (m == null) { _text.text = "メールを選んでください。"; return; }
-            string server = string.IsNullOrEmpty(m.FromAddress) ? "-" : m.IsPhish ? "mail." + m.FromAddress.Substring(m.FromAddress.IndexOf('@') + 1) : "MAIL-SRV01 (10.10.0.20)";
-            _text.text = $"件名: {m.Subject}\n\n差出人アドレス:\n<size=18><b>{(string.IsNullOrEmpty(m.FromAddress) ? "(なし)" : m.FromAddress)}</b></size>\n\n送信元サーバー: <b>{server}</b>\n社内のアドレス: @{MailManager.CompanyDomain}";
+            Show(_empty, _body, m != null);
+            if (m == null) return;
+            _subject.text = m.Subject;
+            string addr = string.IsNullOrEmpty(m.FromAddress) ? "(なし)" : m.FromAddress;
+            int at = addr.IndexOf('@');
+            // ドメイン（@ の後ろ）を目立たせる。社内のドメインと見比べやすいように
+            _addr.text = at > 0 ? $"{addr.Substring(0, at)}<color=#B85A00>{addr.Substring(at)}</color>" : addr;
+            _domain.text = $"社内のアドレスは  @{MailManager.CompanyDomain}";
+            _server.text = string.IsNullOrEmpty(m.FromAddress) ? "-" : m.IsPhish ? "mail." + m.FromAddress.Substring(m.FromAddress.IndexOf('@') + 1) : "MAIL-SRV01 (10.10.0.20)";
         }
     }
 
     // ============================================================ リモート診断キット
     public class RemoteKitTool : ToolWindow
     {
-        Text _text;
-        protected override void Build(RectTransform c)
+        GameObject _empty, _body;
+        Text _host;
+        Text[] _vals;
+        RectTransform[] _tiles;
+        readonly List<GameObject> _badges = new List<GameObject>();
+        ToolList _procs;
+        static readonly string[] Labels = { "Wi-Fi", "IP アドレス", "DNS", "インターネット", "プリンター", "修正プログラム", "画面ロック", "接続" };
+
+        protected override void Build(RectTransform p)
         {
-            _text = UIFactory.Label(c, "", 12, TextAnchor.UpperLeft, null, true);
-            _text.rectTransform.Stretch(6, 4, 6, 4);
+            float y = ToolStyle.Header(p, "リモート診断キット", "リモート接続中のPCの状態を、1つの画面にまとめて表示します。", "remote", ToolStyle.Purple);
+            _empty = ToolStyle.EmptyState(UIFactory.Rect("EmptyHost", p).Stretch(0, y, 0, 0), "リモート接続中のPCはありません",
+                "メインモニターの「ITサポート受付管理」で問い合わせを開く", "「リモート接続」を押す", "PCの状態がここにまとめて出ます");
+            _body = UIFactory.Rect("Body", p).Stretch(0, y, 0, 0).gameObject;
+            var top = ToolStyle.Box(_body.transform, 0, 1, 0, 180);
+            _host = ToolStyle.Text(top, "", 0, 0, 540, 22, 15, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            var grid = UIFactory.Rect("Grid", top).Stretch(0, 28, 0, 0);
+            _vals = new Text[Labels.Length];
+            _tiles = new RectTransform[Labels.Length];
+            for (int i = 0; i < Labels.Length; i++)
+                _vals[i] = ToolStyle.Tile(grid, i % 4, 4, (i / 4) * 64, 56, Labels[i], out _tiles[i]);
+            var pg = ToolStyle.Box(_body.transform, 0, 1, 190, 0, "動いているプログラム");
+            _procs = ToolList.Create(pg, ToolStyle.Purple, "プログラムの情報はありません。");
+        }
+
+        void SetTile(int i, string value, string badge, Tone tone)
+        {
+            _vals[i].text = value;
+            _badges.Add(ToolStyle.BadgeRight(_tiles[i], badge, tone, 6, 5).gameObject);
         }
 
         protected override void Refresh()
         {
             var session = S.HelpDesk.ActiveSession;
-            if (session == null || !session.Connected) { _text.text = "リモート接続中のPCはありません。"; return; }
+            bool on = session != null && session.Connected;
+            Show(_empty, _body, on);
+            if (!on) return;
             var pc = session.PC;
-            var sb = new StringBuilder();
-            sb.AppendLine($"{pc.Hostname} ({pc.UserDisplay})");
-            sb.AppendLine($"Wi-Fi        : {(pc.WifiConnected ? "接続" : "切断")}");
-            sb.AppendLine($"IP アドレス  : {(string.IsNullOrEmpty(pc.IPAddress) ? "-" : pc.IPAddress)} ({(pc.DHCPEnabled ? "自動" : "手動")})");
-            sb.AppendLine($"DNS          : {(string.IsNullOrEmpty(pc.DNS) ? "-" : pc.DNS)} ({(pc.DnsAuto ? "自動" : "手動")})");
-            sb.AppendLine($"インターネット: {(pc.InternetConnectivity ? "OK" : "NG")}");
-            sb.AppendLine($"プリンター   : {(pc.PrinterOnline ? "オンライン" : "オフライン")}{(pc.PrintQueuePaused ? " / 一時停止" : "")}");
-            sb.AppendLine($"修正プログラム: 未適用 {pc.PendingPatches} 件");
-            sb.AppendLine($"画面ロック   : {(pc.ScreenLockEnabled ? "あり" : "なし")}");
-            sb.AppendLine("プロセス:");
-            foreach (var p in pc.RunningProcesses) if (!p.System) sb.AppendLine($"  {p.Name,-16} {p.MemoryKb,7:N0} KB");
-            _text.text = sb.ToString();
+            _host.text = $"{pc.Hostname}　<size=12><color=#666E7C>{pc.UserDisplay}</color></size>";
+            foreach (var b in _badges) if (b) Destroy(b);
+            _badges.Clear();
+            SetTile(0, pc.WifiConnected ? "接続" : "切断", pc.WifiConnected ? "OK" : "NG", pc.WifiConnected ? Tone.Ok : Tone.Bad);
+            SetTile(1, string.IsNullOrEmpty(pc.IPAddress) ? "-" : pc.IPAddress, pc.DHCPEnabled ? "自動" : "手動", Tone.Neutral);
+            SetTile(2, string.IsNullOrEmpty(pc.DNS) ? "-" : pc.DNS, pc.DnsAuto ? "自動" : "手動", Tone.Neutral);
+            SetTile(3, pc.InternetConnectivity ? "つながる" : "つながらない", pc.InternetConnectivity ? "OK" : "NG", pc.InternetConnectivity ? Tone.Ok : Tone.Bad);
+            SetTile(4, pc.PrinterOnline ? "オンライン" : "オフライン", pc.PrintQueuePaused ? "一時停止" : pc.PrinterOnline ? "OK" : "NG",
+                pc.PrintQueuePaused || !pc.PrinterOnline ? Tone.Warn : Tone.Ok);
+            SetTile(5, $"未適用 {pc.PendingPatches} 件", pc.PendingPatches > 0 ? "あり" : "なし", pc.PendingPatches > 0 ? Tone.Warn : Tone.Ok);
+            SetTile(6, pc.ScreenLockEnabled ? "あり" : "なし", pc.ScreenLockEnabled ? "OK" : "なし", pc.ScreenLockEnabled ? Tone.Ok : Tone.Warn);
+            SetTile(7, "リモート接続中", "接続中", Tone.Info);
+            var procs = new List<RemotePC.VirtualProcess>();
+            foreach (var pr in pc.RunningProcesses) if (!pr.System) procs.Add(pr);
+            _procs.SetItems(procs, pr => new ToolList.Row(pr.Name, $"{pr.MemoryKb:N0} KB"));
         }
     }
 
     // ============================================================ 端末隔離ツール
     public class IsolatorTool : ToolWindow
     {
-        TableView _table;
-        protected override void Build(RectTransform c)
+        ToolList _list;
+        Text _sel;
+        FlatButton _btn;
+
+        protected override void Build(RectTransform p)
         {
-            _table = TableView.CreateStretch(c, 0, 0, 0, 34, new TableColumn("端末", 100), new TableColumn("社員", 110), new TableColumn("IP", 100), new TableColumn("状態", 70));
-            var b = UIFactory.Button(c, "選んだ端末を隔離", 0, 0, 160, 26, () =>
+            float y = ToolStyle.Header(p, "端末隔離ツール", "選んだ端末をネットワークから切り離します。その端末の仕事も止まるので、慎重に。", "lock", ToolStyle.Red);
+            var top = ToolStyle.Box(p, 0, 1, y, 74, "選んだ端末");
+            _sel = ToolStyle.Text(top, "", 0, 0, 300, 32, 15, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _btn = ToolStyle.Button(top, "この端末を隔離する", 0, 0, 170, 32, IsolateSelected, ToolStyle.Red);
+            _btn.Rect.AnchorTopRight(0, 0, 170, 32);
+            var lg = ToolStyle.Box(p, 0, 1, y + 84, 0, "社内の端末（選んだ接続要求の端末は自動で選ばれます）");
+            _list = ToolList.Create(lg, ToolStyle.Red, "端末がありません。");
+            _list.SelectionChanged += _ => RefreshSelection();
+            D.SelectionChanged += FollowSelection;
+        }
+
+        protected override void OnClosed() { if (D != null) D.SelectionChanged -= FollowSelection; }
+
+        /// <summary>メインモニターで選んだ要求・ログの端末を選んでおく（隔離するかはプレイヤーが決める）</summary>
+        void FollowSelection()
+        {
+            string device = D.SelectedRequest?.Device;
+            string ip = D.SelectedLog?.Source;
+            foreach (var e in S.Employees.All)
+                if (e.deviceId == device || (ip != null && S.Employees.GetIp(e) == ip)) { _list.Select(e); return; }
+        }
+
+        void IsolateSelected()
+        {
+            if (!(_list.Selected is EmployeeData e)) { AudioFx.Error(); W.SetStatus(0, "隔離する端末を選んでください。"); return; }
+            D.ShowModal("端末の隔離", $"{e.deviceId}（{e.DisplayName}）をネットワークから切り離します。\nよろしいですか？", "lock", "隔離する", () =>
             {
-                if (!(_table.Selected is EmployeeData e)) { AudioFx.Error(); return; }
                 W.SetStatus(0, S.Security.Isolate(e.deviceId));
                 Refresh();
-            }, "lock");
-            b.Rect.anchorMin = b.Rect.anchorMax = new Vector2(0, 0); b.Rect.pivot = new Vector2(0, 0); b.Rect.anchoredPosition = new Vector2(0, 4);
+            }, "やめる", null);
+        }
+
+        void RefreshSelection()
+        {
+            if (_list.Selected is EmployeeData e)
+            {
+                bool done = S.Security.IsIsolated(e.deviceId);
+                _sel.text = $"{e.deviceId}　<size=12><color=#666E7C>{e.DisplayName}</color></size>";
+                _btn.Interactable = !done;
+                _btn.SetText(done ? "隔離中です" : "この端末を隔離する");
+            }
+            else
+            {
+                _sel.text = "<color=#8890A0>一覧から端末を選んでください</color>";
+                _btn.Interactable = false;
+                _btn.SetText("この端末を隔離する");
+            }
         }
 
         protected override void Refresh()
         {
-            var sel = _table.Selected;
+            if (_list == null) return;
             var list = new List<EmployeeData>();
             foreach (var e in S.Employees.All) if (e.IsActive) list.Add(e);
-            _table.SetRows(list, e => new[] { e.deviceId, e.DisplayName, S.Employees.GetIp(e), S.Security.IsIsolated(e.deviceId) ? "隔離中" : "接続" });
-            if (sel != null) _table.SelectData(sel);
+            _list.SetItems(list, e =>
+            {
+                bool iso = S.Security.IsIsolated(e.deviceId);
+                return new ToolList.Row($"{e.deviceId}　{e.DisplayName}", $"{S.Employees.GetIp(e)}　{e.department}", iso ? "隔離中" : "接続中", iso ? Tone.Warn : Tone.Neutral);
+            });
+            RefreshSelection();
         }
     }
 
     // ============================================================ サーバー監視ダッシュボード
     public class ServerMonitorTool : ToolWindow
     {
-        Text _text;
+        RectTransform _content;
+        string _signature;
         protected override float RefreshInterval => 2f;
-        protected override void Build(RectTransform c)
+
+        protected override void Build(RectTransform p)
         {
-            _text = UIFactory.ScrollText(c, "", out var scroll);
-            ((RectTransform)scroll.transform).Stretch();
+            float y = ToolStyle.Header(p, "サーバー監視ダッシュボード", "全サーバーの状態・サービス・動いているプログラム（発行元）を一覧にします。", "server", ToolStyle.Slate);
+            var host = UIFactory.Rect("Host", p).Stretch(ToolStyle.Pad, y, ToolStyle.Pad / 2, ToolStyle.Pad);
+            _content = ToolStyle.ScrollArea(host, out _);
         }
+
+        static Tone StatusTone(string s) => s == "稼働中" ? Tone.Ok : s == "改ざん" ? Tone.Bad : s == "復元中" ? Tone.Info : Tone.Warn;
 
         protected override void Refresh()
         {
-            if (_text == null) return;
-            var sb = new StringBuilder();
+            if (_content == null) return;
+            var sig = new StringBuilder();
             foreach (var st in S.Servers.Servers)
             {
-                sb.AppendLine($"<b>{st.Id}</b>  [{st.StatusLabel}]");
-                foreach (var svc in st.Services) sb.AppendLine($"   サービス: {svc.Name}  {(svc.Running ? "実行中" : "<color=#B00000>停止</color>")}");
-                foreach (var p in st.Processes) sb.AppendLine($"   {p.Name}  （発行元: {p.Publisher}）");
+                sig.Append(st.Id).Append(st.StatusLabel);
+                foreach (var svc in st.Services) sig.Append(svc.Name).Append(svc.Running);
+                foreach (var pr in st.Processes) sig.Append(pr.Name);
             }
-            _text.text = sb.ToString();
+            if (sig.ToString() == _signature) return;
+            _signature = sig.ToString();
+            foreach (Transform t in _content) Destroy(t.gameObject);
+
+            // 2列に並べる（各列の高さを積み上げる）
+            float[] colY = { 0, 0 };
+            foreach (var st in S.Servers.Servers)
+            {
+                int col = colY[0] <= colY[1] ? 0 : 1;
+                float h = 64 + st.Services.Count * 24 + (st.Processes.Count > 0 ? 22 + st.Processes.Count * 20 : 0);
+                var card = UIFactory.Image(_content, ToolStyle.Outline, Color.white, "Server");
+                ToolStyle.Cell(card.rectTransform, col, 2, colY[col], h, 10);
+                var c = card.transform;
+                ToolStyle.Text(c, st.Id, 12, 10, 260, 20, 14, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+                ToolStyle.BadgeRight(c, st.StatusLabel, StatusTone(st.StatusLabel), 10, 10);
+                float y = 40;
+                foreach (var svc in st.Services)
+                {
+                    ToolStyle.Text(c, svc.Name, 12, y, 220, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft);
+                    ToolStyle.BadgeRight(c, svc.Running ? "実行中" : "停止", svc.Running ? Tone.Ok : Tone.Bad, 10, y);
+                    y += 24;
+                }
+                if (st.Processes.Count > 0)
+                {
+                    ToolStyle.Text(c, "動いているプログラム（発行元）", 12, y + 2, 300, 18, 11, ToolStyle.Muted, TextAnchor.MiddleLeft, true);
+                    y += 22;
+                    foreach (var pr in st.Processes)
+                    {
+                        ToolStyle.Text(c, $"{pr.Name}　<color=#666E7C>{pr.Publisher}</color>", 12, y, 300, 18, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, false, true);
+                        y += 20;
+                    }
+                }
+                colY[col] += h + 10;
+            }
+            _content.sizeDelta = new Vector2(0, Mathf.Max(colY[0], colY[1]));
         }
     }
 
     // ============================================================ 相関タイムライン
     public class CorrelatorTool : ToolWindow
     {
-        Text _text;
+        Text _normal, _text;
         protected override float RefreshInterval => 2f;
-        protected override void Build(RectTransform c)
+
+        protected override void Build(RectTransform p)
         {
-            _text = UIFactory.ScrollText(c, "", out var scroll);
-            ((RectTransform)scroll.transform).Stretch();
+            float y = ToolStyle.Header(p, "相関タイムライン", "社外からの接続を、IPの範囲ごとに時間順に並べます。関係があるかを判断するのはあなたです。", "clock", ToolStyle.Teal);
+            var top = ToolStyle.Box(p, 0, 1, y, 66, "選んだ要求の利用者の「ふだん」");
+            _normal = ToolStyle.Text(top, "", 0, 0, 640, 22, 13, ToolStyle.Ink, TextAnchor.MiddleLeft);
+            var lg = ToolStyle.Box(p, 0, 1, y + 76, 0, "社外の接続元（範囲ごと・2件以上）");
+            _text = ToolStyle.ScrollText(lg, 13, true);
         }
 
         static string Range(string ip)
@@ -437,33 +669,32 @@ namespace NightShift.UI.Shift
         {
             if (_text == null) return;
             var e = D.SelectedRequest;
-            var sb = new StringBuilder();
-            if (e != null && e.Employee != null)
-            {
-                sb.AppendLine($"<b>{e.Employee.DisplayName}</b> の普段: 勤務時間 {e.Employee.workHours}／普段使うシステム {string.Join("・", e.Employee.normalAccessTargets.ConvertAll(EmployeeDetailView.ServiceLabel))}");
-                sb.AppendLine();
-            }
+            _normal.text = e != null && e.Employee != null
+                ? $"<b>{e.Employee.DisplayName}</b>　勤務時間 {e.Employee.workHours}　ふだん使うシステム {string.Join("・", e.Employee.normalAccessTargets.ConvertAll(EmployeeDetailView.ServiceLabel))}"
+                : "<color=#8890A0>メインモニターで接続要求を選ぶと、その利用者のふだんの使い方が出ます。</color>";
             // 社外の接続元を範囲ごとに時系列で並べる（関連があるかの判断はプレイヤー）
             var groups = new Dictionary<string, List<LogEntry>>();
             foreach (var l in S.Logs.Entries)
             {
-                if (l.Source == null || l.Source.StartsWith("10.") || !char.IsDigit(l.Source[0])) continue;
+                if (l.Source == null || l.Source.StartsWith("10.") || l.Source.Length == 0 || !char.IsDigit(l.Source[0])) continue;
                 string r = Range(l.Source);
                 if (!groups.TryGetValue(r, out var list)) groups[r] = list = new List<LogEntry>();
                 list.Add(l);
             }
+            var sb = new StringBuilder();
             foreach (var kv in groups)
             {
                 if (kv.Value.Count < 2) continue;
-                sb.AppendLine($"<b>{kv.Key}</b>  {kv.Value.Count} 件");
+                sb.AppendLine($"<b><color=#0D7888>{kv.Key}</color></b>　{kv.Value.Count} 件");
                 int from = Mathf.Max(0, kv.Value.Count - 6);
                 for (int i = from; i < kv.Value.Count; i++)
                 {
                     var l = kv.Value[i];
-                    sb.AppendLine($"   {TimeManager.Format(l.Time)}  {l.Source} → {EmployeeDetailView.ServiceLabel(l.Destination)}  {l.EventType} {l.Result}  {l.Detail}");
+                    sb.AppendLine($"  {TimeManager.Format(l.Time)}  {l.Source} → {EmployeeDetailView.ServiceLabel(l.Destination)}  {l.EventType} {l.Result}  <color=#666E7C>{l.Detail}</color>");
                 }
+                sb.AppendLine();
             }
-            _text.text = sb.Length == 0 ? "まだ記録がありません。" : sb.ToString();
+            _text.text = sb.Length == 0 ? "<color=#8890A0>社外からの接続の記録は、まだありません。</color>" : sb.ToString();
         }
     }
 }

@@ -280,6 +280,10 @@ namespace NightShift.Tests
                     d = NewDesktop(25, null, 150f);
                     // 情報を出すツールのために、保留中の要求を1つ選んでおく
                     if (d.S.Requests.Pending.Count > 0) d.SelectRequest(d.S.Requests.Pending[0]);
+                    // ログ解析・メール差出人チェッカー用: 社外からのログの行と、偽メールを選んでおく
+                    foreach (var l in d.S.Logs.Entries) if (l.Source != null && l.Source.StartsWith("203.")) { d.SelectLog(l); break; }
+                    if (t[0] == Items.MailInspector) d.SelectMail(PhishingMail.Send(d.S, false));
+                    if (t[0] == Items.LogAnalyzer && d.SelectedLog == null && d.S.Logs.Entries.Count > 0) d.SelectLog(d.S.Logs.Entries[d.S.Logs.Entries.Count - 1]);
                     d.RebuildMonitors();
                     var ws = d.Stations[0];
                     d.ShowMonitor(1);
