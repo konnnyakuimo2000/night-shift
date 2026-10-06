@@ -6,24 +6,27 @@ namespace NightShift.UI
 {
     /// <summary>
     /// 社員証写真風のドット絵を社員番号から決定的に生成する（オリジナル描画・外部素材なし）。
-    /// 48×60 ドット。光は左上から。年齢（白髪・しわ・生え際）と、名前から推定した性別で髪型・服を変える。
+    /// 画風: 入国審査ゲーム風の、くすんだ色・大きなドット・黒い縁取り・強い影・無表情。
+    /// 32×40 ドットを3倍で表示。光は左から。年齢（白髪・しわ・生え際）と、名前から推定した性別で髪型・服を変える。
     /// EmployeeData.portrait が設定されていればそちらを優先する。
     /// </summary>
     public static class PortraitPainter
     {
-        const int W = 48, H = 60, Scale = 2;
+        const int W = 32, H = 40, Scale = 3;
         static readonly Dictionary<string, Sprite> _cache = new Dictionary<string, Sprite>();
 
         static Color C(int r, int g, int b) => new Color(r / 255f, g / 255f, b / 255f, 1f);
         static Color Mul(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, 1f);
         static Color Mix(Color a, Color b, float t) { var c = Color.Lerp(a, b, t); c.a = 1; return c; }
 
-        static readonly Color[] Skins = { C(246, 214, 184), C(238, 200, 164), C(226, 184, 146), C(250, 226, 200), C(232, 192, 160) };
-        static readonly Color[] Hairs = { C(28, 24, 24), C(52, 38, 30), C(78, 54, 38), C(40, 34, 34), C(96, 66, 44) };
-        static readonly Color[] Suits = { C(36, 46, 78), C(64, 66, 74), C(28, 28, 34), C(84, 66, 50), C(52, 72, 64), C(70, 60, 84) };
-        static readonly Color[] Ties = { C(150, 30, 40), C(30, 60, 140), C(40, 100, 60), C(130, 96, 30), C(96, 40, 116), C(160, 120, 40) };
-        static readonly Color[] Blouses = { C(244, 244, 240), C(236, 222, 228), C(220, 232, 244), C(240, 236, 214) };
-        static readonly Color[] Cardigans = { C(150, 60, 70), C(70, 90, 130), C(110, 120, 90), C(180, 150, 110), C(90, 70, 100) };
+        // くすんだ色（最後にさらに彩度を落とす）
+        static readonly Color[] Skins = { C(214, 178, 148), C(200, 162, 130), C(186, 148, 118), C(222, 190, 160), C(194, 158, 128) };
+        static readonly Color[] Hairs = { C(34, 30, 28), C(60, 46, 36), C(84, 62, 44), C(46, 40, 38), C(102, 78, 54) };
+        static readonly Color[] Coats = { C(62, 66, 72), C(78, 74, 66), C(48, 52, 50), C(86, 72, 58), C(64, 74, 64), C(70, 64, 76) };
+        static readonly Color[] Ties = { C(120, 40, 40), C(46, 60, 100), C(52, 84, 58), C(112, 90, 46), C(84, 50, 86) };
+        static readonly Color[] Blouses = { C(196, 196, 186), C(186, 176, 172), C(170, 180, 186), C(192, 186, 164) };
+        static readonly Color[] Backs = { C(148, 156, 140), C(156, 152, 136), C(140, 148, 150) };
+        static readonly Color Ink = C(24, 22, 20);
 
         // 名前（読み）から性別を推定する（データに性別の項目がないため）
         static readonly HashSet<string> FemaleNames = new HashSet<string> { "ユイ", "マユ", "チヒロ", "メグミ", "ミサキ", "サクラ", "アヤ", "ユミ", "ヨウコ", "ケイコ", "アキコ", "ナオミ", "リエ", "エリ" };
@@ -78,259 +81,175 @@ namespace NightShift.UI
             var cv = new Canvas();
             bool female = IsFemale(e);
             int age = e.age;
+            const int cx = 16;
 
-            // ---------------- 背景（証明写真の青。頭の後ろが少し明るい） ----------------
+            // ---------------- 背景（くすんだ単色・下の方に帯） ----------------
+            Color back = Backs[rng.Next(Backs.Length)];
             for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
-            {
-                var c = Mix(C(198, 216, 232), C(150, 176, 202), y / (float)H);
-                float d = Vector2.Distance(new Vector2(x, y), new Vector2(24, 22)) / 30f;
-                c = Mix(Mix(c, Color.white, 0.18f), c, Mathf.Clamp01(d));
-                // 当時の写真らしい粗い粒（市松の微妙なむら）
-                if (((x + y) & 1) == 0 && y > 40) c = Mul(c, 0.985f);
-                cv.Set(x, y, c, false);
-            }
+                cv.Set(x, y, y > 30 ? Mul(back, 0.88f) : back, false);
 
             Color skin = Skins[rng.Next(Skins.Length)];
-            Color skinLight = Mix(skin, Color.white, 0.25f);
-            Color skinShade = Mul(skin, 0.86f);
-            Color skinDeep = Mul(skin, 0.72f);
+            Color skinHi = Mix(skin, C(236, 224, 200), 0.3f);
+            Color skinSh = Mul(skin, 0.78f);
+            Color skinDeep = Mul(skin, 0.62f);
             Color baseHair = Hairs[rng.Next(Hairs.Length)];
-            Color hair = age >= 50 ? Mix(baseHair, C(170, 168, 166), Mathf.Clamp01((age - 46) / 14f))
-                      : age >= 42 && rng.Next(3) == 0 ? Mix(baseHair, C(150, 148, 146), 0.35f) : baseHair;
-            Color hairLight = Mix(hair, Color.white, 0.28f);
-            Color hairDark = Mul(hair, 0.65f);
-            Color dark = C(36, 28, 28);
+            Color hair = age >= 50 ? Mix(baseHair, C(150, 148, 140), Mathf.Clamp01((age - 46) / 12f))
+                      : age >= 42 && rng.Next(3) == 0 ? Mix(baseHair, C(128, 126, 120), 0.35f) : baseHair;
+            Color hairHi = Mix(hair, C(200, 196, 180), 0.22f);
+            Color hairSh = Mul(hair, 0.7f);
 
-            const int cx = 24;
-            // 髪型（男性: 0 短髪 1 七三分け 2 オールバック 3 スポーツ刈り / 女性: 0 ロング 1 ボブ 2 まとめ髪 3 ぱっつん前髪）
+            // 髪型（男性: 0 短髪 1 七三 2 オールバック 3 坊主 / 女性: 0 ロング 1 ボブ 2 まとめ髪 3 ぱっつん）
             int style = rng.Next(4);
-            bool receding = !female && age >= 48 && rng.Next(2) == 0;
-            int glasses = rng.Next(100) < (age >= 40 ? 50 : 30) ? 1 + rng.Next(3) : 0; // 1 丸 2 四角 3 縁なし
-            int brow = rng.Next(3);
-            bool smile = rng.Next(3) == 0;
-            int facial = !female && age >= 30 ? rng.Next(6) : 0; // 4 口ひげ 5 無精ひげ
-            bool lanyard = rng.Next(2) == 0;
+            bool receding = !female && age >= 46 && rng.Next(2) == 0;
+            int glasses = rng.Next(100) < (age >= 40 ? 45 : 25) ? 1 + rng.Next(2) : 0;
+            int facial = !female && age >= 28 ? rng.Next(6) : 0; // 4 口ひげ 5 あごひげ
+            bool heavyBrow = rng.Next(2) == 0;
+            bool frown = rng.Next(3) != 0;
 
-            // ---------------- 後ろ髪（顔の後ろ） ----------------
+            // ---------------- 後ろ髪 ----------------
             if (female && (style == 0 || style == 3))
-                for (int y = 10; y < 52; y++)
-                for (int x = 8; x < 40; x++)
-                    if (InEllipse(x, y, cx, 30, 15.5f, 22f)) cv.Set(x, y, x < cx - 4 ? hair : hairDark);
+                for (int y = 6; y < 34; y++) for (int x = 5; x < 27; x++) if (InEllipse(x, y, cx, 19, 10.5f, 14.5f)) cv.Set(x, y, x > cx + 3 ? hairSh : hair);
             if (female && style == 1)
-                for (int y = 10; y < 42; y++)
-                for (int x = 9; x < 39; x++)
-                    if (InEllipse(x, y, cx, 26, 14.5f, 16f)) cv.Set(x, y, x < cx - 4 ? hair : hairDark);
+                for (int y = 6; y < 27; y++) for (int x = 6; x < 26; x++) if (InEllipse(x, y, cx, 16, 9.8f, 10.5f)) cv.Set(x, y, x > cx + 3 ? hairSh : hair);
             if (female && style == 2)
-                for (int y = 4; y < 14; y++)
-                for (int x = 17; x < 31; x++)
-                    if (InEllipse(x, y, cx, 8, 6.5f, 5.5f)) cv.Set(x, y, InEllipse(x, y, cx - 2, 7, 3, 2.5f) ? hairLight : hair);
+                for (int y = 2; y < 9; y++) for (int x = 11; x < 21; x++) if (InEllipse(x, y, cx, 5, 4.4f, 3.6f)) cv.Set(x, y, x < cx ? hairHi : hair);
 
-            // ---------------- 体（肩・服） ----------------
-            Color suit = female ? Cardigans[rng.Next(Cardigans.Length)] : Suits[rng.Next(Suits.Length)];
-            bool cardigan = female && rng.Next(2) == 0;
-            Color top = female ? (cardigan ? suit : Blouses[rng.Next(Blouses.Length)]) : suit;
-            for (int y = 43; y < H; y++)
+            // ---------------- 体（くすんだ上着） ----------------
+            Color coat = Coats[rng.Next(Coats.Length)];
+            for (int y = 29; y < H; y++)
             for (int x = 0; x < W; x++)
-                if (InEllipse(x, y, cx, 64, 25f, 20f))
-                {
-                    float shade = x < cx - 8 ? 1.08f : x > cx + 9 ? 0.82f : 1f;
-                    cv.Set(x, y, Mul(top, shade));
-                }
-
-            // 首（あごの下は影）
-            for (int y = 37; y < 47; y++)
-            for (int x = 19; x < 29; x++)
-                cv.Set(x, y, y < 44 ? skinDeep : x > 25 ? skinShade : skin);   // あごの下は濃い影（あごの線をはっきりさせる）
+                if (InEllipse(x, y, cx, 43, 17f, 13f))
+                    cv.Set(x, y, x < cx - 6 ? Mix(coat, C(200, 196, 180), 0.12f) : x > cx + 5 ? Mul(coat, 0.72f) : coat);
+            // 首（あごの下は濃い影）
+            for (int y = 26; y < 32; y++) for (int x = 13; x < 20; x++) cv.Set(x, y, y < 29 ? skinDeep : x > 17 ? skinSh : skin);
 
             if (!female)
             {
-                // ワイシャツの V と襟、ネクタイ
-                Color shirt = C(244, 244, 240);
-                for (int y = 45; y < H; y++)
+                Color shirt = C(190, 188, 178);
+                for (int y = 30; y < H; y++)
                 {
-                    int half = Mathf.Min(9, (y - 45) / 2 + 3);
-                    for (int x = cx - half; x < cx + half; x++) cv.Set(x, y, x > cx + 2 ? Mul(shirt, 0.9f) : shirt);
-                }
-                for (int i = 0; i < 4; i++) { cv.Set(cx - 6 + i, 45 + i, Mul(shirt, 0.8f)); cv.Set(cx + 5 - i, 45 + i, Mul(shirt, 0.8f)); }
-                // スーツの襟（下に向かって開く）
-                for (int y = 47; y < H; y++)
-                {
-                    int half = Mathf.Min(10, (y - 45) / 2 + 3);
-                    cv.Set(cx - half - 1, y, Mul(suit, 0.6f)); cv.Set(cx + half, y, Mul(suit, 0.6f));
-                    cv.Set(cx - half - 2, y, Mul(suit, 1.15f));
+                    int half = Mathf.Min(5, (y - 30) / 2 + 2);
+                    for (int x = cx - half; x < cx + half; x++) cv.Set(x, y, x > cx ? Mul(shirt, 0.85f) : shirt);
+                    cv.Set(cx - half - 1, y, Mul(coat, 0.55f)); cv.Set(cx + half, y, Mul(coat, 0.55f)); // 襟の線
                 }
                 Color tie = Ties[rng.Next(Ties.Length)];
-                // 結び目
-                for (int y = 46; y < 49; y++) for (int x = cx - 2; x < cx + 2; x++) cv.Set(x, y, x == cx - 2 ? Mul(tie, 1.2f) : tie);
-                // 本体（下に行くほど広い）・柄の斜線
-                for (int y = 49; y < H; y++)
-                {
-                    int half = 1 + (y - 49) / 4;
-                    for (int x = cx - half - 1; x <= cx + half; x++)
-                        cv.Set(x, y, (x + y) % 4 == 0 ? Mul(tie, 0.75f) : x <= cx - half ? Mul(tie, 1.15f) : tie);
-                }
+                cv.Set(cx - 1, 31, tie); cv.Set(cx, 31, Mul(tie, 0.8f));
+                for (int y = 32; y < H; y++) { cv.Set(cx - 1, y, tie); cv.Set(cx, y, Mul(tie, 0.75f)); if (y > 35) cv.Set(cx - 2, y, tie); }
             }
             else
             {
-                // ブラウスの襟ぐり（丸）、カーディガンなら中のブラウスが見える
-                Color blouse = cardigan ? Blouses[rng.Next(Blouses.Length)] : top;
-                for (int y = 45; y < H; y++)
+                Color blouse = Blouses[rng.Next(Blouses.Length)];
+                for (int y = 30; y < H; y++)
                 {
-                    int half = cardigan ? Mathf.Min(8, (y - 45) / 2 + 3) : 0;
-                    for (int x = cx - half; x < cx + half; x++) cv.Set(x, y, blouse);
+                    int half = Mathf.Min(5, (y - 30) / 2 + 2);
+                    for (int x = cx - half; x < cx + half; x++) cv.Set(x, y, x > cx ? Mul(blouse, 0.85f) : blouse);
                 }
-                for (int x = cx - 5; x <= cx + 5; x++) if (InEllipse(x, 46, cx, 45, 6, 2.2f)) cv.Set(x, 46, Mul(blouse, 0.85f));
-                if (rng.Next(2) == 0)
-                    for (int x = cx - 4; x <= cx + 4; x++) cv.Set(x, 48 + (Mathf.Abs(x - cx) < 3 ? 1 : 0), C(230, 214, 150)); // ネックレス
-            }
-            // 社員証のストラップ
-            if (lanyard)
-            {
-                Color strap = C(40, 90, 170);
-                for (int y = 46; y < H; y++) { cv.Set(cx - 9 + (y - 46) / 5, y, strap); cv.Set(cx + 8 - (y - 46) / 5, y, strap); }
+                for (int x = cx - 3; x <= cx + 2; x++) cv.Set(x, 31, Mul(blouse, 0.7f)); // 襟ぐり
             }
 
-            // ---------------- 顔 ----------------
-            for (int y = 12; y < 42; y++)
-            for (int x = 10; x < 38; x++)
+            // ---------------- 顔（角ばったあご） ----------------
+            for (int y = 8; y < 29; y++)
             {
-                // 下に行くほど細くなる（あご）
-                float rx = y > 30 ? 11f - (y - 30) * 0.32f : 11f;
-                if (!InEllipse(x, y, cx, 26, rx, 14.2f)) continue;
-                Color c = skin;
-                if (x <= cx - 6 && y < 30) c = skinLight;          // 光の当たる頬・額
-                if (x >= cx + 7) c = skinShade;                      // 右側の影
-                if (y >= 38) c = skinShade;                          // あごの下
-                cv.Set(x, y, c);
+                float half = y < 22 ? 6.6f : 6.6f - (y - 22) * 0.75f;  // あごに向かって細くなる
+                if (y < 11) half = 5.6f + (y - 8) * 0.35f;              // 頭の上は少し丸く
+                for (int x = 0; x < W; x++)
+                {
+                    float dx = x + 0.5f - cx;
+                    if (dx < -half || dx > half) continue;
+                    // 光は左から: 左は明るく、右の 1/3 は影、あごの下は濃い影
+                    Color c = dx < -2.5f ? skinHi : dx > 2.2f ? skinSh : skin;
+                    if (y >= 27) c = skinSh;
+                    cv.Set(x, y, c);
+                }
             }
             // 耳
-            for (int y = 24; y < 32; y++)
-            {
-                if (InEllipse(12, y, 12.5f, 28, 2.2f, 4f)) cv.Set(12, y, skinShade);
-                if (InEllipse(13, y, 12.5f, 28, 2.2f, 4f)) cv.Set(13, y, skin);
-                if (InEllipse(35, y, 35.5f, 28, 2.2f, 4f)) cv.Set(35, y, skinShade);
-                if (InEllipse(36, y, 35.5f, 28, 2.2f, 4f)) cv.Set(36, y, skinDeep);
-            }
-            cv.Set(12, 28, skinDeep); cv.Set(36, 28, Mul(skinDeep, 0.9f));
+            for (int y = 15; y < 20; y++) { cv.Set(9, y, skinSh); cv.Set(23, y, skinDeep); }
+            cv.Set(9, 17, skinDeep);
 
-            // 頬の赤み（若い人・女性）
-            if (female || age < 28)
-            {
-                Color blush = Mix(skin, C(236, 140, 130), 0.35f);
-                cv.Set(17, 31, blush); cv.Set(18, 31, blush); cv.Set(30, 31, blush); cv.Set(31, 31, blush);
-            }
+            // 目元のくぼみ（眉の下の影）→ 眉 → 目（小さな黒い点）
+            for (int x = 10; x <= 22; x++) if (cv.IsFigure(x, 15) && x != 16) cv.Set(x, 15, Mix(cv.Get(x, 15), skinDeep, 0.55f));
+            Color brow = Mul(hair, 0.7f);
+            for (int x = 10; x <= 14; x++) cv.Set(x, 14, brow);
+            for (int x = 18; x <= 22; x++) cv.Set(x, 14, brow);
+            if (heavyBrow) { cv.Set(11, 13, brow); cv.Set(12, 13, brow); cv.Set(20, 13, brow); cv.Set(21, 13, brow); }
+            if (frown) { cv.Set(14, 15, brow); cv.Set(18, 15, brow); } // 眉間に力が入った無表情
+            cv.Set(12, 16, Ink); cv.Set(13, 16, Mul(skinDeep, 0.8f));
+            cv.Set(19, 16, Ink); cv.Set(20, 16, Mul(skinDeep, 0.8f));
+            if (female) { cv.Set(11, 16, Ink); cv.Set(21, 16, Ink); }
+            cv.Set(12, 17, skinSh); cv.Set(20, 17, skinSh); // 目の下
+            if (age >= 40) { cv.Set(11, 18, skinSh); cv.Set(21, 18, skinSh); }
 
-            // ---------------- 目・眉・鼻・口 ----------------
-            void Eye(int ex)
-            {
-                // 上まぶた → 白目 → 瞳（光）→ 下のふち
-                for (int x = ex - 2; x <= ex + 2; x++) cv.Set(x, 24, x == ex + 2 ? Mul(dark, 1.6f) : dark);   // 上まぶた
-                cv.Set(ex - 1, 25, C(244, 242, 236)); cv.Set(ex + 2, 25, C(232, 228, 222));                     // 白目
-                cv.Set(ex - 1, 26, C(236, 234, 228)); cv.Set(ex + 2, 26, C(226, 222, 216));
-                for (int y = 25; y <= 27; y++) { cv.Set(ex, y, C(52, 34, 28)); cv.Set(ex + 1, y, C(38, 26, 22)); } // 瞳（2×3）
-                cv.Set(ex, 25, Mix(C(52, 34, 28), Color.white, 0.65f));                                         // 光
-                cv.Set(ex - 1, 27, skinShade); cv.Set(ex + 2, 27, skinShade);                                   // 下まぶた
-                if (female) { cv.Set(ex + 3, 23, dark); cv.Set(ex - 3, 24, dark); }
-                if (age >= 45) for (int x = ex - 1; x <= ex + 1; x++) cv.Set(x, 29, skinShade); // 目の下
-            }
-            Eye(19); Eye(28);
-            // 眉（0 まっすぐ 1 山形 2 太い）
-            Color browC = Mul(hair, 0.8f);
-            for (int i = 0; i < 6; i++)
-            {
-                int yl = 20 + (brow == 1 && (i == 2 || i == 3) ? -1 : 0);
-                cv.Set(16 + i, yl, browC); cv.Set(26 + i, yl, browC);
-                if (brow == 2) { cv.Set(16 + i, yl + 1, browC); cv.Set(26 + i, yl + 1, browC); }
-            }
-            // 鼻（左に光、右に影、小鼻）
-            for (int y = 27; y < 33; y++) { cv.Set(cx + 1, y, skinShade); if (y < 31) cv.Set(cx - 1, y, skinLight); }
-            cv.Set(cx - 2, 33, skinDeep); cv.Set(cx + 2, 33, skinDeep); cv.Set(cx, 33, skinShade);
-            // 口
-            Color lip = female ? C(196, 82, 92) : C(178, 104, 96);
-            int mw = 3 + rng.Next(2);
-            for (int x = cx - mw; x <= cx + mw - 1; x++) cv.Set(x, 36, Mul(lip, 0.75f));
-            for (int x = cx - mw + 1; x <= cx + mw - 2; x++) cv.Set(x, 37, x < cx ? Mix(lip, Color.white, 0.2f) : lip);
-            if (smile) { cv.Set(cx - mw - 1, 35, Mul(lip, 0.75f)); cv.Set(cx + mw, 35, Mul(lip, 0.75f)); }
+            // 鼻（長い影の線と小鼻）
+            for (int y = 16; y < 21; y++) cv.Set(cx + 1, y, skinSh);
+            cv.Set(cx - 1, 21, skinDeep); cv.Set(cx, 21, skinSh); cv.Set(cx + 1, 21, skinDeep); cv.Set(cx + 2, 21, skinDeep);
+            cv.Set(cx - 1, 19, skinHi);
+
+            // 口（への字の一本線）
+            Color mouth = Mul(skinDeep, 0.75f);
+            for (int x = cx - 2; x <= cx + 2; x++) cv.Set(x, 24, mouth);
+            if (frown) { cv.Set(cx - 3, 25, mouth); cv.Set(cx + 3, 25, mouth); } else { cv.Set(cx - 3, 24, mouth); cv.Set(cx + 3, 24, mouth); }
+            if (female) for (int x = cx - 1; x <= cx + 1; x++) cv.Set(x, 25, Mix(skin, C(150, 70, 70), 0.45f));
             // 年齢のしわ
-            if (age >= 45) { cv.Set(18, 33, skinShade); cv.Set(19, 34, skinShade); cv.Set(30, 33, skinShade); cv.Set(29, 34, skinShade); }
-            if (age >= 50) for (int x = 19; x < 30; x += 2) cv.Set(x, 18, skinShade);
+            if (age >= 40) { cv.Set(cx - 4, 22, skinSh); cv.Set(cx - 4, 23, skinSh); cv.Set(cx + 4, 22, skinDeep); cv.Set(cx + 4, 23, skinDeep); }
+            if (age >= 50) for (int x = 12; x <= 20; x += 2) cv.Set(x, 11, skinSh);
             // ひげ
-            if (facial == 4) for (int x = cx - 4; x <= cx + 3; x++) { cv.Set(x, 34, hairDark); if (x > cx - 4 && x < cx + 3) cv.Set(x, 35, hair); }
-            if (facial == 5)
-                for (int y = 33; y < 41; y++)
-                for (int x = 15; x < 34; x++)
-                    if (cv.IsFigure(x, y) && ((x * 7 + y * 3) % 5 == 0) && Vector2.Distance(new Vector2(x, y), new Vector2(cx, 30)) > 6) cv.Set(x, y, Mix(cv.Get(x, y), hairDark, 0.35f));
+            if (facial == 4) for (int x = cx - 3; x <= cx + 3; x++) cv.Set(x, 23, x > cx + 1 ? hairSh : hair);
+            if (facial == 5) for (int y = 23; y < 29; y++) for (int x = 10; x < 23; x++) if (cv.IsFigure(x, y) && (y > 24 || x < cx - 3 || x > cx + 3)) cv.Set(x, y, (x + y) % 2 == 0 ? hair : hairSh);
 
             // ---------------- 髪（前） ----------------
-            // 生え際（x ごとの、髪が下りてくる高さ）。こめかみ・もみあげの方が低い
-            int Hairline(int x)
+            for (int y = 3; y < 24; y++)
+            for (int x = 6; x < 27; x++)
             {
                 int dx = Mathf.Abs(x - cx);
-                int h = female ? 15 : (style == 3 ? 16 : 17);
-                if (receding && dx < 6) h = 13;                       // 生え際の後退（M字）
-                if (dx > 9) h += 8; else if (dx > 7) h += 3;
-                if (!female && style == 1 && x < cx - 2) h += 1;        // 七三: 分け目の左は少し下りる
-                return h;
-            }
-            for (int y = 6; y < 34; y++)
-            for (int x = 9; x < 40; x++)
-            {
-                bool cap = InEllipse(x, y, cx, 20, 13.8f, 13f) && y < Hairline(x);
-                if (!female && style == 1 && InEllipse(x, y, cx - 4, 10, 8f, 3.5f)) cap = true;             // 七三: 分けた側のふくらみ
-                bool sideburn = !female && y >= 18 && y < 26 && (x == 12 || x == 13 || x == 35 || x == 36) && InEllipse(x, y, cx, 22, 13f, 13f);
-                bool fringe = false;
-                if (female && style == 3) fringe = y < 21 && InEllipse(x, y, cx, 17, 12f, 7.5f);                 // ぱっつん
-                if (female && style == 1) fringe = y < 20 && InEllipse(x, y, cx - 3, 15, 11f, 6f);                // 斜めの前髪
-                if (female && (style == 0 || style == 2)) fringe = y < 19 && InEllipse(x, y, cx + 2, 14, 12f, 5.5f);
-                bool sides = female && style != 2 && y < 40 && (x <= 13 || x >= 35) && InEllipse(x, y, cx, 24, 14f, 17f);
-                if (!female && style == 3) cap = cap && InEllipse(x, y, cx, 21, 13f, 12f);                        // スポーツ刈り（短く丸い）
-                if (!(cap || sideburn || fringe || sides)) continue;
-                Color c = hair;
-                if (x > cx + 6) c = hairDark;
-                // つやの光（左上の弧）
-                if (InEllipse(x, y, cx - 4, 13, 6, 3) && !InEllipse(x, y, cx - 4, 14, 5, 2.4f)) c = hairLight;
-                // 毛の流れ（細い線）
-                if ((x * 3 + y) % 7 == 0 && c == hair) c = Mix(hair, hairDark, 0.5f);
+                int line = female ? 11 : (style == 3 ? 10 : 11);
+                if (receding && dx < 4) line = 9;
+                if (dx > 6) line += 5;
+                bool cap = InEllipse(x, y, cx, 11, 8.6f, 8f) && y < line;
+                if (!female && style == 3) cap = cap && InEllipse(x, y, cx, 12, 8f, 7.4f);
+                if (!female && style == 1 && InEllipse(x, y, cx - 3, 6, 5.5f, 2.5f)) cap = true;   // 七三のふくらみ
+                bool fringe = female && style == 3 && y < 13 && InEllipse(x, y, cx, 10, 8f, 4.6f);
+                if (female && style == 1) fringe = y < 13 && InEllipse(x, y, cx - 2, 9, 7.5f, 4f);
+                if (female && (style == 0 || style == 2)) fringe = y < 12 && InEllipse(x, y, cx + 2, 9, 8f, 3.4f);
+                bool sides = female && style != 2 && y < 27 && (x <= 9 || x >= 23) && InEllipse(x, y, cx, 15, 9.5f, 12f);
+                if (!(cap || fringe || sides)) continue;
+                Color c = x > cx + 3 ? hairSh : x < cx - 4 && y < 9 ? hairHi : hair;
+                if (!female && style == 2 && (x % 3 == 0) && y < 9) c = hairHi;      // オールバックの筋
+                if (!female && style == 3 && (x + y) % 2 == 0) c = Mix(hair, skin, 0.35f); // 坊主: 地肌が透ける
                 cv.Set(x, y, c);
             }
-            if (!female && style == 1) for (int y = 8; y < 14; y++) cv.Set(cx - 5, y, Mix(skin, hair, 0.35f));   // 七三の分け目
-            if (!female && style == 3)                                                                              // スポーツ刈り: 地肌が少し透ける
-                for (int y = 8; y < 18; y++) for (int x = 12; x < 37; x++) if (cv.IsFigure(x, y) && (x + y) % 3 == 0 && cv.Get(x, y) == hair) cv.Set(x, y, Mix(hair, skin, 0.3f));
-            if (!female && style == 2) for (int x = 12; x < 37; x += 3) for (int y = 10; y < 15; y++) if (cv.IsFigure(x, y) && (x + y) % 2 == 0) cv.Set(x, y, hairLight); // オールバックの筋
-            if (age >= 50)
-                for (int i = 0; i < 18; i++) { int gx = 11 + rng.Next(26), gy = 9 + rng.Next(10); if (cv.IsFigure(gx, gy)) cv.Set(gx, gy, C(200, 198, 196)); } // 白髪
+            if (!female && style == 1) for (int y = 4; y < 9; y++) cv.Set(cx - 3, y, Mix(hair, skin, 0.45f)); // 分け目
+            if (age >= 50) for (int i = 0; i < 8; i++) { int gx = 8 + rng.Next(16), gy = 4 + rng.Next(6); if (cv.IsFigure(gx, gy)) cv.Set(gx, gy, C(176, 174, 166)); }
 
-            // ---------------- 眼鏡 ----------------
+            // ---------------- 眼鏡（細い黒縁） ----------------
             if (glasses > 0)
             {
-                Color fr = glasses == 3 ? C(160, 160, 170) : rng.Next(2) == 0 ? C(40, 36, 40) : C(120, 90, 50);
-                void Lens(int ex)
-                {
-                    for (int x = ex - 3; x <= ex + 3; x++)
-                    for (int y = 23; y <= 29; y++)
-                    {
-                        bool edge = glasses == 1 ? InEllipse(x, y, ex + 0.5f, 26.5f, 3.6f, 3.4f) && !InEllipse(x, y, ex + 0.5f, 26.5f, 2.6f, 2.4f)
-                                                 : (x == ex - 3 || x == ex + 3 || y == 23 || y == 29);
-                        if (glasses == 3 && y != 29 && x != ex - 3 && x != ex + 3) edge = false; // 縁なしは下と横だけ
-                        if (edge) cv.Set(x, y, fr);
-                    }
-                    cv.Set(ex - 2, 24, Mix(cv.Get(ex - 2, 24), Color.white, 0.6f)); // レンズの光
-                }
-                Lens(19); Lens(28);
-                cv.Set(23, 25, fr); cv.Set(24, 25, fr);
-                cv.Set(13, 25, fr); cv.Set(14, 25, fr); cv.Set(34, 25, fr); cv.Set(35, 25, fr);
+                Color fr = glasses == 1 ? Ink : C(110, 104, 92);
+                for (int x = 10; x <= 14; x++) { cv.Set(x, 15, fr); cv.Set(x, 18, fr); }
+                for (int x = 18; x <= 22; x++) { cv.Set(x, 15, fr); cv.Set(x, 18, fr); }
+                for (int y = 15; y <= 18; y++) { cv.Set(10, y, fr); cv.Set(14, y, fr); cv.Set(18, y, fr); cv.Set(22, y, fr); }
+                cv.Set(15, 16, fr); cv.Set(16, 16, fr); cv.Set(17, 16, fr);
+                cv.Set(11, 16, Mix(cv.Get(11, 16), Color.white, 0.35f)); // レンズの反射
             }
 
-            // ---------------- 輪郭線（人物の外側を1ドット濃く） ----------------
-            var outline = new List<int>();
+            // ---------------- 黒い縁取り（人物の外周） ----------------
+            var edge = new List<int>();
             for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
+                if (cv.IsFigure(x, y) && ((x > 0 && !cv.IsFigure(x - 1, y)) || (x < W - 1 && !cv.IsFigure(x + 1, y)) || (y > 0 && !cv.IsFigure(x, y - 1))))
+                    edge.Add(y * W + x);
+            foreach (int i in edge) cv.Px[i] = Ink;
+
+            // ---------------- 色をくすませる（彩度を落とし、少し黄ばませ、平らな色に） ----------------
+            for (int i = 0; i < cv.Px.Length; i++)
             {
-                if (!cv.IsFigure(x, y)) continue;
-                if (!cv.IsFigure(x - 1, y) && x > 0 || !cv.IsFigure(x + 1, y) && x < W - 1 || !cv.IsFigure(x, y - 1) && y > 0) outline.Add(y * W + x);
+                var c = cv.Px[i];
+                float l = c.r * 0.3f + c.g * 0.59f + c.b * 0.11f;
+                c = Mix(c, new Color(l, l, l), 0.35f);
+                c = new Color(c.r * 1.02f, c.g, c.b * 0.9f, 1f);
+                c = new Color(Mathf.Round(c.r * 24) / 24f, Mathf.Round(c.g * 24) / 24f, Mathf.Round(c.b * 24) / 24f, 1f);
+                cv.Px[i] = c;
             }
-            foreach (int i in outline) cv.Px[i] = Mul(cv.Px[i], 0.62f);
 
             // ---------------- 拡大してテクスチャに ----------------
             var tex = new Texture2D(W * Scale, H * Scale, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
