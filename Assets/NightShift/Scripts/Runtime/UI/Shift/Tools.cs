@@ -335,7 +335,7 @@ namespace NightShift.UI.Shift
 
         Text StatCell(RectTransform parent, int i, string label)
         {
-            var bg = UIFactory.Image(parent, ToolStyle.Round, ToolStyle.Light(ToolStyle.Indigo, 0.9f), "Stat");
+            var bg = UIFactory.Image(parent, ToolStyle.Round, Color.white, "Stat");
             ToolStyle.Cell(bg.rectTransform, i, 3, 28, 52);
             ToolStyle.Text(bg.transform, label, 10, 4, 200, 16, 11, ToolStyle.Muted, TextAnchor.MiddleLeft, true);
             return ToolStyle.Text(bg.transform, "-", 10, 20, 200, 28, 20, ToolStyle.Indigo, TextAnchor.MiddleLeft, true);

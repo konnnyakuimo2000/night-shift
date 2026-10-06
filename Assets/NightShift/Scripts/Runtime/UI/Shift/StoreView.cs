@@ -151,7 +151,7 @@ namespace NightShift.UI.Shift
             foreach (var b in _filters)
             {
                 bool on = (_filter.HasValue ? _filter.Value.ToString() : "All") == b.name;
-                b.SetAccent(Accent, on);
+                b.SetLatched(on);
             }
             RefreshDetail();
         }

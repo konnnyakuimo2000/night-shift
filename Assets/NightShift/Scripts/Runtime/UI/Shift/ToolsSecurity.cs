@@ -64,8 +64,10 @@ namespace NightShift.UI.Shift
             _scanLabel = ToolStyle.Text(row, "", 0, 70, 480, 18, 11, ToolStyle.Muted);
 
             var rg = ToolStyle.Box(p, 0, 1, y + 222, 0, "検査結果");
-            _result = ToolStyle.Text(rg, "まだ検査していません。", 13, ToolStyle.Ink);
-            _result.rectTransform.Stretch();
+            var resBg = UIFactory.Image(rg, RetroTheme.Field, Color.white, "ResultBg");
+            resBg.rectTransform.Stretch();
+            _result = ToolStyle.Text(resBg.transform, "まだ検査していません。", 13, ToolStyle.Ink);
+            _result.rectTransform.Stretch(8, 6, 8, 6);
         }
 
         FlatButton ScanButton(RectTransform row, int i, string label, System.Action a)
@@ -188,7 +190,7 @@ namespace NightShift.UI.Shift
             Ask(row, 0, "選んだ要求を審査", 3000, ProposeSelected, null);
             Ask(row, 1, "ログを調査", 4000, InvestigateLogs, Items.LogAnalyzer);
             Ask(row, 2, "感染の疑いを探す", 5000, FindInfections, null);
-            var prop = UIFactory.Image(row, ToolStyle.Round, ToolStyle.Light(ToolStyle.Violet, 0.92f), "Proposal");
+            var prop = UIFactory.Image(row, ToolStyle.Round, Color.white, "Proposal");
             prop.rectTransform.StretchH(56, 44);
             _proposalText = ToolStyle.Text(prop.transform, "", 12, ToolStyle.Ink, TextAnchor.MiddleLeft);
             _proposalText.rectTransform.Stretch(10, 2, 230, 2);
@@ -201,8 +203,10 @@ namespace NightShift.UI.Shift
             if (_auto.LabelText != null) _auto.LabelText.fontSize = 12;
 
             var cg = ToolStyle.Box(p, 0, 1, y + 68, 0, "SOC-AI とのやりとり", ToolStyle.Pad + 186);
-            _chat = ToolStyle.Text(cg, "", 13, ToolStyle.Ink, TextAnchor.LowerLeft);
-            _chat.rectTransform.Stretch();
+            var chatBg = UIFactory.Image(cg, RetroTheme.Field, Color.white, "ChatBg");
+            chatBg.rectTransform.Stretch();
+            _chat = ToolStyle.Text(chatBg.transform, "", 12, ToolStyle.Ink, TextAnchor.LowerLeft);
+            _chat.rectTransform.Stretch(8, 6, 8, 6);
             S.Requests.Created += OnCreated;
             Say("SOC-AI です。使えるプラグイン: " + Plugins());
             RefreshProposal();
