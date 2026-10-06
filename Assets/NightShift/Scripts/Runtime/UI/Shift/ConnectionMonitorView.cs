@@ -86,7 +86,10 @@ namespace NightShift.UI.Shift
             UIFactory.Button(ag, $"社員情報を参照 [{Core.GameSettings.KeyLabel(Core.GameSettings.Lookup)}]", 0, 90, 196, 26, LookupEmployee, "people");
             UIFactory.Button(ag, "閉じる(C)", 0, 122, 196, 26, _w.RequestClose, "exit");
             if (_d.Unlocked(Data.Features.FirewallBlock))
+            {
                 _fwBtn = UIFactory.Button(ag, "接続元を遮断", 0, 154, 96, 24, BlockSource, "lock");
+                _fwBtn.Label.fontSize = 11; // 幅に収める
+            }
             if (_d.Unlocked(Data.Features.Report))
                 _reportBtn = UIFactory.Button(ag, "報告", 100, 154, 96, 24, ReportSelected, "warning");
 
