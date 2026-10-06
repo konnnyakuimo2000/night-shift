@@ -355,6 +355,7 @@ namespace NightShift.Core
             {
                 PlayerPrefs.DeleteKey(CheckpointKey);
                 foreach (var w in WeekStarts) PlayerPrefs.DeleteKey(WeekKey(w));
+                PlayerPrefs.SetInt(ProgressKey, 1); // 最高到達日も新しいゲームに合わせる
                 PlayerPrefs.Save();
             }
             catch { }
@@ -489,6 +490,8 @@ namespace NightShift.Core
             Wallet.ResetAll();
             Account = OperatorAccount.NewGame(OperatorName);
             Account.Save();
+            // 新しいゲームのセーブ地点（DAY1）をすぐ作る。最初の夜の前に終了しても、前のゲームの日付で再開しないように
+            SaveCheckpoint(1);
             ShowClockIn();
         }
 
@@ -622,7 +625,11 @@ namespace NightShift.Core
                 _desktop = null;
             }
             foreach (Transform t in OverlayLayer) Destroy(t.gameObject);
-            if (!keepSession) Session = null;
+            if (!keepSession)
+            {
+                Session = null;
+                _completeTimer = -1; // 前の夜の「業務完了 → 評価画面」のタイマーを取り消す（やり直し・タイトルへ戻ったとき）
+            }
         }
 
         void Update()
@@ -635,7 +642,12 @@ namespace NightShift.Core
             if (_completeTimer > 0)
             {
                 _completeTimer -= Time.unscaledDeltaTime;
-                if (_completeTimer <= 0) { _completeTimer = -1; ShowEvaluation(); }
+                if (_completeTimer <= 0)
+                {
+                    _completeTimer = -1;
+                    // 業務を終えた夜のときだけ評価へ進む
+                    if (Session != null && Session.Phase == ShiftPhase.Complete) ShowEvaluation();
+                }
             }
             var keys = ShortcutInput.Poll();
             if (_desktop != null) _desktop.HandleShortcuts(keys);

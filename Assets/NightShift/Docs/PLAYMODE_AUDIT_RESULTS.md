@@ -11,7 +11,14 @@ Unity 6000.0.49f1 / Windows / PlayMode / batchmode（描画有効）で、24件�
 - XML: `Logs/PlayModeAuditVerified.xml`。Unityログ: `Logs/PlayModeAuditVerified.log`。
 - 実行手順: [PLAYMODE_AUDIT.md](PLAYMODE_AUDIT.md)。実行スクリプト: `Tools/Run-PlayModeAudit.ps1`。
 
-## 再現した問題
+## 修正後の再実行（2026-10-06）
+
+下の2件を修正し、同じ手順（`Tools/Run-PlayModeAudit.ps1`）で再実行した。**24件すべて成功、失敗0件**。
+
+- 1 → 新規ゲームの開始時に DAY1 のセーブ地点をすぐ作り、最高到達日も 1 に戻す（`StartNewGame` / `ClearSaves`）。
+- 2 → 夜を片付けるとき（やり直し・タイトルへ戻る）に「業務完了 → 評価」のタイマーを取り消す（`DisposeShift`）。さらに、業務を終えた夜のときだけ評価へ進む（`Update`）。
+
+## 再現した問題（修正前）
 
 ### 1. 新規ゲーム直後に過去の到達日が再開先として残る
 
