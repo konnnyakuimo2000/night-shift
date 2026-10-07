@@ -103,7 +103,7 @@ namespace NightShift.Systems.SideQuests
             }
             // 初回注文から2作業夜以降に、翌夜の急変を予告する
             if (L.spikeDay == 0 && !L.spikeCleared && L.fxFirstDay > 0 && Day >= L.fxFirstDay + 1 && Day + 1 <= SideQuestManager.LastTaskDay
-                && !State.Has("SPIKE_RETRY_" + Day))
+                && !State.Has("SPIKE_RETRY_" + Day) && !Q.TaskDayReserved(Day + 1, this))
             {
                 L.spikeDay = Day + 1;
                 Mail("SPIKE-" + (Day + 1), From, Address, "【予告】明日の夜は急変が予想されます",

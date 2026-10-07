@@ -50,6 +50,14 @@ namespace NightShift.UI.Shift
                 case "RECORD": TextWindow.Open(_d, "quest-record", "対応記録", arg as string ?? "", "doc"); break;
                 case "HINT": TextWindow.Open(_d, "quest-hint", "ヒント", arg as string ?? "", "info"); break;
                 case "LOAN": LeisureAccountView.Open(_d); break;
+                case "CHOICE":
+                    if (arg is MorningChoice choice)
+                    {
+                        // 時計は要求の受理時に停止済み。二択の確定まで業務へ戻さない。
+                        _d.Game.SaveQuestChoiceCheckpoint();
+                        ShowChoice(choice);
+                    }
+                    break;
                 case "CONFIRM_TRUE":
                     if (arg is Sq03Route t)
                         _d.ShowModal("担当変更",
@@ -60,7 +68,52 @@ namespace NightShift.UI.Shift
             }
         }
 
+        // ================= その場の二択 =================
+        GameObject _choice;
+        float _choiceArm;
+        FlatButton[] _choiceButtons;
+
+        /// <summary>
+        /// 周回が終わる二択（SQ06 の加入／離脱）。Enter・Esc では決めない（Esc は一時停止のまま使える）。
+        /// 表示直後の入力を持ち越さないよう、ボタンは少し待ってから押せるようにする。
+        /// </summary>
+        void ShowChoice(MorningChoice c)
+        {
+            if (_choice != null) Destroy(_choice);
+            var dim = UIFactory.Solid(_layer, new Color(0, 0, 0, 0.6f), "QuestChoice");
+            dim.rectTransform.Stretch();
+            var box = UIFactory.Panel(dim.transform, RetroTheme.Raised, "Box");
+            box.rectTransform.anchorMin = box.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            box.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            box.rectTransform.sizeDelta = new Vector2(560, 260);
+            var bar = UIFactory.Image(box.transform, RetroTheme.GradientSprite(RetroTheme.TitleActiveA, RetroTheme.TitleActiveB), Color.white, "Title");
+            bar.rectTransform.StretchH(3, 18, 3, 3);
+            UIFactory.Label(bar.transform, " " + c.Title, 12, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
+            UIFactory.Label(box.transform, c.Text, 20, 32, 520, 150, 13, TextAnchor.UpperLeft);
+            var accept = ToolStyle.Button(box.transform, c.Accept, 40, 200, 220, 34, () => Choose(c, true), ToolStyle.Red, false);
+            var decline = ToolStyle.Button(box.transform, c.Decline, 300, 200, 220, 34, () => Choose(c, false), ToolStyle.Slate, false);
+            _choiceButtons = new[] { accept, decline };
+            foreach (var b in _choiceButtons) b.Interactable = false;
+            _choiceArm = 1.0f;
+            _choice = dim.gameObject;
+            _d.QuestBlocking = true;
+            PopupMenu.CloseAll();
+        }
+
+        void Choose(MorningChoice c, bool accept)
+        {
+            if (_choiceArm > 0 || _d.PauseOpen) return;
+            _d.S.Quests.ChooseMorning(c, accept);
+            if (_d.S.Quests.PendingChoice != null) return;   // 確定しなかった（本編の終端が先に決まっていたなど）
+            Destroy(_choice);
+            _choice = null;
+            _d.QuestBlocking = _full != null;
+        }
+
         // ================= 演出 =================
+        /// <summary>全面の演出で時計を止めている</summary>
+        public bool HoldsClock => _full != null;
+
         public void Play(string fx)
         {
             switch (fx)
@@ -135,7 +188,7 @@ namespace NightShift.UI.Shift
             _full = bg.gameObject;
             if (kind == "APPROACH" || kind == "DESK") BuildFigure(bg.transform, kind == "DESK");
             if (!_d.S.Time.Paused) { _d.S.Time.Paused = true; _pausedByFx = true; }
-            _d.EffectBlocking = true;
+            _d.QuestBlocking = true;
             if (Set.loudSounds && kind != "RED") AudioFx.PowerDown(); else AudioFx.Hum();
         }
 
@@ -182,8 +235,9 @@ namespace NightShift.UI.Shift
             _full = null; _figure = null;
             if (_d != null)
             {
-                _d.EffectBlocking = false;
-                if (_pausedByFx && _d.S != null) _d.S.Time.Paused = false;
+                _d.QuestBlocking = _choice != null;
+                // 一時停止メニュー・二択が残っている間は、時計を再開しない
+                if (_pausedByFx && _d.S != null && !_d.PauseOpen && _d.S.Quests.PendingChoice == null) _d.S.Time.Paused = false;
             }
             _pausedByFx = false;
         }
@@ -191,6 +245,11 @@ namespace NightShift.UI.Shift
         void Update()
         {
             float dt = Time.unscaledDeltaTime;
+            if (_choice != null && _choiceArm > 0 && !_d.PauseOpen)
+            {
+                _choiceArm -= dt;
+                if (_choiceArm <= 0) foreach (var b in _choiceButtons) b.Interactable = true;
+            }
             if (_after != null && (_afterLeft -= dt) <= 0) { Destroy(_after); _after = null; }
             if (_scan != null && (_scanLeft -= dt) <= 0) EndScan();
             if (_frame != null && (_frameLeft -= dt) <= 0) { Destroy(_frame); _frame = null; }

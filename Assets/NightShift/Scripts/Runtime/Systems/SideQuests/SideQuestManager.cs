@@ -53,7 +53,9 @@ namespace NightShift.Systems.SideQuests
             Routes.Add(new Sq04Route(this));
             Routes.Add(new Sq03Route(this));
             Routes.Add(new Sq05Route(this));
-            // SQ01 / SQ02 / SQ06 は後で追加
+            Routes.Add(new Sq01Route(this));
+            Routes.Add(new Sq02Route(this));
+            Routes.Add(new Sq06Route(this));
             // これまでのサブクエストのメールを受信トレイに戻す
             foreach (var r in Career.questMails)
                 if (r.day < Day || (r.day == Day && r.time < 0)) AddToInbox(r, notify: false);
@@ -205,7 +207,19 @@ namespace NightShift.Systems.SideQuests
             Changed?.Invoke();
         }
 
-        public void RequestUi(string kind, object arg = null) => UiRequested?.Invoke(kind, arg);
+        public MorningChoice PendingChoice { get; private set; }
+        bool _pausedBeforeChoice;
+        public void RequestUi(string kind, object arg = null)
+        {
+            if (kind == "CHOICE" && arg is MorningChoice choice)
+            {
+                if (Ended || PendingChoice != null || EndingResolver.CheckGameOver(Career, S) != null) return;
+                PendingChoice = choice;
+                _pausedBeforeChoice = S.Time.Paused;
+                S.Time.Paused = true;
+            }
+            UiRequested?.Invoke(kind, arg);
+        }
 
         // ================= 接続要求 =================
         public class RequestSpec
@@ -213,6 +227,7 @@ namespace NightShift.Systems.SideQuests
             public string Tag, MailId, Note, Confirm;
             public EmployeeData Employee;
             public string DisplayUser, DisplayEmployeeId, Device, SourceIp, NodeId, AccessType;
+            public NetworkNodeDefinition Destination;   // ゲーム内だけの架空の転送先
             public SourceZone Zone = SourceZone.Internal;
             public ExpectedAction Expected = ExpectedAction.PolicyDerived;
             public bool Malicious, SecurityAlert;
@@ -230,7 +245,7 @@ namespace NightShift.Systems.SideQuests
             def.isMalicious = r.Malicious;
             def.timeoutMinutes = r.Timeout;
             def.hideFlags = UnityEngine.HideFlags.DontSave;
-            var node = S.Database.nodes.Find(n => n != null && n.nodeId == r.NodeId);
+            var node = r.Destination ?? S.Database.nodes.Find(n => n != null && n.nodeId == r.NodeId);
             def.destination = node;
             def.accessType = r.AccessType;
             var e = new EventInstance
@@ -266,9 +281,45 @@ namespace NightShift.Systems.SideQuests
         /// <summary>ゲーム内時刻に処理を予約する（一時停止・全面演出中は進まない）</summary>
         public void At(float time, string label, Action action) => _timers.Add((time, label, action));
 
+        /// <summary>時間制限付きの作業は一夜一本。確定した日だけを予告に使う。</summary>
+        public int ReserveTaskDay(QuestRoute route, int first, int last = LastTaskDay)
+        {
+            for (int day = first; day <= Math.Min(last, LastTaskDay); day++)
+            {
+                if (Career.leisure.spikeDay == day) continue;
+                if (TaskDayReserved(day, route)) continue;
+                route.State.nextTaskDay = day;
+                return day;
+            }
+            route.State.nextTaskDay = 0;
+            return 0;
+        }
+
+        public bool TaskDayReserved(int day, QuestRoute except = null) => Routes.Exists(r => r != except && r.State.IsOpen && r.State.nextTaskDay == day);
+
+        /// <summary>固定の脅威は残し、ランダムな通常要求の枠を置き換える。</summary>
+        public void ReplaceRoutineSlots(int count)
+        {
+            foreach (var item in S.Director.Scheduler.Items)
+            {
+                if (count <= 0) break;
+                if (item.Fired || item.Time < S.Time.CurrentMinute || !item.Label.StartsWith("ROUTINE ")) continue;
+                item.Fired = true;
+                count--;
+            }
+        }
+
+        public void CancelWork(string routeId)
+        {
+            string prefix = routeId + "-";
+            _timers.RemoveAll(t => t.label.StartsWith(prefix));
+            foreach (var j in _jobs) if (j.Id.StartsWith(prefix)) j.Finished = true;
+        }
+
         public class QuestJob
         {
             public string Id, Label, Device, SourceIp, Target;
+            public EventInstance Request;
             public float Start, Minutes;
             public Action Done, Aborted;
             public bool Finished, Succeeded;
@@ -293,14 +344,14 @@ namespace NightShift.Systems.SideQuests
 
         public void Tick(float now, float realDelta)
         {
-            if (Ended) return;
+            if (Ended || S.Time.Paused) return;
             for (int i = 0; i < _timers.Count; i++)
             {
                 if (now < _timers[i].time) continue;
                 var t = _timers[i];
                 _timers.RemoveAt(i--);
                 try { t.action(); } catch (Exception ex) { UnityEngine.Debug.LogException(ex); }
-                if (Ended) return;
+                if (Ended || S.Time.Paused) return;
             }
             foreach (var j in _jobs.ToArray())
             {
@@ -317,7 +368,7 @@ namespace NightShift.Systems.SideQuests
                     S.Logs.Add(now, j.SourceIp, j.Target, "-", "TRANSFER", "DONE", $"{j.Label}（100%）");
                     j.Done?.Invoke();
                     Changed?.Invoke();
-                    if (Ended) return;
+                    if (Ended || S.Time.Paused) return;
                 }
             }
             Leisure.Tick(now);
@@ -366,6 +417,7 @@ namespace NightShift.Systems.SideQuests
             if (st.status == QuestStatus.Resolved) return;
             st.status = QuestStatus.Resolved;
             st.result = result;
+            CancelWork(q.Id);
             if (note != null) Note($"{q.Title}: {note}");
             q.OnClosed();
             Changed?.Invoke();
@@ -377,10 +429,12 @@ namespace NightShift.Systems.SideQuests
             var st = q.State;
             if (st.status == QuestStatus.Resolved || Ended) return;
             var def = SubEndings.Get(endingId);
+            if (def != null && def.Terminal && EndingResolver.CheckGameOver(Career, S) != null) return;
             if (def != null && def.Terminal && atNightEnd) { PendingTerminal = endingId; _pendingRoute = q; _pendingResult = result; return; }
             st.status = QuestStatus.Resolved;
             st.result = result;
             st.endingId = endingId;
+            CancelWork(q.Id);
             q.OnClosed();
             if (!Career.TryOnce("END-" + q.Id)) return;
             Career.SeeSubEnding(endingId);
@@ -466,9 +520,15 @@ namespace NightShift.Systems.SideQuests
         /// <summary>朝の進路を選んだ。途中終了になったら、その結末 ID</summary>
         public string ChooseMorning(MorningChoice c, bool accept)
         {
+            if (c == null) return null;
             var q = Route(c.QuestId);
             if (q == null || Ended) return null;
             q.OnMorningChoice(c, accept);
+            if (PendingChoice == c && q.State.status == QuestStatus.Resolved)
+            {
+                PendingChoice = null;
+                if (!Ended) S.Time.Paused = _pausedBeforeChoice;
+            }
             Career.Save();
             return Ended ? q.State.endingId : null;
         }
@@ -520,6 +580,43 @@ namespace NightShift.Systems.SideQuests
         protected int Day => Q.Day;
         protected CareerRecord Career => CareerRecord.Current;
         protected float Now => S.Time.CurrentMinute;
+
+        // このセッションで生成した要求だけを受理する。タグの一致だけでは成立させない。
+        readonly Dictionary<EventInstance, SideQuestManager.RequestSpec> _taskRequests = new Dictionary<EventInstance, SideQuestManager.RequestSpec>();
+        readonly HashSet<EventInstance> _handledTasks = new HashSet<EventInstance>();
+        protected bool CanWork => State.IsOpen && !Q.Ended && EndingResolver.CheckGameOver(Career, S) == null;
+        protected string TaskMail => State.stage + "-DAY" + State.nextTaskDay;
+        protected void Later(float time, string key, Action action)
+        {
+            string stage = State.stage;
+            Q.At(time, Id + "-" + key, () => { if (CanWork && State.stage == stage) action(); });
+        }
+        protected EventInstance SpawnTask(SideQuestManager.RequestSpec spec)
+        {
+            if (!CanWork) return null;
+            var e = Q.SpawnRequest(spec);
+            if (e != null) _taskRequests[e] = spec;
+            return e;
+        }
+        protected bool ConsumeTask(EventInstance e, float start, float end)
+        {
+            if (!CanWork || e == null || !_taskRequests.TryGetValue(e, out var r) || _handledTasks.Contains(e)) return false;
+            if (e.QuestTag != r.Tag || e.Employee != r.Employee || e.Device != (r.Device ?? r.Employee?.deviceId)
+                || e.SourceIp != (r.SourceIp ?? (r.Employee != null ? S.Employees.GetIp(r.Employee) : "10.10.99.50")) || e.Destination?.nodeId != r.NodeId || e.AccessType != r.AccessType) return false;
+            _handledTasks.Add(e);
+            if (Now < start || Now >= end || e.AutoDecided) return false;
+            State.Mark($"{State.stage}-DAY{Day}-{e.RequestId}-{e.State}@{T(Now)}");
+            return true;
+        }
+        protected void Work(EventInstance e, string key, float minutes, Action done, Action aborted)
+        {
+            string stage = State.stage;
+            var job = Q.StartJob(Id + "-" + key, e.AccessType, e.Device, e.SourceIp, e.Destination?.nodeId, minutes,
+                () => { if (CanWork && State.stage == stage) done(); },
+                () => { if (CanWork && State.stage == stage) aborted(); });
+            job.Request = e;
+            Q.CheckJobs();
+        }
 
         public abstract string Id { get; }
         public abstract string Title { get; }

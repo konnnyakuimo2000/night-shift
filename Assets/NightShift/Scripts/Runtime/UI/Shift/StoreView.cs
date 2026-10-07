@@ -171,14 +171,23 @@ namespace NightShift.UI.Shift
             RefreshDetail();
         }
 
+        /// <summary>所持数による購入制限。確認画面を出した後にも照合する。</summary>
+        public static string StockBlockedReason(StoreItemDefinition it)
+        {
+            var career = CareerRecord.Current;
+            if (!it.consumable && career.Owns(it.itemId)) return "購入済みです。";
+            if (it.consumable && career.ItemCount(it.itemId) >= it.maxStock) return "これ以上は持てません。";
+            if (it.itemId == Data.Items.Charm && career.charm.boughtToday >= 1) return "1夜に1枚までです。";
+            return null;
+        }
+
         /// <summary>買えない理由（null = 買える）</summary>
         string Reason(StoreItemDefinition it)
         {
             var career = CareerRecord.Current;
             if (_d.ShiftStarted) return "業務時間中は注文できません。";
-            if (!it.consumable && career.Owns(it.itemId)) return "購入済みです。";
-            if (it.consumable && career.ItemCount(it.itemId) >= it.maxStock) return "これ以上は持てません。";
-            if (it.itemId == Data.Items.Charm && career.charm.boughtToday >= 1) return "1夜に1枚までです。";
+            string stock = StockBlockedReason(it);
+            if (stock != null) return stock;
             if (!string.IsNullOrEmpty(it.prerequisite) && !career.Owns(it.prerequisite))
             {
                 var pre = _d.Game.Database.FindItem(it.prerequisite);
@@ -228,6 +237,7 @@ namespace NightShift.UI.Shift
             if (reason != null) { AudioFx.Error(); _w.SetStatus(0, reason); return; }
             MessageBox.Confirm(_d, "ご注文の確認", $"「{it.displayName}」を {OperatorWallet.Yen(it.price)} で注文します。\n代金は給与から精算されます。よろしいですか？", () =>
             {
+                if (Reason(it) != null) { AudioFx.Error(); return; }
                 if (!_d.Game.Wallet.TrySpend(it.price)) { AudioFx.Error(); return; }
                 var career = CareerRecord.Current;
                 if (it.itemId == Data.Items.VaccineUpdate) career.vaccineDefinitionDay = _d.S.Day.dayNumber;

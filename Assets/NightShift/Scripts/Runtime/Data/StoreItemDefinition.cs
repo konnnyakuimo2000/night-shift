@@ -51,6 +51,7 @@ namespace NightShift.Data
         // サブクエスト（招待・案内のあとにだけ店頭に並ぶ）
         public const string GambleTerminal = "TOOL_GAMBLE_TERMINAL";
         public const string FxTerminal = "TOOL_FX_TERMINAL";
+        public const string SignalDesk = "TOOL_SIGNAL_DESK";
         public const string Charm = "ITEM_DEVICE_CHARM";
     }
 }

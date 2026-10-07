@@ -660,7 +660,10 @@ namespace NightShift.Data
                 "社内サーバーを検査・駆除します（Client が前提）。", "shield", Items.Vaccine);
             I(Items.Correlator, "相関タイムライン", StoreCategory.Tool, 29800, 22,
                 "同じ接続元の範囲・同じ利用者の記録を時系列に並べます（関連があるかの判断はあなた）。", "clock", M);
-            // サブクエスト（SQ03/04/05）: 招待・案内のあとにだけ並ぶ。ゲーム内の架空のサービス
+            // サブクエスト: 招待・案内のあとにだけ並ぶ。ゲーム内の架空のサービス
+            I(Items.SignalDesk, "SIGNAL DESK", StoreCategory.Tool, 3000, 17,
+                "NULL SIGNAL のメール一覧・関連ログ・作業時刻・対象接続を一画面に整理します。購入は任意で、自動許可・自動送信は行いません。",
+                "network", M, false, 1, null, Systems.SideQuests.Sq06Route.InvitedFlag);
             I(Items.GambleTerminal, "NIGHT CLUB", StoreCategory.Tool, 1500, 9,
                 "会員制の赤／黒ゲーム。賭け・入出金・損益履歴・一夜の支出上限・指定損失での新規ベット停止・決着通知をすべて内蔵（追加課金なし）。勝率は赤 48%・黒 48%・ハウス 4%。勝ちを保証する機能はありません。",
                 "globe", M, false, 1, null, Systems.SideQuests.Sq04Route.InvitedFlag);

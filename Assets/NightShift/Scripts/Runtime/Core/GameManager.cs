@@ -353,6 +353,7 @@ namespace NightShift.Core
         // ---------------- セーブ地点（続きから） ----------------
         // 日付・30日間の記録・財布・アカウントを1か所にまとめて保存する（日付だけ先に進む、などの食い違いを防ぐ）
         const string CheckpointKey = "NightShift.Checkpoint";
+        const string QuestChoiceKey = "NightShift.QuestChoice";
         const string CheckpointSep = "#CHECKPOINT#";
 
         /// <summary>「続きから」で始まる日（セーブ地点が無ければ 0）</summary>
@@ -388,12 +389,47 @@ namespace NightShift.Core
             catch { }
         }
 
+        /// <summary>処理完了後の二択専用の保存。通常の朝の保存は残し、途中の業務は再開しない。</summary>
+        public void SaveQuestChoiceCheckpoint()
+        {
+            if (CareerRecord.SaveDisabled || Session?.Quests.PendingChoice?.QuestId != "SQ06") return;
+            try
+            {
+                PlayerPrefs.SetString(QuestChoiceKey, string.Join(CheckpointSep, new[] { CurrentDay.ToString(), CareerRecord.Current.Snapshot(), Wallet.Snapshot(), Account.Snapshot() }));
+                PlayerPrefs.Save();
+            }
+            catch { }
+        }
+
+        bool ResumeQuestChoice()
+        {
+            string[] saved;
+            try { saved = PlayerPrefs.GetString(QuestChoiceKey, "").Split(new[] { CheckpointSep }, System.StringSplitOptions.None); }
+            catch { return false; }
+            if (saved.Length != 4 || !int.TryParse(saved[0], out int day) || Database.FindDay(day) == null) return false;
+            var record = JsonUtility.FromJson<CareerRecord>(saved[1]);
+            if (record == null || !record.Quest("SQ06").IsOpen || !record.Quest("SQ06").Has("N3_DONE")) return false;
+            // やり直しは同じ夜の朝へ戻す。二択から通常業務へ抜ける経路は作らない。
+            if (!TryReadCheckpoint(out int morning, out var original) || morning != day) return false;
+            _careerSnapshot = original[1]; _walletSnapshot = original[2]; _snapshotDay = day;
+            CareerRecord.Restore(saved[1]); Wallet.Restore(saved[2]); Account = OperatorAccount.Restore(saved[3]);
+            CurrentDay = day;
+            ClearScreen(); DisposeShift();
+            Session = new ShiftSession(Database, Database.GetDay(day), 0, OperatorName);
+            Session.Quests.TerminalEnding += id => _pendingSubEnding = id;
+            _desktop = ShiftDesktop.Build(ScreenLayer, this, Session);
+            Session.Ui = _desktop; _screen = _desktop.gameObject; State = GameState.Shift;
+            Session.Quests.Route<Systems.SideQuests.Sq06Route>().ResumeChoice();
+            return true;
+        }
+
         /// <summary>新しく始めたら、前のゲームのセーブ地点と週の初日のセーブを消す</summary>
         static void ClearSaves()
         {
             try
             {
                 PlayerPrefs.DeleteKey(CheckpointKey);
+                PlayerPrefs.DeleteKey(QuestChoiceKey);
                 foreach (var w in WeekStarts) PlayerPrefs.DeleteKey(WeekKey(w));
                 PlayerPrefs.SetInt(ProgressKey, 1); // 最高到達日も新しいゲームに合わせる
                 PlayerPrefs.Save();
@@ -582,6 +618,7 @@ namespace NightShift.Core
         void ContinueGame()
         {
             try { OperatorName = PlayerPrefs.GetString(NameKey, OperatorName); } catch { }
+            if (ResumeQuestChoice()) return;
             if (TryReadCheckpoint(out int day, out var parts) && Database.FindDay(day) != null)
             {
                 // セーブ地点の日付・記録・財布・アカウントをそろえて戻す
@@ -659,6 +696,7 @@ namespace NightShift.Core
 
         public void RestartDay()
         {
+            try { PlayerPrefs.DeleteKey(QuestChoiceKey); } catch { }
             ClearScreen();
             DisposeShift();
             ShowBriefing();

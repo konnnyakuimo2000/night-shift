@@ -36,6 +36,7 @@ namespace NightShift.UI.Shift
                 case Items.SocAi: Open<SocAiTool>(ws, id, "SOC-AI", "debug", 660, 640); break;
                 case Items.GambleTerminal: Open<NightClubTool>(ws, id, "NIGHT CLUB", "globe", 600, 700); break;
                 case Items.FxTerminal: Open<MidnightFxTool>(ws, id, "MIDNIGHT FX", "network", 700, 760); break;
+                case Items.SignalDesk: Open<SignalDeskTool>(ws, id, "SIGNAL DESK", "network", 700, 620); break;
             }
         }
 

@@ -211,6 +211,9 @@ namespace NightShift.UI.Shift
             Set("access", e.AccessType);
             Set("perm", RequiredPermissionText(e));
             Set("state", StateLabel(e));
+            foreach (var job in _d.S.Quests.Jobs)
+                if (job.Request == e)
+                    Set("state", job.Finished ? (job.Succeeded ? "処理完了" : "処理中断") : $"処理中 {job.Progress(_d.S.Time.CurrentMinute):P0}（遮断で中断）");
             Set("decided", e.State == EventState.Pending ? "-" : TimeManager.Format(e.DecidedTime > 0 ? e.DecidedTime : e.GeneratedTime + e.ResponseTime));
             bool pending = e.State == EventState.Pending;
             _allow.Interactable = _block.Interactable = pending;
@@ -318,7 +321,7 @@ namespace NightShift.UI.Shift
             }
             // 残り時間の表示を、ゲーム内の1分ごとに更新する
             int minute = Mathf.FloorToInt(_d.S.Time.CurrentMinute);
-            if (!_showProcessed && minute != _lastMinute) { _lastMinute = minute; _dirty = true; }
+            if (minute != _lastMinute) { _lastMinute = minute; _dirty = true; }
             if (_dirty && Time.frameCount % 5 == 0) Refresh();
             if (_d.S.Phase == ShiftPhase.Grace)
                 _w.SetStatus(0, _d.S.Day.requestsExpire

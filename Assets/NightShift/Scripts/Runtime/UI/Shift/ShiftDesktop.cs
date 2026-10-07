@@ -23,6 +23,7 @@ namespace NightShift.UI.Shift
         NotificationToaster _toaster;
         RectTransform _modalLayer;
         GameObject _pause;
+        QuestUi _questUi;
         DebugOverlay _overlay;
 
         public static ShiftDesktop Build(RectTransform parent, GameManager gm, ShiftSession s)
@@ -49,7 +50,7 @@ namespace NightShift.UI.Shift
             d.RebuildMonitors();
             d.InventoryChanged += d.RebuildMonitors;
             HorrorFx.Attach(d, UIFactory.Rect("Fx", root.transform).Stretch());
-            QuestUi.Attach(d, UIFactory.Rect("QuestFx", root.transform).Stretch());
+            d._questUi = QuestUi.Attach(d, UIFactory.Rect("QuestFx", root.transform).Stretch());
             d._toaster = NotificationToaster.Build(root.transform, d);
             d._modalLayer = UIFactory.Rect("Modal", root.transform).Stretch();
             d._overlay = DebugOverlay.Build(gm.DebugLayer, d);
@@ -383,9 +384,14 @@ namespace NightShift.UI.Shift
         // ---------------- 入力の受け付け ----------------
         /// <summary>ブルースクリーン・停電などの演出で、メインの操作ができない</summary>
         public bool EffectBlocking { get; set; }
+        /// <summary>サブクエストの全面演出・その場の二択の間は、承認などの入力を受け付けない（HorrorFx の EffectBlocking とは別に持つ）</summary>
+        public bool QuestBlocking { get; set; }
+        public bool PauseOpen => _pause != null;
+        /// <summary>一時停止メニュー以外の理由で時計を止めている（サブクエストの二択・全面演出）。一時停止を閉じても再開しない</summary>
+        public bool ClockHeld => (S?.Quests?.PendingChoice != null) || (_questUi != null && _questUi.HoldsClock);
 
         /// <summary>メインモニターの業務画面への判定キー（許可・拒否など）を受け付けない状態</summary>
-        public bool InputBlocked => _pause != null || ModalOpen || CurrentMonitor != 0 || EffectBlocking;
+        public bool InputBlocked => _pause != null || ModalOpen || CurrentMonitor != 0 || EffectBlocking || QuestBlocking;
 
         // ---------------- モーダル（他を操作できない確認） ----------------
         readonly List<Action> _modalCancels = new List<Action>();
@@ -485,7 +491,7 @@ namespace NightShift.UI.Shift
             if (_pause == null) return;
             Destroy(_pause);
             _pause = null;
-            S.Time.Paused = false;
+            S.Time.Paused = ClockHeld;
         }
 
         // ---------------- 業務開始前に読むもの ----------------
