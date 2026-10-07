@@ -193,6 +193,64 @@ namespace NightShift.Events
 
         float Rand(float a, float b) => a + (b - a) * (float)_s.Rng.NextDouble();
 
+        /// <summary>手が空いたときに追加で届けた接続要求の数</summary>
+        public int ExtraSpawned { get; private set; }
+
+        /// <summary>
+        /// 手が空いたプレイヤーに、仕事を1件届ける。
+        /// 研修（1件ずつの夜）は、予定している次の仕事を前倒しする。予定が尽きたら、その夜の練習用の要求から追加する。
+        /// 本番は、その夜の配分（違反の割合）どおりに接続要求を1件追加する。
+        /// </summary>
+        public EventInstance SpawnExtra()
+        {
+            if (Stopped) return null;
+            if (!_s.Day.randomEvents && PullNextGated()) return _s.Requests.Pending.Count > 0 ? _s.Requests.Pending[_s.Requests.Pending.Count - 1] : null;
+            var day = _s.Day;
+            for (int i = 0; i < 6; i++)
+            {
+                EventDefinition def;
+                if (day.randomEvents)
+                {
+                    bool violation = day.violationPool.Count > 0 && _s.Rng.NextDouble() < day.violationRatio;
+                    def = PickWeighted(violation ? day.violationPool : day.routinePool, day.dayNumber) ?? PickWeighted(day.routinePool, day.dayNumber);
+                }
+                else def = PickWeighted(PracticePool(day), day.dayNumber);
+                if (def == null) return null;
+                var e = _s.Factory.Build(def);
+                if (e == null) continue;
+                _s.Requests.Submit(e);
+                ExtraSpawned++;
+                return e;
+            }
+            return null;
+        }
+
+        /// <summary>研修: まだ出ていない、予定の接続要求・問い合わせを今に前倒しする</summary>
+        bool PullNextGated()
+        {
+            ScheduledItem next = null;
+            foreach (var it in Scheduler.Items)
+                if (!it.Fired && it.Gated && (next == null || it.Time < next.Time)) next = it;
+            if (next == null) return false;
+            next.Time = _s.Time.CurrentMinute;
+            next.Latest = next.Time;
+            next.GateDeadline = next.Time;
+            int before = OpenPlayerTasks;
+            Scheduler.Tick(_s.Time.CurrentMinute, false, true);
+            return OpenPlayerTasks > before;
+        }
+
+        /// <summary>研修の夜の練習用の要求（その夜のランダム枠に入っている接続要求。攻撃シナリオは含めない）</summary>
+        static List<EventDefinition> PracticePool(DayDefinition day)
+        {
+            var list = new List<EventDefinition>();
+            foreach (var slot in day.randomSlots)
+                foreach (var d in slot.pool)
+                    if (d != null && d.kind == EventKind.ConnectionRequest && d.category != EventCategory.Threat && !list.Contains(d)) list.Add(d);
+            foreach (var d in day.routinePool) if (d != null && !list.Contains(d)) list.Add(d);
+            return list;
+        }
+
         /// <summary>定義から即時に1件発生させる</summary>
         public EventInstance Spawn(EventDefinition def)
         {

@@ -216,6 +216,8 @@ namespace NightShift.Core
             var slip = Payroll.Compute(day.dayNumber, result, Session.Evaluation, Database.payroll);
             var previous = Wallet.Record(slip, out bool updated);
             NightClosing.Close(Session, result, slip);
+            if (Session.Director.ExtraSpawned > 0)
+                result.Stats.Add(new System.Collections.Generic.KeyValuePair<string, string>("追加で届いた仕事", $"{Session.Director.ExtraSpawned} 件（手が空いたときに届いた接続要求）"));
             // サブクエスト: 個別入金（給与とは別）・段階の進行・返済日の返済
             Session.Quests.OnNightEnd();
             if (Session.Quests.Summary.Count > 0)

@@ -142,64 +142,30 @@ namespace NightShift.Systems
             return false;
         }
 
-        // ---- 待ち時間の詰め: プレイヤーが何もすることがない状態を10秒以上つくらない ----
-        /// <summary>何もすることがない状態がこの秒数（実時間）続いたら、時計を早送りする</summary>
-        public const float IdleFastAfter = 3f;
-        /// <summary>この秒数続いたら、次の仕事が届く時刻まで時計を進める（以後に仕事が無ければ業務終了まで）</summary>
-        public const float IdleSkipAfter = 7f;
-        public const float IdleFastScale = 6f;
+        // ---- 仕事の量: プレイヤーが何もすることがない状態を10秒以上つくらない ----
+        // 時計の速さは変えない。手が空いたら接続要求を追加で届けるので、速く正確にこなす人ほど多くの件数を扱える。
+        /// <summary>何もすることがない状態がこの秒数（実時間）続いたら、接続要求を1件追加する</summary>
+        public const float IdleSpawnAfter = 7f;
         /// <summary>何もすることがない状態が続いている実時間（秒）</summary>
         public float IdleRealSeconds { get; private set; }
         /// <summary>この夜でいちばん長かった、何もすることがない時間（実時間・秒）</summary>
         public float MaxIdleRealSeconds { get; private set; }
-        public bool FastForwarding => Time.PacingScale > 1f;
 
-        /// <summary>
-        /// プレイヤーに今することがあるか: 保留中の要求・未対応の問い合わせ・依頼・リモート操作中・業務中に届いた未読メール・
-        /// 進行中の攻撃（ログや監視で気付いて止める余地がある間は早送りしない）・サブクエストの作業
-        /// </summary>
+        /// <summary>プレイヤーに今することがあるか（保留中の要求・未対応の問い合わせ・依頼・リモート操作中・サブクエストの作業）</summary>
         public bool HasWork =>
             Requests.Pending.Count > 0 || HelpDesk.OpenCount > 0 || OpenTaskCount > 0
-            || (HelpDesk.ActiveSession != null && HelpDesk.ActiveSession.Connected)
-            || UnreadShiftMail || Director.Threats.AnyActive(Time.CurrentMinute) || Quests.HasWork;
-
-        bool UnreadShiftMail
-        {
-            get { foreach (var m in Mail.Inbox) if (!m.Read && m.ReceivedAt >= 0) return true; return false; }
-        }
+            || (HelpDesk.ActiveSession != null && HelpDesk.ActiveSession.Connected) || Quests.HasWork;
 
         void TrackIdle(float realDelta)
         {
-            if (HasWork) { IdleRealSeconds = 0; Time.PacingScale = 1f; return; }
-            if (!Time.Paused) IdleRealSeconds += realDelta;
+            if (HasWork) { IdleRealSeconds = 0; return; }
+            if (Time.Paused) return;
+            IdleRealSeconds += realDelta;
             MaxIdleRealSeconds = Math.Max(MaxIdleRealSeconds, IdleRealSeconds);
-            Time.PacingScale = IdleRealSeconds >= IdleFastAfter ? IdleFastScale : 1f;
-        }
-
-        /// <summary>次の仕事が届くまで時計を進める。予約が尽きたら業務終了の時刻まで</summary>
-        void SkipToNextWork()
-        {
-            for (int i = 0; i < 60 && !HasWork && Time.CurrentMinute < Day.endMinute; i++)
-            {
-                float now = Time.CurrentMinute;
-                float next = -1;
-                var item = Director.Scheduler.NextPending();
-                if (item != null) next = item.Time;
-                float q = Quests.NextTimer;
-                if (q >= 0 && (next < 0 || q < next)) next = q;
-                if (next < 0) next = Day.endMinute;
-                // 予定時刻を過ぎても出ていないもの（研修の「1件ずつ」の間合いなど）は少しずつ進める
-                if (next <= now + 0.01f) next = now + 0.5f;
-                float t = Math.Min(Day.endMinute, next + 0.01f);
-                Time.JumpTo(t);
-                Director.Tick(t, 0f);
-                Requests.Tick(t);
-                HelpDesk.Tick(t, 0f);
-                Servers.Tick(t);
-                Quests.Tick(t, 0f);
-            }
-            IdleRealSeconds = 0;
-            Time.PacingScale = 1f;
+            // 終業の予告（残り10分）を過ぎたら追加しない
+            if (IdleRealSeconds < IdleSpawnAfter || Time.CurrentMinute >= Day.endWarningMinute) return;
+            if (Director.SpawnExtra() != null) IdleRealSeconds = 0;
+            else IdleRealSeconds = IdleSpawnAfter - 1f;   // 出せなかった（条件に合う社員がいない等）: 少し待って再挑戦
         }
 
         public event Action EndWarning;
@@ -267,11 +233,6 @@ namespace NightShift.Systems
                         Servers.Tick(now);
                         Quests.Tick(now, unscaledDelta);
                     }
-                    if (!Time.Paused && !HasWork && IdleRealSeconds >= IdleSkipAfter)
-                    {
-                        SkipToNextWork();
-                        now = Time.CurrentMinute;
-                    }
                     if (!EndWarningIssued && now >= Day.endWarningMinute)
                     {
                         EndWarningIssued = true;
@@ -309,7 +270,6 @@ namespace NightShift.Systems
         {
             if (Phase != ShiftPhase.Running) return;
             Time.JumpTo(Math.Max(Time.CurrentMinute, Day.endMinute));
-            Time.PacingScale = 1f;
             Time.Stop();
             Director.StopNewEvents();
             Logs.Add(Day.endMinute, "NIGHT-OPS", "-", OperatorName, "SHIFT", "END", "新規受付を停止");

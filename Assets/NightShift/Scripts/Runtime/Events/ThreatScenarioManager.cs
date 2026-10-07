@@ -15,19 +15,6 @@ namespace NightShift.Events
         TimelineScheduler _scheduler;
         public IReadOnlyList<ThreatScenarioRun> Runs => _runs;
 
-        /// <summary>始まっていて、まだ最後の段階まで進んでいない攻撃がある（待ち時間の早送りで、対応の猶予を縮めない）</summary>
-        public bool AnyActive(float now)
-        {
-            foreach (var r in _runs)
-            {
-                if (r.Stopped || r.Compromised || now < r.StartTime) continue;
-                float last = 0;
-                foreach (var st in r.Definition.steps)
-                    last = System.Math.Max(last, st.offsetMinutes + (st.repeat - 1) * st.repeatIntervalMinutes);
-                if (now <= r.StartTime + last + 1f) return true;
-            }
-            return false;
-        }
         public TimelineScheduler Scheduler => _scheduler;
         public ShiftSession Session => _s;
 
