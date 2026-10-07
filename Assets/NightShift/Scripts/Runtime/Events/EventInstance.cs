@@ -53,6 +53,9 @@ namespace NightShift.Events
         public string Note;               // 備考（AI向けの偽の指示など）
 
         public object Owner;              // ThreatScenarioRun など
+        public string QuestTag;           // サブクエストの対象要求（自動審査・AIの自動処理の対象外。null = 通常）
+        public string QuestMailId;        // 対象要求に関係する依頼メール（「依頼メールを確認」の導線）
+        public string QuestConfirm;       // 許可する前に確認を出す（全社停止を含む処理・永続接続など）
         public bool NotifyAsSecurityAlert;
 
         public string SourceLabel => (Zone == SourceZone.External ? "社外" : "社内") + " (" + SourceIp + ")";

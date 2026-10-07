@@ -141,7 +141,7 @@ namespace NightShift.Tests
         [Test]
         public void StoreItems_AreConsistent()
         {
-            Assert.AreEqual(17, Db.storeItems.Count);
+            Assert.AreEqual(20, Db.storeItems.Count);
             var ids = new HashSet<string>();
             foreach (var it in Db.storeItems)
             {

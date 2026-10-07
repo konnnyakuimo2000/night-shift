@@ -287,7 +287,7 @@ namespace NightShift.UI.Shift
         {
             var names = new List<string>();
             foreach (var it in D.Game.Database.storeItems)
-                if (it != null && (it.category == StoreCategory.Tool || it.category == StoreCategory.Security) && CareerRecord.Current.Owns(it.itemId)) names.Add(it.displayName);
+                if (it != null && string.IsNullOrEmpty(it.questFlag) && (it.category == StoreCategory.Tool || it.category == StoreCategory.Security) && CareerRecord.Current.Owns(it.itemId)) names.Add(it.displayName);
             return names.Count == 0 ? "（なし。ツールを買うとできることが増えます）" : string.Join("・", names);
         }
 
@@ -356,7 +356,7 @@ namespace NightShift.UI.Shift
 
         void OnCreated(EventInstance e)
         {
-            if (_auto == null || !_auto.Value || e.State != EventState.Pending) return;
+            if (_auto == null || !_auto.Value || e.State != EventState.Pending || e.QuestTag != null) return;
             if (!Spend(4500)) { _auto.SetValue(false, false); return; }
             bool allow = Judge(e, out string why);
             e.AutoDecided = true;

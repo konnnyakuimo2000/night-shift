@@ -30,6 +30,7 @@ namespace NightShift.Core
     {
         public List<PaySlip> slips = new List<PaySlip>();
         public int spent;   // ストアでの支出（後で使う）
+        public List<LedgerEntry> ledger = new List<LedgerEntry>(); // 給与以外の入出金（サブクエストの個別入金など）
         public int version; // 給与体系の版。古い版の明細は読み込み時に破棄する
 
         const int CurrentVersion = 2;   // 2: ブラック企業の給与体系（日当制・罰金）
@@ -41,7 +42,28 @@ namespace NightShift.Core
             get { int s = 0; foreach (var p in slips) s += p.total; return s; }
         }
 
-        public int Balance => TotalEarned - spent;
+        public int Balance => TotalEarned - spent + LedgerTotal;
+
+        public int LedgerTotal
+        {
+            get { int s = 0; foreach (var e in ledger) s += e.amount; return s; }
+        }
+
+        /// <summary>給与以外の入出金を記録する。同じ txId は一度だけ。記録したら true</summary>
+        public bool AddEntry(string txId, int day, string source, string label, int amount)
+        {
+            if (ledger.Exists(e => e.txId == txId)) return false;
+            ledger.Add(new LedgerEntry { txId = txId, day = day, source = source, label = label, amount = amount });
+            Save();
+            return true;
+        }
+
+        public int SumSource(string sourcePrefix)
+        {
+            int s = 0;
+            foreach (var e in ledger) if (e.source != null && e.source.StartsWith(sourcePrefix)) s += e.amount;
+            return s;
+        }
 
         public PaySlip Find(int day) => slips.Find(p => p.day == day);
 
@@ -62,6 +84,7 @@ namespace NightShift.Core
 
         public void Save()
         {
+            if (CareerRecord.SaveDisabled) return; // テスト中は保存しない
             try
             {
                 PlayerPrefs.SetString(Key, JsonUtility.ToJson(this));
@@ -105,6 +128,7 @@ namespace NightShift.Core
         {
             slips.Clear();
             spent = 0;
+            ledger.Clear();
             Save();
         }
 
@@ -117,6 +141,7 @@ namespace NightShift.Core
                 var w = JsonUtility.FromJson<OperatorWallet>(json);
                 if (w == null) return;
                 slips = w.slips; spent = w.spent; version = w.version;
+                ledger = w.ledger ?? new List<LedgerEntry>();
                 Save();
             }
             catch { }

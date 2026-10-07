@@ -172,6 +172,9 @@ namespace NightShift.UI.Screens
             foreach (var e in AllEndings) lb.AppendLine(career.endingsSeen.Contains(e[0]) ? $"　{e[0]}　{e[1]}" : $"　{e[0]}　？？？");
             lb.AppendLine(" ゲームオーバー記録");
             foreach (var g in AllGameOvers) lb.AppendLine(career.gameOversSeen.Contains(g[0]) ? $"　{g[0]}　{g[1]}" : $"　{g[0]}　？？？");
+            int sub = 0;
+            foreach (var se in Systems.SideQuests.SubEndings.All) if (career.subEndingsSeen.Contains(se.Id)) sub++;
+            lb.AppendLine($" サブエンド　{sub} / {Systems.SideQuests.SubEndings.All.Count}");
             UIFactory.Label(list.transform, lb.ToString(), 8, 6, 424, 250, 12, TextAnchor.UpperLeft);
             UIFactory.Button(root, "タイトルへ(T)", 1060, 720, 190, 30, toTitle, "exit");
             var k = root.gameObject.AddComponent<KeyAction>(); k.Key = KeyCode.T; k.Action = toTitle;

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10640ffc8aa183b4a9cd9252e866ccae, type: 3}
   m_Name: GameDatabase
   m_EditorClassIdentifier: 
-  dataVersion: 31
+  dataVersion: 32
   companyName: NEXUS CORPORATION
   companyNameJa: "\u30CD\u30AF\u30B5\u30B9\u30B3\u30FC\u30DD\u30EC\u30FC\u30B7\u30E7\u30F3"
   systemName: "\u793E\u5185\u60C5\u5831\u30B7\u30B9\u30C6\u30E0"
@@ -121,6 +121,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6c5c90a7cddf64c4fa516be998268c30, type: 2}
   - {fileID: 11400000, guid: 056ec9f88b6627e4e9303a4dfc451a7f, type: 2}
   - {fileID: 11400000, guid: a994d79a23fedaa40b2f404f6f24081d, type: 2}
+  - {fileID: 11400000, guid: 3d3b347eaae49f6429f406770e6a5c12, type: 2}
+  - {fileID: 11400000, guid: 32068915540bbe04697d685a82ffc524, type: 2}
+  - {fileID: 11400000, guid: 97a2cbf2d473f5c4eafc415253a7e32a, type: 2}
   - {fileID: 11400000, guid: ae4c4fd03bf7f034f9d4e0c1ae1e09f9, type: 2}
   - {fileID: 11400000, guid: 900c358dad440ad4788b659b629317c5, type: 2}
   - {fileID: 11400000, guid: d1cb4856629f9d74990371e23eb19746, type: 2}

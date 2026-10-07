@@ -60,6 +60,25 @@ namespace NightShift.UI.Shift
                 if (y > 520) { y = 10; x += 92; }
             }
 
+            // 機器保護札（SQ03）: 在庫・貼付中・破れた札
+            var career = CareerRecord.Current;
+            var charm = career.charm;
+            int stock = career.ItemCount(Items.Charm);
+            bool posted = charm.postedDay == Desktop.S.Day.dayNumber;
+            if (Index == 0 && (stock > 0 || posted || charm.torn))
+            {
+                var root = UIFactory.Rect("Icon:charm", _icons).Place(x, y, 86, 66);
+                var hit = root.gameObject.AddComponent<Image>();
+                hit.color = new Color(0, 0, 0, 0);
+                var ic = UIFactory.Image(root, RetroTheme.BigIcon("shield"), posted ? new Color(1f, 0.95f, 0.8f, charm.consumed ? 0.4f : 1f) : Color.white, "Icon");
+                ic.raycastTarget = false;
+                ic.rectTransform.Place(27, 2, 32, 32);
+                string label = posted ? (charm.consumed ? "札（文字が薄い）" : "札（貼付中）") : charm.torn && stock == 0 ? "破れた札" : $"機器保護札 ×{stock}";
+                var lb = UIFactory.Label(root, label, 11, TextAnchor.UpperCenter, Color.white);
+                lb.rectTransform.Place(0, 36, 86, 30);
+                root.gameObject.AddComponent<ClickHandler>().OnDoubleClick = PostCharm;
+            }
+
             // 前任者の付箋（ワークステーションの裏に貼られていた）— 手がかり1
             if (Index == 1)
             {
@@ -75,6 +94,23 @@ namespace NightShift.UI.Shift
                 ch2.OnClick = () => Desktop.ShowClue("C1",
                     "ワークステーションの裏に貼られていた、前任者の付箋。\n「夜は長い。全部を一度に見ようとしないこと」\n「このPCのパスワードは付箋に書かないこと」\n— E-0004");
             }
+        }
+
+        /// <summary>機器保護札をモニターの側面に貼る（その夜の次の不調を1回防ぐ。翌朝に必ず破れる。貼り直し不可）</summary>
+        void PostCharm()
+        {
+            var career = CareerRecord.Current;
+            var ch = career.charm;
+            int day = Desktop.S.Day.dayNumber;
+            if (ch.postedDay == day) { MessageBox.Show(Desktop, "機器保護札", ch.consumed ? "札の文字が薄くなっている。今夜はもう効果がない。" : "今夜はもう貼ってある。", "shield"); return; }
+            if (career.ItemCount(Items.Charm) <= 0) { MessageBox.Show(Desktop, "機器保護札", "破れた札が残っている。もう使えない。", "shield"); return; }
+            Desktop.ShowModal("機器保護札", (ch.torn ? "側面の破片を取り除いて、" : "") + "新しい札をモニターの側面に貼りますか？\n（今夜の次の表示の乱れを1回防ぎます。貼った札は翌朝に破れます）", "warning", "貼る", () =>
+            {
+                if (!career.UseItem(Items.Charm)) return;
+                ch.postedDay = day; ch.consumed = false; ch.torn = false;
+                career.Save();
+                RebuildIcons();
+            }, "やめる", null);
         }
 
         // ---------------- タスクバー ----------------

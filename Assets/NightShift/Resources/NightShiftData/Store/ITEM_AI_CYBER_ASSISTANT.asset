@@ -24,3 +24,4 @@ MonoBehaviour:
   maxStock: 1
   icon: debug
   adCopy: "\u591C\u52E4\u306E\u76F8\u68D2\u3001SOC-AI \u767A\u58F2"
+  questFlag: 

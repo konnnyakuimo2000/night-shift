@@ -24,3 +24,4 @@ MonoBehaviour:
   maxStock: 1
   icon: shield
   adCopy: 
+  questFlag: 

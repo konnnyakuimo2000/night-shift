@@ -1,0 +1,143 @@
+using NightShift.Core;
+using NightShift.Data;
+
+namespace NightShift.Systems.SideQuests
+{
+    /// <summary>
+    /// SQ05「FX」（GAMBLING_FX_SPEC.md §3）。「夜間相場通信」の案内 → 返信で MIDNIGHT FX が店頭に並ぶ → 最初の手動注文で Active。
+    /// 架空通貨ペア NEX/CRD。相場は周回の種と日付で決まり、注文の向きを見て書き換えない。見通しメールは方向を約束しない。
+    /// 急変夜は初回注文から2作業夜以降に予告。FX戦士: 取引した夜 3夜以上・純利益 ¥20,000 以上・借入残 0・急変夜を勝ち越し → 朝に「専業になる」で SE-F01。
+    /// </summary>
+    public class Sq05Route : QuestRoute
+    {
+        public Sq05Route(SideQuestManager q) : base(q) { }
+        public override string Id => "SQ05";
+        public override string Title => "FX";
+        public override int EarliestDay => 13;
+        public const string InvitedFlag = "SQ05_INVITED";
+        const string From = "夜間相場通信";
+        const string Address = "news@midnight-market.example";
+
+        public override bool Ready() => Unlocked(Features.Store);
+
+        LeisureAccount A => Q.Leisure;
+        LeisureState L => Career.leisure;
+
+        public bool Qualified => A.FxNights >= LeisureAccount.NightsGoal && A.FxNet >= LeisureAccount.ProfitGoal && L.debt == 0 && L.spikeCleared;
+        public override string Memo() => $"取引した夜 {A.FxNights} / 純利益 {Yen(A.FxNet)}{(L.spikeCleared ? " / 急変夜 勝ち越し" : "")}";
+
+        public override void Offer()
+        {
+            State.stage = "INVITE";
+            Mail("INVITE", From, Address, "あなたが働いている間にも、相場は動いています",
+                "今夜の変動予定と、取引端末の案内をお送りします。\n買いと売り、どちらからでも参加できます。\n\n" +
+                "※ 当通信の見通しは、上昇・下落を約束するものではありません。",
+                replies: new[] { "案内を受け取る", "配信を停止する" });
+        }
+
+        public override void OnReply(QuestMailRecord r, int index, string text)
+        {
+            if (r.mailId != "SQ05-INVITE") return;
+            if (index == 0)
+            {
+                State.Mark("REPLIED");
+                Career.SetFlag(InvitedFlag);
+                Mail("GUIDE", From, Address, "取引端末のご案内",
+                    "社内購買に「MIDNIGHT FX」（¥2,000）が並んでいます。\n" +
+                    "遊興口座に入金し、NEX/CRD を買い・売りで取引できます。証拠金 ¥500〜¥5,000・倍率 1／5／10 倍。\n" +
+                    "残りの証拠金が 20% を切ると強制決済されます（損失は証拠金まで）。終業時には自動で決済されます。", time: Now + 1);
+                Q.Note("MIDNIGHT FX が社内購買に並びました（業務開始前に購入できます）。");
+            }
+            else Q.Close(this, QuestResult.Declined, "配信を停止しました。");
+        }
+
+        public override bool? OnReported(QuestMailRecord r) => null;
+        public override bool Touched() => State.Has("REPLIED");
+
+        public override void OnShiftStart()
+        {
+            if (!Career.Owns(Items.FxTerminal)) return;
+            // 今夜の見通し（発表時刻と不確実性だけを伝える）
+            var rel = A.Releases;
+            A.Price(0);
+            string times = string.Join("、", rel.ConvertAll(t => T(t)));
+            Mail("OUTLOOK-" + Day, From, Address, A.SpikeNight ? "【急変夜】今夜の見通し" : "今夜の見通し",
+                $"今夜の架空経済指標の発表予定: {times}\n" +
+                (A.SpikeNight ? "<b>今夜は大きな値動きが予想されます。</b>上がるか下がるかは分かりません。\n" : "発表の前後は値動きが大きくなることがあります。方向は分かりません。\n"));
+        }
+
+        public void OnOrderPlaced()
+        {
+            if (State.status == QuestStatus.Offered) { State.status = QuestStatus.Active; State.stage = "TRADING"; }
+        }
+
+        public void OnPositionClosed(long pnl)
+        {
+            if (pnl < 0 && !State.Has("FIRST_LOSS"))
+            {
+                State.Mark("FIRST_LOSS");
+                Q.Route<Sq04Route>()?.LoanOffer();
+            }
+            if (Qualified && !State.Has("WARRIOR_MAIL"))
+            {
+                State.Mark("WARRIOR_MAIL");
+                Mail("WARRIOR", From, Address, "夜明けまで生き残った方へ",
+                    "急変の夜を越えて、利益を残しました。\n専業になるなら、朝の精算のあとでお選びください。\n※ これまでの成績は、今後の利益を保証するものではありません。", time: Now + 1);
+            }
+        }
+
+        public override void OnAction(QuestMailRecord r, string key)
+        {
+            if (key == "LOAN") Q.RequestUi("LOAN");
+        }
+
+        public override void OnNightEnd()
+        {
+            // 急変夜の結果
+            if (L.spikeDay == Day)
+            {
+                L.spikeCleared = L.spikeCleared || (L.spikeClosed > 0 && L.spikePnl > 0);
+                if (!L.spikeCleared) { L.spikeDay = 0; State.Mark("SPIKE_RETRY_" + Day); }
+                L.spikeClosed = 0; L.spikePnl = 0;
+                return;   // 同じ夜に再予告しない
+            }
+            // 初回注文から2作業夜以降に、翌夜の急変を予告する
+            if (L.spikeDay == 0 && !L.spikeCleared && L.fxFirstDay > 0 && Day >= L.fxFirstDay + 1 && Day + 1 <= SideQuestManager.LastTaskDay
+                && !State.Has("SPIKE_RETRY_" + Day))
+            {
+                L.spikeDay = Day + 1;
+                Mail("SPIKE-" + (Day + 1), From, Address, "【予告】明日の夜は急変が予想されます",
+                    $"DAY{Day + 1} の夜、架空経済指標の大きな発表があります。\n値動きの方向は分かりません。\n取引される場合は、証拠金と倍率にご注意ください。",
+                    nextMorning: true);
+            }
+        }
+
+        public override void OnFinalDay()
+        {
+            if (L.debt > 0) return;
+            if (State.status == QuestStatus.Offered) Q.Close(this, QuestResult.Abandoned);
+        }
+
+        int LastTradedDay => L.fxNights.Count == 0 ? 0 : L.fxNights[L.fxNights.Count - 1];
+
+        public override MorningChoice MorningChoice()
+        {
+            if (!Qualified || L.warriorDeclinedDay >= LastTradedDay) return null;
+            var c = new MorningChoice
+            {
+                QuestId = Id, Key = "WARRIOR", Title = "夜明けまで生き残った方へ",
+                Text = $"取引した夜: {A.FxNights} 夜 / FX純利益: {Yen(A.FxNet)} / 借入残: なし / 急変夜: 勝ち越し\n\n" +
+                       "専業になりますか？\n（専業になると、この周回はここで終わります）",
+                Accept = "専業になる", Decline = "夜勤を続ける"
+            };
+            if (Q.Route<Sq03Route>()?.State.IsOpen == true) c.Blocked = "画面の不調が続いていて、今は決められない。（在籍確認の件が片付くまで保留）";
+            return c;
+        }
+
+        public override void OnMorningChoice(MorningChoice c, bool accept)
+        {
+            if (accept && c.Blocked == null && Qualified) Q.Resolve(this, QuestResult.Completed, "SE-F01");
+            else L.warriorDeclinedDay = Day;
+        }
+    }
+}

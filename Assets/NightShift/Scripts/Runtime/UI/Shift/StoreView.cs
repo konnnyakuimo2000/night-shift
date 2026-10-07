@@ -116,10 +116,23 @@ namespace NightShift.UI.Shift
         {
             var list = new List<StoreItemDefinition>();
             foreach (var it in _d.Game.Database.storeItems)
-                if (it != null && it.unlockDay <= _d.S.Day.dayNumber && (!_filter.HasValue || it.category == _filter.Value)) list.Add(it);
+                if (it != null && it.unlockDay <= _d.S.Day.dayNumber && OnSale(it) && (!_filter.HasValue || it.category == _filter.Value)) list.Add(it);
             list.Sort((a, b) => a.unlockDay != b.unlockDay ? a.unlockDay.CompareTo(b.unlockDay) : a.price.CompareTo(b.price));
             return list;
         }
+
+        public const string CharmFlag = "SQ03_CHARM";
+
+        /// <summary>サブクエストで解禁される商品は、招待・案内のあとにだけ並ぶ（新商品の通知は出さない）</summary>
+        public static bool OnSale(StoreItemDefinition it, int day)
+        {
+            if (string.IsNullOrEmpty(it.questFlag)) return true;
+            var c = CareerRecord.Current;
+            if (it.questFlag == CharmFlag) return Systems.SideQuests.Sq03Route.CharmOnSale(c, day);
+            return c.HasFlag(it.questFlag);
+        }
+
+        bool OnSale(StoreItemDefinition it) => OnSale(it, _d.S.Day.dayNumber);
 
         public static string CategoryLabel(StoreCategory c)
         {
@@ -165,6 +178,7 @@ namespace NightShift.UI.Shift
             if (_d.ShiftStarted) return "業務時間中は注文できません。";
             if (!it.consumable && career.Owns(it.itemId)) return "購入済みです。";
             if (it.consumable && career.ItemCount(it.itemId) >= it.maxStock) return "これ以上は持てません。";
+            if (it.itemId == Data.Items.Charm && career.charm.boughtToday >= 1) return "1夜に1枚までです。";
             if (!string.IsNullOrEmpty(it.prerequisite) && !career.Owns(it.prerequisite))
             {
                 var pre = _d.Game.Database.FindItem(it.prerequisite);
@@ -186,13 +200,25 @@ namespace NightShift.UI.Shift
             if (_catBadge) Destroy(_catBadge.gameObject);
             _catBadge = ToolStyle.BadgeRight(_detail.transform, CategoryLabel(it.category), Tone.Info, 0, 2);
             _owned.text = it.consumable ? $"所持 {career.ItemCount(it.itemId)} 個（最大 {it.maxStock} 個）" : career.Owns(it.itemId) ? "購入済み" : "未購入";
-            _desc.text = (it.description ?? "").Replace(' ', '\u00A0'); // 日本語の中の半角スペースで不自然に改行しないように
+            _desc.text = Description(it).Replace(' ', '\u00A0'); // 日本語の中の半角スペースで不自然に改行しないように
             _ad.text = string.IsNullOrEmpty(it.adCopy) ? "" : $"「{it.adCopy}」";
             string reason = Reason(it);
             _reasonHost.SetActive(reason != null);
             _reason.text = reason ?? "";
             _buy.Interactable = reason == null;
             _buy.SetText(reason == null ? $"購入する（{OperatorWallet.Yen(it.price)}）(B)" : "購入できません");
+        }
+
+        /// <summary>機器保護札の説明は、発動を経験したあと・終盤で変わる（価格・残数・効果の表示は変えない）</summary>
+        string Description(StoreItemDefinition it)
+        {
+            string d = it.description ?? "";
+            if (it.itemId != Data.Items.Charm) return d;
+            var c = CareerRecord.Current.charm;
+            var st = CareerRecord.Current.FindQuest("SQ03");
+            if (st != null && st.stage == "H3") d += "\n貼る場所が残っていることをご確認ください。";
+            else if (c.everTriggered) d += "\n剥がしたものを再使用しないでください。";
+            return d;
         }
 
         void Buy()
@@ -207,6 +233,7 @@ namespace NightShift.UI.Shift
                 if (it.itemId == Data.Items.VaccineUpdate) career.vaccineDefinitionDay = _d.S.Day.dayNumber;
                 else if (it.itemId == Data.Items.TokenPack) career.extraTokensTonight += 20000;
                 else career.AddItem(it.itemId);
+                if (it.itemId == Data.Items.Charm) career.charm.boughtToday++;
                 // 買った時点の定義ファイルが付いている
                 if (it.itemId == Data.Items.Vaccine) career.vaccineDefinitionDay = Mathf.Max(career.vaccineDefinitionDay, _d.S.Day.dayNumber);
                 career.Save();

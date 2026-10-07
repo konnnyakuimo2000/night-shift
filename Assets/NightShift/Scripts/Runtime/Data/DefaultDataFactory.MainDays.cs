@@ -621,13 +621,14 @@ namespace NightShift.Data
         static void BuildStore(MainContext c)
         {
             void I(string id, string name, StoreCategory cat, int price, int day, string desc, string icon, string pre = null,
-                bool consumable = false, int maxStock = 1, string ad = null)
+                bool consumable = false, int maxStock = 1, string ad = null, string questFlag = null)
             {
                 var it = c.b.Add(ScriptableObject.CreateInstance<StoreItemDefinition>(), "Store", "ITEM_" + id);
                 it.itemId = id; it.displayName = name; it.category = cat; it.price = price; it.unlockDay = day;
                 it.description = desc; it.icon = icon; it.prerequisite = pre; it.consumable = consumable;
                 it.maxStock = consumable ? maxStock : 1;
                 it.adCopy = ad;
+                it.questFlag = questFlag;
                 c.db.storeItems.Add(it);
             }
             const string M = Items.Monitor1;
@@ -659,6 +660,16 @@ namespace NightShift.Data
                 "社内サーバーを検査・駆除します（Client が前提）。", "shield", Items.Vaccine);
             I(Items.Correlator, "相関タイムライン", StoreCategory.Tool, 29800, 22,
                 "同じ接続元の範囲・同じ利用者の記録を時系列に並べます（関連があるかの判断はあなた）。", "clock", M);
+            // サブクエスト（SQ03/04/05）: 招待・案内のあとにだけ並ぶ。ゲーム内の架空のサービス
+            I(Items.GambleTerminal, "NIGHT CLUB", StoreCategory.Tool, 1500, 9,
+                "会員制の赤／黒ゲーム。賭け・入出金・損益履歴・一夜の支出上限・指定損失での新規ベット停止・決着通知をすべて内蔵（追加課金なし）。勝率は赤 48%・黒 48%・ハウス 4%。勝ちを保証する機能はありません。",
+                "globe", M, false, 1, null, Systems.SideQuests.Sq04Route.InvitedFlag);
+            I(Items.FxTerminal, "MIDNIGHT FX", StoreCategory.Tool, 2000, 13,
+                "架空通貨ペア NEX/CRD の取引端末。チャート・売買・入出金・損益履歴・指定価格への到達通知・利益／損失の自動決済条件をすべて内蔵（追加課金なし）。値動きの方向は予測しません。",
+                "network", M, false, 1, null, Systems.SideQuests.Sq05Route.InvitedFlag);
+            I(Items.Charm, "機器保護札", StoreCategory.Consumable, 3000, 12,
+                "表示の乱れが気になる場合にご使用ください。印字面を画面に向けないでください。\nワークステーションのモニター側面に貼ると、その夜の次の表示の乱れを1回防ぎます。貼った札は翌朝に破れます。1夜に1枚まで。",
+                "shield", null, true, 2, null, "SQ03_CHARM");
             I(Items.SocAi, "サイバー防御AI「SOC-AI」", StoreCategory.AI, 49800, 25,
                 "持っているツールをプラグインとして使い、調査・許可/拒否の提案を行います。1夜 30,000 トークンまで。AI も間違えます。", "debug", M, false, 1, "夜勤の相棒、SOC-AI 発売");
             I(Items.TokenPack, "SOC-AI 追加トークン", StoreCategory.Consumable, 2980, 25,

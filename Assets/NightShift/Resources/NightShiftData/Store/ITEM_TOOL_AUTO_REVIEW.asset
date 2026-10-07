@@ -23,3 +23,4 @@ MonoBehaviour:
   maxStock: 1
   icon: check
   adCopy: "\u5BE9\u67FB\u304C\u306F\u304B\u3069\u308B\uFF01 \u81EA\u52D5\u5BE9\u67FB\u30C4\u30FC\u30EB"
+  questFlag: 

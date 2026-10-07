@@ -41,6 +41,8 @@ namespace NightShift.Systems
         public MailManager Mail { get; }
         public SecurityOps Security { get; }
         public ServerOps Servers { get; }
+        /// <summary>メール起点のサブクエスト</summary>
+        public SideQuests.SideQuestManager Quests { get; }
 
         public IShiftUi Ui { get; set; }
 
@@ -175,6 +177,7 @@ namespace NightShift.Systems
                 var d = db.FindDay(n);
                 if (d != null) Mail.Add(MailManager.FromBriefing(d, OperatorName, n < day.dayNumber), false);
             }
+            Quests = new SideQuests.SideQuestManager(this);
         }
 
         public void StartShift()
@@ -184,6 +187,7 @@ namespace NightShift.Systems
             Logs.Add(Time.CurrentMinute, "NIGHT-OPS", "AUTH-SRV01", OperatorName, "LOGIN", "OK", "夜間運用担当 ログイン");
             Time.Start();
             Phase = ShiftPhase.Running;
+            Quests.OnShiftStart();
         }
 
         public void Tick(float unscaledDelta)
@@ -200,6 +204,7 @@ namespace NightShift.Systems
                         Requests.Tick(now);
                         HelpDesk.Tick(now, delta);
                         Servers.Tick(now);
+                        Quests.Tick(now, unscaledDelta);
                     }
                     if (!EndWarningIssued && now >= Day.endWarningMinute)
                     {
@@ -214,7 +219,7 @@ namespace NightShift.Systems
                 {
                     float delta = Time.Tick(unscaledDelta);
                     float now = Time.CurrentMinute;
-                    if (delta > 0) { HelpDesk.Tick(now, delta); Servers.Tick(now); }
+                    if (delta > 0) { HelpDesk.Tick(now, delta); Servers.Tick(now); Quests.Tick(now, unscaledDelta); }
                     if (now >= OvertimeEnd || (Requests.Pending.Count == 0 && HelpDesk.OpenCount == 0)) Complete();
                     break;
                 }

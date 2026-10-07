@@ -24,6 +24,8 @@ namespace NightShift.Data
         public string icon = "pc";
         [Tooltip("広告の一言（ネットニュースのバナー）")]
         public string adCopy;
+        [Tooltip("サブクエストで解禁される商品（この記録フラグが立つまで店頭に並ばない）")]
+        public string questFlag;
     }
 
     /// <summary>ツール・機材の ID（Features と同じ仕組みで有効/無効を判定する）</summary>
@@ -46,5 +48,9 @@ namespace NightShift.Data
         public const string SocAi = "AI_CYBER_ASSISTANT";
         public const string TokenPack = "AI_TOKEN_PACK";
         public const string Coffee = "ITEM_COFFEE";
+        // サブクエスト（招待・案内のあとにだけ店頭に並ぶ）
+        public const string GambleTerminal = "TOOL_GAMBLE_TERMINAL";
+        public const string FxTerminal = "TOOL_FX_TERMINAL";
+        public const string Charm = "ITEM_DEVICE_CHARM";
     }
 }

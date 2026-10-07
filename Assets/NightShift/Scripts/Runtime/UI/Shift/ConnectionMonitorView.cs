@@ -78,6 +78,9 @@ namespace NightShift.UI.Shift
             F("decided", "処理時刻:", 0, 160); y += 30;
             _hint = UIFactory.Label(dg, DefaultHint, 0, y, 540, 36, 12, TextAnchor.UpperLeft);
             _hint.color = RetroTheme.HintText;
+            // サブクエストの対象要求: 関係する依頼メールへの導線（正解・悪意の答えは表示しない）
+            _questMail = UIFactory.Button(dg, "依頼メールを確認", 404, y, 136, 24, OpenQuestMail, "mail");
+            _questMail.gameObject.SetActive(false);
 
             var ag = UIFactory.Group(c, "処理", 566, 236, 214, 212);
             _allow = UIFactory.Button(ag, $"接続を許可 [{Core.GameSettings.KeyLabel(Core.GameSettings.Allow)}]", 0, 0, 196, 32, () => Decide(PlayerAction.Allow), "check");
@@ -193,6 +196,7 @@ namespace NightShift.UI.Shift
             void Set(string k, string v) => _fields[k].text = v;
             if (e == null)
             {
+                if (_questMail != null) _questMail.gameObject.SetActive(false);
                 foreach (var f in _fields.Values) f.text = "";
                 _allow.Interactable = _block.Interactable = false;
                 return;
@@ -210,6 +214,9 @@ namespace NightShift.UI.Shift
             Set("decided", e.State == EventState.Pending ? "-" : TimeManager.Format(e.DecidedTime > 0 ? e.DecidedTime : e.GeneratedTime + e.ResponseTime));
             bool pending = e.State == EventState.Pending;
             _allow.Interactable = _block.Interactable = pending;
+            bool quest = !string.IsNullOrEmpty(e.QuestMailId) && _d.S.Mail.Find(e.QuestMailId) != null;
+            _questMail.gameObject.SetActive(quest);
+            _hint.rectTransform.sizeDelta = new Vector2(quest ? 398 : 540, 36);
             _hint.text = string.IsNullOrEmpty(e.Note) ? (e.AutoDecided ? "※ この要求は自動的に処理されました。" : DefaultHint) : "備考: " + e.Note;
             _hint.color = string.IsNullOrEmpty(e.Note) ? RetroTheme.HintText : RetroTheme.Text;
             if (_fwBtn != null) _fwBtn.Interactable = !_d.S.Security.IsBlocked(e.SourceIp);
@@ -264,9 +271,31 @@ namespace NightShift.UI.Shift
         /// <summary>端末の確認は DAY2 から。それまでは端末名を表示しない（端末で判断させない）。</summary>
         string DeviceText(EventInstance e) => _d.Unlocked(Data.Features.DeviceCheck) ? e.Device : "—";
 
+        RetroButton _questMail;
+
+        void OpenQuestMail()
+        {
+            if (!(_table.Selected is EventInstance e) || string.IsNullOrEmpty(e.QuestMailId)) return;
+            var m = _d.S.Mail.Find(e.QuestMailId);
+            if (m != null) MailboxView.Open(_d, null, m);
+        }
+
         void Decide(PlayerAction action)
         {
             if (!(_table.Selected is EventInstance e) || e.State != EventState.Pending) { AudioFx.Error(); return; }
+            // 周回が終わる操作などは、許可の前に一度だけ確認する
+            if (action == PlayerAction.Allow && !string.IsNullOrEmpty(e.QuestConfirm))
+            {
+                var target = e;
+                _d.ShowModal("接続の許可", e.QuestConfirm, "warning", "許可する", () => DecideNow(target, PlayerAction.Allow), "やめる", null);
+                return;
+            }
+            DecideNow(e, action);
+        }
+
+        void DecideNow(EventInstance e, PlayerAction action)
+        {
+            if (e.State != EventState.Pending) return;
             int idx = _table.SelectedIndex;
             _d.S.Requests.Decide(e, action);
             _w.SetStatus(0, $"{e.RequestId} の要求を処理しました。");

@@ -176,12 +176,36 @@ namespace NightShift.UI.Shift
         {
             var list = new List<MailMessage>(_d.S.Mail.Inbox);
             list.Reverse(); // 新しい順
-            _table.SetRows(list, m => new[] { m.Read ? "" : "●", m.Subject, ShortDate(m.DateLabel) });
+            // 重要な手がかりは後続のメールに埋もれさせない
+            var pinned = list.FindAll(x => x.Pinned);
+            list.RemoveAll(x => x.Pinned);
+            list.InsertRange(0, pinned);
+            _table.SetRows(list, m => new[] { m.Read ? "" : "●", (m.Pinned ? "★ " : "") + ListSubject(m), ShortDate(m.DateLabel) });
             int unread = _d.S.Mail.UnreadCount;
             _inboxButton.SetText(unread > 0 ? $"受信トレイ ({unread})" : "受信トレイ");
             _w.SetStatus(1, $"{list.Count} 通 / 未読 {unread} 通");
             _dirty = false;
         }
+
+        /// <summary>怪異メールの件名は、一文字だけ崩れて見える（原文は変えない）</summary>
+        string ListSubject(MailMessage m)
+        {
+            if (!m.Horror || m.Pinned || string.IsNullOrEmpty(m.Subject) || Core.GameSettings.Current.horrorMild) return m.Subject;
+            return "縺" + m.Subject.Substring(1);
+        }
+
+        readonly HashSet<string> _original = new HashSet<string>();
+
+        /// <summary>怪異メールの本文の表示（文字化け）。原文は Body のまま。固定表示の手がかりは崩さない</summary>
+        string BodyFor(MailMessage m)
+        {
+            if (!m.Horror || m.Pinned || _original.Contains(m.MailId)) return m.Body;
+            var st = Core.CareerRecord.Current.FindQuest("SQ03");
+            if (st == null || (st.stage != "H2" && st.stage != "H3") || Core.GameSettings.Current.horrorMild) return m.Body;
+            return HorrorFx.Garble(m.Body, m.MailId.GetHashCode());
+        }
+
+        void Reshow() { var keep = _shown; _shown = null; Show(keep); }
 
         void Show(MailMessage m)
         {
@@ -194,6 +218,7 @@ namespace NightShift.UI.Shift
             foreach (Transform t in _preview) Destroy(t.gameObject);
             if (m == null) return;
             _d.S.Mail.MarkRead(m);
+            if (m.QuestId != null) _d.S.Quests.OnMailShown(m);
 
             float y = 0;
             void Row(string label, string value)
@@ -260,8 +285,21 @@ namespace NightShift.UI.Shift
                 y += 34;
             }
 
+            // 返信（選択式・自由入力）
+            if (m.Replies != null || m.FreeReply) y = BuildReply(m, y);
+            if (m.Horror && (BodyFor(m) != m.Body || _original.Contains(m.MailId)))
+            {
+                var mm2 = m;
+                UIFactory.Button(_preview, _original.Contains(m.MailId) ? "表示を戻す" : "原文を見る", 0, y, 120, 24, () =>
+                {
+                    if (!_original.Remove(mm2.MailId)) _original.Add(mm2.MailId);
+                    Reshow();
+                }, "doc");
+                y += 28;
+            }
+
             // メール本文は文章のみ（図はマニュアル側）
-            var sr = DocumentRenderer.Render(_preview, m.Body, null);
+            var sr = DocumentRenderer.Render(_preview, BodyFor(m), null);
             ((RectTransform)sr.transform).Stretch(0, y, 0, 0);
             // 今日の業務連絡は、最後までスクロールしたら既読
             if (m.IsBriefing && m.Day == _d.S.Day.dayNumber && !_d.IsRead(ShiftDesktop.BriefingReadId))
@@ -286,6 +324,9 @@ namespace NightShift.UI.Shift
                 case MailManager.ActionPasswordChange: PasswordChangeView.Open(_d); break;
                 case MailManager.ActionPhishForm: PhishFormView.Open(_d, m); break;
                 case MailManager.ActionMalwareAttachment: PhishingMail.OpenAttachment(_d.S, m, _d.HasTool(Data.Items.Vaccine)); break;
+                default:
+                    if (m.QuestId != null) { _d.S.Quests.OnMailAction(m, key); Reshow(); }
+                    break;
             }
         }
 
@@ -293,10 +334,78 @@ namespace NightShift.UI.Shift
         {
             if (m.Reported) return;
             m.Reported = true;
+            if (m.QuestId != null)
+            {
+                // 内部不正・情報提供・不明な送信者の報告。怪異メールなどは誤報にしない
+                bool? ok = _d.S.Quests.OnMailReported(m);
+                if (ok.HasValue) _w.SetStatus(0, _d.S.Security.Report($"メールの報告「{m.Subject}」（{m.FromAddress}）", ok.Value));
+                else
+                {
+                    _d.S.Logs.Add(_d.S.Time.CurrentMinute, "NIGHT-OPS", "情報システム部", _d.S.OperatorName, "REPORT", "SENT", $"メールの報告「{m.Subject}」");
+                    _w.SetStatus(0, "情報システム部に報告しました。");
+                }
+                Reshow();
+                return;
+            }
             _w.SetStatus(0, _d.S.Security.Report($"不審なメール「{m.Subject}」（{m.FromAddress}）", m.IsPhish));
             var shown = _shown;
             _shown = null;
             Show(shown);
+        }
+
+        /// <summary>返信欄。選んだ返信は確認してから送る（送る前なら取り消せる）。送ったものは「送信済み」に表示</summary>
+        float BuildReply(MailMessage m, float y)
+        {
+            var box = UIFactory.Image(_preview, RetroTheme.Field, new Color(0.93f, 0.95f, 1f), "Reply");
+            float h = 0;
+            UIFactory.Label(box.transform, "返信:", 6, 6, 50, 22, 12).fontStyle = FontStyle.Bold;
+            bool sentOnce = m.RepliedIndex >= 0 || !string.IsNullOrEmpty(m.RepliedText);
+            if (m.Replies != null)
+            {
+                if (sentOnce && !m.FreeReply)
+                    UIFactory.Label(box.transform, $"送信済み: 「{m.RepliedText}」", 56, 6, 650, 22, 12).color = new Color(0f, 0.19f, 0.63f);
+                else
+                {
+                    float x = 56;
+                    for (int i = 0; i < m.Replies.Count; i++)
+                    {
+                        int idx = i;
+                        string text = m.Replies[i];
+                        float w = Mathf.Clamp(24 + text.Length * 13, 120, 260);
+                        UIFactory.Button(box.transform, text, x, 4, w, 26, () => ConfirmReply(m, idx, text), "mail");
+                        x += w + 6;
+                    }
+                }
+                h = 34;
+            }
+            if (m.FreeReply)
+            {
+                var input = UIFactory.Input(box.transform, 56, h + 4, 480, 26, "");
+                var mm = m;
+                UIFactory.Button(box.transform, "送信", 542, h + 4, 80, 26, () =>
+                {
+                    string t = input.text;
+                    if (string.IsNullOrWhiteSpace(t)) { AudioFx.Error(); return; }
+                    ConfirmReply(mm, 0, t);
+                }, "mail");
+                h += 34;
+                if (sentOnce)
+                {
+                    UIFactory.Label(box.transform, $"最後に送った返信: 「{m.RepliedText}」", 56, h, 650, 20, 12).color = new Color(0f, 0.19f, 0.63f);
+                    h += 22;
+                }
+            }
+            box.rectTransform.Place(0, y, 720, h + 4);
+            return y + h + 10;
+        }
+
+        void ConfirmReply(MailMessage m, int index, string text)
+        {
+            _d.ShowModal("返信の確認", $"次の内容で返信します。\n\n「{text}」\n\n送信しますか？", "mail", "送信する", () =>
+            {
+                if (_d.S.Mail.SendReply(m, index, text)) { AudioFx.Chime(); _w.SetStatus(0, "返信を送信しました。"); }
+                Reshow();
+            }, "やめる", null);
         }
 
         void Update()

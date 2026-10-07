@@ -52,6 +52,13 @@ namespace NightShift.Core
         public int extraTokensTonight;                      // 今夜の追加トークン
         public List<string> autoReviewConditions = new List<string>(); // 自動審査ツールの条件
         public bool autoReviewEnabled;                                  // 自動審査ツールの自動許可（初めは停止）
+        // ---- サブクエスト（SUBQUEST_SPEC.md） ----
+        public List<QuestState> quests = new List<QuestState>();
+        public List<QuestMailRecord> questMails = new List<QuestMailRecord>();
+        public List<string> subEndingsSeen = new List<string>();        // サブエンド図鑑（周回をまたいで残る）
+        public List<string> doneTx = new List<string>();                // 一度だけ適用する処理の ID（報酬・終端など）
+        public LeisureState leisure = new LeisureState();               // SQ04/05 の遊興口座
+        public CharmState charm = new CharmState();                     // SQ03 の機器保護札
 
         const int CurrentVersion = 1;
         const string Key = "NightShift.Career";
@@ -85,9 +92,11 @@ namespace NightShift.Core
         {
             var seen = Current?.endingsSeen ?? new List<string>();
             var go = Current?.gameOversSeen ?? new List<string>();
+            var sub = Current?.subEndingsSeen ?? new List<string>();
             Current = NewCareer();
             Current.endingsSeen = seen;
             Current.gameOversSeen = go;
+            Current.subEndingsSeen = sub;
             Current.Save();
         }
 
@@ -97,7 +106,8 @@ namespace NightShift.Core
             try
             {
                 var r = JsonUtility.FromJson<CareerRecord>(json);
-                if (r != null) { Current = r; Current.Save(); }
+                // 図鑑はやり直しで消さない（保存済みの一覧と合わせる）
+                if (r != null) { var prev = Current; Current = r; Current.LoadSeen(); Current.MergeSeen(prev); Current.Save(); }
             }
             catch { }
         }
@@ -110,7 +120,7 @@ namespace NightShift.Core
             try
             {
                 PlayerPrefs.SetString(Key, JsonUtility.ToJson(this));
-                PlayerPrefs.SetString(SeenKey, string.Join(",", endingsSeen) + "|" + string.Join(",", gameOversSeen));
+                PlayerPrefs.SetString(SeenKey, string.Join(",", endingsSeen) + "|" + string.Join(",", gameOversSeen) + "|" + string.Join(",", subEndingsSeen));
                 PlayerPrefs.Save();
             }
             catch { }
@@ -125,6 +135,7 @@ namespace NightShift.Core
                 var parts = s.Split('|');
                 foreach (var id in parts[0].Split(',')) if (id.Length > 0 && !endingsSeen.Contains(id)) endingsSeen.Add(id);
                 if (parts.Length > 1) foreach (var id in parts[1].Split(',')) if (id.Length > 0 && !gameOversSeen.Contains(id)) gameOversSeen.Add(id);
+                if (parts.Length > 2) foreach (var id in parts[2].Split(',')) if (id.Length > 0 && !subEndingsSeen.Contains(id)) subEndingsSeen.Add(id);
             }
             catch { }
         }
@@ -240,5 +251,33 @@ namespace NightShift.Core
         }
 
         public void AddTrust(int delta) => trust = Mathf.Clamp(trust + delta, 0, 100);
+
+        // ---------------- サブクエスト ----------------
+        public QuestState Quest(string id)
+        {
+            var q = quests.Find(x => x.id == id);
+            if (q == null) { q = new QuestState { id = id }; quests.Add(q); }
+            return q;
+        }
+
+        public QuestState FindQuest(string id) => quests.Find(x => x.id == id);
+
+        /// <summary>まだ一度も適用していない処理なら true を返し、適用済みにする（報酬・終端を二重に適用しない）</summary>
+        public bool TryOnce(string txId)
+        {
+            if (doneTx.Contains(txId)) return false;
+            doneTx.Add(txId);
+            return true;
+        }
+
+        public void SeeSubEnding(string id) { if (!subEndingsSeen.Contains(id)) subEndingsSeen.Add(id); Save(); }
+
+        void MergeSeen(CareerRecord prev)
+        {
+            if (prev == null) return;
+            foreach (var id in prev.endingsSeen) if (!endingsSeen.Contains(id)) endingsSeen.Add(id);
+            foreach (var id in prev.gameOversSeen) if (!gameOversSeen.Contains(id)) gameOversSeen.Add(id);
+            foreach (var id in prev.subEndingsSeen) if (!subEndingsSeen.Contains(id)) subEndingsSeen.Add(id);
+        }
     }
 }

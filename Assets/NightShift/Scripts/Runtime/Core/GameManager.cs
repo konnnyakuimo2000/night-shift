@@ -74,6 +74,7 @@ namespace NightShift.Core
             GameSettings.Changed += ApplyUiScale;
             Application.runInBackground = true;
             Database = GameDatabase.Load();
+            Systems.SideQuests.SideQuestManager.WalletProvider = () => Wallet;
             if (Database != null && !string.IsNullOrEmpty(Database.companyNameJa)) MailManager.CompanyName = Database.companyNameJa;
             AudioFx.Init(gameObject);
             RetroCursor.Install(gameObject);
@@ -176,6 +177,7 @@ namespace NightShift.Core
             }
             Session = new ShiftSession(Database, day, System.Environment.TickCount, OperatorName);
             Session.ShiftCompleted += OnShiftCompleted;
+            Session.Quests.TerminalEnding += id => _pendingSubEnding = id;
             _desktop = ShiftDesktop.Build(ScreenLayer, this, Session);
             Session.Ui = _desktop;
             AddPayslipMail(day);
@@ -214,9 +216,14 @@ namespace NightShift.Core
             var slip = Payroll.Compute(day.dayNumber, result, Session.Evaluation, Database.payroll);
             var previous = Wallet.Record(slip, out bool updated);
             NightClosing.Close(Session, result, slip);
+            // サブクエスト: 個別入金（給与とは別）・段階の進行・返済日の返済
+            Session.Quests.OnNightEnd();
+            if (Session.Quests.Summary.Count > 0)
+                result.Stats.Add(new System.Collections.Generic.KeyValuePair<string, string>("サブクエスト", string.Join("／", Session.Quests.Summary)));
             _pendingGameOver = EndingResolver.CheckGameOver(CareerRecord.Current, Session);
             _finalOutcome = EndingResolver.Outcome(Session);
-            if (_pendingGameOver == null)
+            // 本編のゲームオーバー・夜の終わりに決まった途中終了（破産など）は、その夜からやり直せるよう翌日の保存地点を作らない
+            if (_pendingGameOver == null && Session.Quests.PendingTerminal == null)
             {
                 SaveProgress(CurrentDay + 1);
                 SaveCheckpoint(CurrentDay + 1);
@@ -228,6 +235,30 @@ namespace NightShift.Core
         void GoToNextDay()
         {
             if (_pendingGameOver != null) { ShowGameOver(_pendingGameOver); return; }
+            // サブクエスト: 夜の終わりに決まった途中終了 → 朝の進路選択（本編のゲームオーバーが優先）
+            var quests = Session?.Quests;
+            if (quests != null && quests.PendingTerminal != null)
+            {
+                string id = quests.ConfirmPendingTerminal();
+                ShowSubEnding(id, "その夜からやり直す", () => RestartDay());
+                return;
+            }
+            var choice = quests?.PendingMorningChoice();
+            if (choice != null)
+            {
+                SetScreen(MorningChoiceScreen.Build(ScreenLayer, choice, () =>
+                {
+                    string id = quests.ChooseMorning(choice, true);
+                    if (id != null) ShowSubEnding(id, "その朝から続ける", ContinueGame);
+                    else ContinueToNextDay();
+                }, () => { quests.ChooseMorning(choice, false); ContinueToNextDay(); }), GameState.Complete);
+                return;
+            }
+            ContinueToNextDay();
+        }
+
+        void ContinueToNextDay()
+        {
             if (CurrentDay >= DefaultDataFactory.LastDay) { ShowEnding(); return; }
             int next = CurrentDay + 1;
             if (Database.FindDay(next) != null)
@@ -239,6 +270,15 @@ namespace NightShift.Core
         }
 
         EndingResolver.GameOver _pendingGameOver;
+        string _pendingSubEnding;
+
+        /// <summary>途中終了型のサブエンド（業務中に決まったものは、その夜の開始時点からやり直せる）</summary>
+        void ShowSubEnding(string id, string retryLabel, System.Action retry)
+        {
+            CareerRecord.Current.Save();
+            DisposeShift();
+            SetScreen(SubEndingScreen.Build(ScreenLayer, id, OperatorName, retryLabel, retry, ShowTitle), GameState.Complete);
+        }
         FinalOutcome _finalOutcome;
 
         /// <summary>1日の始まり: DAY8 からは朝のネットニュース → タイムカード</summary>
@@ -584,6 +624,11 @@ namespace NightShift.Core
                 CareerRecord.SaveDisabled = saveWas;
                 ShowTitle();
             }
+            if (id.StartsWith("SE-"))
+            {
+                SetScreen(SubEndingScreen.Build(ScreenLayer, id, OperatorName, "戻る", Back, Back), GameState.Complete);
+                return;
+            }
             if (id.StartsWith("GO"))
             {
                 var s = new ShiftSession(Database, Database.GetDay(20), 1, OperatorName);
@@ -641,6 +686,7 @@ namespace NightShift.Core
             if (!keepSession)
             {
                 Session = null;
+                _pendingSubEnding = null;
                 _completeTimer = -1; // 前の夜の「業務完了 → 評価画面」のタイマーを取り消す（やり直し・タイトルへ戻ったとき）
             }
         }
@@ -661,6 +707,12 @@ namespace NightShift.Core
                     // 業務を終えた夜のときだけ評価へ進む
                     if (Session != null && Session.Phase == ShiftPhase.Complete) ShowEvaluation();
                 }
+            }
+            if (_pendingSubEnding != null)
+            {
+                string id = _pendingSubEnding;
+                _pendingSubEnding = null;
+                ShowSubEnding(id, "その夜からやり直す", () => RestartDay());
             }
             var keys = ShortcutInput.Poll();
             if (_desktop != null) _desktop.HandleShortcuts(keys);

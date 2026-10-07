@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc3142bf85602f469f7ce0a9d5e0fe9, type: 3}
+  m_Name: ITEM_TOOL_GAMBLE_TERMINAL
+  m_EditorClassIdentifier: 
+  itemId: TOOL_GAMBLE_TERMINAL
+  displayName: NIGHT CLUB
+  category: 1
+  price: 1500
+  description: "\u4F1A\u54E1\u5236\u306E\u8D64\uFF0F\u9ED2\u30B2\u30FC\u30E0\u3002\u8CED\u3051\u30FB\u5165\u51FA\u91D1\u30FB\u640D\u76CA\u5C65\u6B74\u30FB\u4E00\u591C\u306E\u652F\u51FA\u4E0A\u9650\u30FB\u6307\u5B9A\u640D\u5931\u3067\u306E\u65B0\u898F\u30D9\u30C3\u30C8\u505C\u6B62\u30FB\u6C7A\u7740\u901A\u77E5\u3092\u3059\u3079\u3066\u5185\u8535\uFF08\u8FFD\u52A0\u8AB2\u91D1\u306A\u3057\uFF09\u3002\u52DD\u7387\u306F\u8D64
+    48%\u30FB\u9ED2 48%\u30FB\u30CF\u30A6\u30B9 4%\u3002\u52DD\u3061\u3092\u4FDD\u8A3C\u3059\u308B\u6A5F\u80FD\u306F\u3042\u308A\u307E\u305B\u3093\u3002"
+  unlockDay: 9
+  prerequisite: HW_MONITOR_2
+  consumable: 0
+  maxStock: 1
+  icon: globe
+  adCopy: 
+  questFlag: SQ04_INVITED

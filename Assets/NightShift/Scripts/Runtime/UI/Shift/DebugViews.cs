@@ -146,8 +146,9 @@ namespace NightShift.UI.Shift
             UIFactory.Button(rg, "記録を表示", GX * 3, 28, BW, BH, () => Say($"信用 {career.trust} / 所持金 {OperatorWallet.Yen(game.Wallet.Balance)} / 手がかり {career.clues.Count} / ID被害 {career.accountCompromised} / 記録 {career.nights.Count} 夜"));
 
             // ---------------- 画面の確認・日の移動 ----------------
-            var pg = UIFactory.Group(c, "画面の確認・日の移動", 0, 350, 580, 54);
+            var pg = UIFactory.Group(c, "画面の確認・日の移動・サブクエスト", 0, 350, 580, 82);
             var previews = new List<string> { "GO1", "GO2", "GO3", "GO4", "END1", "END2", "END3", "END4", "END6" };
+            foreach (var se in Systems.SideQuests.SubEndings.All) if (se.Terminal) previews.Add(se.Id);
             var previewDd = RetroDropdown.Create(pg, 0, 1, 90, previews, 0);
             UIFactory.Button(pg, "画面を表示", 96, 0, 96, BH, () => game.DebugPreview(previewDd.Value));
             var days = new List<string>();
@@ -157,9 +158,13 @@ namespace NightShift.UI.Shift
             {
                 if (int.TryParse(dayDd.Value.Replace("DAY", ""), out int n)) game.StartDay(n);
             });
+            // サブクエスト（条件を待たずに案内を出す）
+            var quests = new List<string> { "SQ03", "SQ04", "SQ05" };
+            var questDd = RetroDropdown.Create(pg, 0, 29, 90, quests, 0, null);
+            UIFactory.Button(pg, "案内を出す", 96, 28, 96, BH, () => { s.Quests.DebugOffer(questDd.Value); Say($"{questDd.Value} の案内を出しました"); });
 
             // ---------------- 情報 ----------------
-            var ig = UIFactory.Group(c, "保留中の要求（正解と理由）・次のイベント", 0, 408, 580, 228);
+            var ig = UIFactory.Group(c, "保留中の要求（正解と理由）・次のイベント", 0, 436, 580, 200);
             _info = UIFactory.Label(ig, "", 11, TextAnchor.UpperLeft);
             _info.rectTransform.Stretch();
             _info.font = RetroTheme.MonoFont;
@@ -170,7 +175,7 @@ namespace NightShift.UI.Shift
         public static void GrantAllTools(CareerRecord career, GameDatabase db, int day)
         {
             foreach (var it in db.storeItems)
-                if (it != null && !it.consumable && !career.Owns(it.itemId)) career.AddItem(it.itemId);
+                if (it != null && !it.consumable && string.IsNullOrEmpty(it.questFlag) && !career.Owns(it.itemId)) career.AddItem(it.itemId);
             career.vaccineDefinitionDay = day;
             career.Save();
         }

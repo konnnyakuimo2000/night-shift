@@ -23,3 +23,4 @@ MonoBehaviour:
   maxStock: 1
   icon: shield
   adCopy: "VACCINE 99 \u65B0\u767A\u58F2"
+  questFlag: 

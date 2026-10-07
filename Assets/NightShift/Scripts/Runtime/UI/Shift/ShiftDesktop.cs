@@ -49,6 +49,7 @@ namespace NightShift.UI.Shift
             d.RebuildMonitors();
             d.InventoryChanged += d.RebuildMonitors;
             HorrorFx.Attach(d, UIFactory.Rect("Fx", root.transform).Stretch());
+            QuestUi.Attach(d, UIFactory.Rect("QuestFx", root.transform).Stretch());
             d._toaster = NotificationToaster.Build(root.transform, d);
             d._modalLayer = UIFactory.Rect("Modal", root.transform).Stretch();
             d._overlay = DebugOverlay.Build(gm.DebugLayer, d);

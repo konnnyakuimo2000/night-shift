@@ -34,6 +34,8 @@ namespace NightShift.UI.Shift
                 case Items.Vaccine: Open<VaccineTool>(ws, id, "VACCINE 99", "shield", 540, 500); break;
                 case Items.VaccineServer: Open<VaccineTool>(ws, Items.Vaccine, "VACCINE 99", "shield", 540, 500); break;
                 case Items.SocAi: Open<SocAiTool>(ws, id, "SOC-AI", "debug", 660, 640); break;
+                case Items.GambleTerminal: Open<NightClubTool>(ws, id, "NIGHT CLUB", "globe", 600, 700); break;
+                case Items.FxTerminal: Open<MidnightFxTool>(ws, id, "MIDNIGHT FX", "network", 700, 760); break;
             }
         }
 
@@ -290,6 +292,7 @@ namespace NightShift.UI.Shift
         /// <summary>自動許可の対象か（社内・非管理系・警告なし ＋ 有効にした条件をすべて満たす）</summary>
         public static bool Eligible(ShiftSession s, EventInstance e, List<string> conds)
         {
+            if (e.QuestTag != null) return false; // サブクエストの対象要求は、自動で処理しない
             if (e.Zone != SourceZone.External && e.Destination != null && !e.Destination.isAdministrative && !e.NotifyAsSecurityAlert)
             {
                 var acc = e.Destination.FindAccess(e.AccessType);

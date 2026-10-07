@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc3142bf85602f469f7ce0a9d5e0fe9, type: 3}
+  m_Name: ITEM_ITEM_DEVICE_CHARM
+  m_EditorClassIdentifier: 
+  itemId: ITEM_DEVICE_CHARM
+  displayName: "\u6A5F\u5668\u4FDD\u8B77\u672D"
+  category: 4
+  price: 3000
+  description: "\u8868\u793A\u306E\u4E71\u308C\u304C\u6C17\u306B\u306A\u308B\u5834\u5408\u306B\u3054\u4F7F\u7528\u304F\u3060\u3055\u3044\u3002\u5370\u5B57\u9762\u3092\u753B\u9762\u306B\u5411\u3051\u306A\u3044\u3067\u304F\u3060\u3055\u3044\u3002\n\u30EF\u30FC\u30AF\u30B9\u30C6\u30FC\u30B7\u30E7\u30F3\u306E\u30E2\u30CB\u30BF\u30FC\u5074\u9762\u306B\u8CBC\u308B\u3068\u3001\u305D\u306E\u591C\u306E\u6B21\u306E\u8868\u793A\u306E\u4E71\u308C\u30921\u56DE\u9632\u304E\u307E\u3059\u3002\u8CBC\u3063\u305F\u672D\u306F\u7FCC\u671D\u306B\u7834\u308C\u307E\u3059\u30021\u591C\u306B1\u679A\u307E\u3067\u3002"
+  unlockDay: 12
+  prerequisite: 
+  consumable: 1
+  maxStock: 2
+  icon: shield
+  adCopy: 
+  questFlag: SQ03_CHARM

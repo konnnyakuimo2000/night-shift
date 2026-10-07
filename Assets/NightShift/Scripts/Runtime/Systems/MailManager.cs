@@ -23,6 +23,14 @@ namespace NightShift.Systems
         public string FromAddress;          // 差出人のメールアドレス（DAY13〜表示）
         public bool IsPhish;                // 偽メール（報告すべきもの）
         public bool Reported;
+        // ---- サブクエスト ----
+        public string QuestId;              // サブクエストのメール（null = 通常のメール）
+        public List<string> Replies;        // 選べる返信（null = 返信なし）
+        public bool FreeReply;              // 自由入力の返信欄
+        public int RepliedIndex = -1;       // 送った返信
+        public string RepliedText;
+        public bool Horror;                 // 怪異メール（文字化けなどの演出対象。原文は Body に残す）
+        public bool Pinned;                 // 後続のメールに埋もれさせない
     }
 
     /// <summary>運用担当者の受信トレイ。業務連絡・作業依頼などはすべてメールで届く。</summary>
@@ -49,6 +57,25 @@ namespace NightShift.Systems
         public IReadOnlyList<MailMessage> Inbox => _inbox;
         public event Action<MailMessage> Received;
         public event Action Changed;
+        /// <summary>返信を送った（選んだ返信の番号、自由入力の文面）</summary>
+        public event Action<MailMessage, int, string> Replied;
+
+        /// <summary>返信を送る。一度送ったメールには二度送れない（自由入力の返信欄は、送るたびに受け付ける）</summary>
+        public bool SendReply(MailMessage m, int index, string text)
+        {
+            if (m == null) return false;
+            if (!m.FreeReply && m.RepliedIndex >= 0) return false;
+            m.RepliedIndex = index;
+            m.RepliedText = text;
+            Replied?.Invoke(m, index, text);
+            Changed?.Invoke();
+            return true;
+        }
+
+        public void Remove(MailMessage m)
+        {
+            if (m != null && _inbox.Remove(m)) Changed?.Invoke();
+        }
 
         public int UnreadCount
         {

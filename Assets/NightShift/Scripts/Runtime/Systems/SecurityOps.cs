@@ -21,6 +21,12 @@ namespace NightShift.Systems
 
         public IReadOnlyList<string> Blocked => _blocked;
         public event Action Changed;
+        /// <summary>端末を隔離した（端末名）</summary>
+        public event Action<string> DeviceIsolated;
+        /// <summary>接続元を遮断した（接続元・範囲）</summary>
+        public event Action<string> SourceBlocked;
+        /// <summary>サブクエストの対象（不正な取得・転送をしている端末や接続先）か。止めたら正しい対応として数える</summary>
+        public Func<string, bool> QuestTargetCheck;
 
         public SecurityOps(ShiftSession s) { _s = s; }
 
@@ -57,9 +63,10 @@ namespace NightShift.Systems
             _blocked.Add(target);
             float now = _s.Time.CurrentMinute;
             _s.Logs.Add(now, "FIREWALL", target, _s.OperatorName, "FW", "BLOCK", "接続元を遮断リストに登録");
+            SourceBlocked?.Invoke(target);
 
             // 評価: 攻撃に使われた接続元なら正しい対応。社内の端末・正規の接続元を止めたら業務妨害
-            bool hostile = false;
+            bool hostile = QuestTargetCheck != null && QuestTargetCheck(target);
             foreach (var h in _hostileIps) if (h == target || (target.EndsWith("*") && h.StartsWith(target.Substring(0, target.Length - 1)))) hostile = true;
             if (hostile) _s.Evaluation.SecurityActionsCorrect++;
             else
@@ -85,7 +92,8 @@ namespace NightShift.Systems
             if (_isolated.Contains(device)) return $"{device} はすでに隔離しています。";
             _isolated.Add(device);
             _s.Logs.Add(_s.Time.CurrentMinute, device, "-", _s.OperatorName, "ISOLATE", "OK", "端末をネットワークから隔離");
-            if (IsInfected(device)) _s.Evaluation.SecurityActionsCorrect++;
+            DeviceIsolated?.Invoke(device);
+            if (IsInfected(device) || (QuestTargetCheck != null && QuestTargetCheck(device))) _s.Evaluation.SecurityActionsCorrect++;
             else _s.Evaluation.SecurityActionsWrong++;
             Changed?.Invoke();
             return $"{device} をネットワークから隔離しました。";
