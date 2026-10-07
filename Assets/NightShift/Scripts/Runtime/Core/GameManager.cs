@@ -394,6 +394,8 @@ namespace NightShift.Core
             int n = day.dayNumber;
             if (n < DefaultDataFactory.MainStartDay) return;
             string date = (string.IsNullOrEmpty(day.clockInDateLabel) ? day.dateLabel : day.clockInDateLabel) + " 20:00";
+            // 同じ用件でも、夜ごとに言い回しを変える
+            string Vary(params string[] options) => options[(n + career.seed) % options.Length];
             void Mail(string id, string from, string subject, string body) => Session.Mail.Add(new MailMessage
             {
                 MailId = id, From = MailManager.Sender(from), FromAddress = "morita@" + MailManager.CompanyDomain,
@@ -410,25 +412,33 @@ namespace NightShift.Core
                     "前任者の机に、古い15インチのモニターが残っていました。\n捨てるのも手間なので、サブモニターとして使ってください。\n（備品の申請は不要です。壊したら弁償です）");
             }
             if (Session.SeniorHelp)
-                Mail("SENIOR-HELP-" + n, "カスタマーサポート部 中村", "今夜、少し残ります",
-                    $"最近きつそうなので、今夜は私も少し残って、問い合わせを{ShiftSession.SeniorHelpTickets}件ほど引き受けます。\n無理をしないように。\n（課長には「精勤手当はなし」と言われました。ごめんなさい）");
+                Mail("SENIOR-HELP-" + n, "カスタマーサポート部 中村", Vary("今夜、少し残ります", "問い合わせ、少し手伝います", "今夜は私もいます"),
+                    Vary($"最近きつそうなので、今夜は私も少し残って、問い合わせを{ShiftSession.SeniorHelpTickets}件ほど引き受けます。\n無理をしないように。\n（課長には「精勤手当はなし」と言われました。ごめんなさい）",
+                         $"昨日も一昨日も大変だったみたいですね。\n今夜は終電まで残れるので、問い合わせを{ShiftSession.SeniorHelpTickets}件ほどこっちで受けます。\n接続の審査に集中してください。\n（手当の件は…ごめんなさい、課長に止められました）",
+                         $"夜勤、ひとりで回すのは無理がありますよね。\n今夜は私が問い合わせを{ShiftSession.SeniorHelpTickets}件引き受けます。缶コーヒー、机に置いておきました。\n（精勤手当はなしだそうです。この会社らしいですね）"));
             if (n == DefaultDataFactory.MainStartDay) return;
 
             if (career.ConsecutiveRank("D", n - 1) == 2)
-                Mail("WARN-GO1-" + n, "情報システム部 課長 森田", "【最終警告】業務評価について",
-                    "2夜続けて、業務評価が最低でした。\n<b>次も同じ評価なら、契約は更新しません。</b>");
+                Mail("WARN-GO1-" + n, "情報システム部 課長 森田", Vary("【最終警告】業務評価について", "【重要】契約について", "業務評価の件（必読）"),
+                    Vary("2夜続けて、業務評価が最低でした。\n<b>次も同じ評価なら、契約は更新しません。</b>",
+                         "評価表を見ました。2夜続けて最低です。\n代わりの人はいくらでもいます。\n<b>次も同じなら、契約はここまでです。</b>",
+                         "上から言われているので、はっきり書きます。\n2夜続けての最低評価は、うちでは前例がありません。\n<b>今夜も同じなら、契約は打ち切りです。</b>"));
             if (career.accountCompromised >= 1 && !career.HasFlag("MAILED_GO3_" + career.accountCompromised))
             {
                 career.SetFlag("MAILED_GO3_" + career.accountCompromised);
                 bool last = career.accountCompromised >= 2;
                 Mail("WARN-GO3-" + n, "情報システム部 セキュリティ担当", last ? "【最終警告】あなたのアカウントが再び不正に使われました" : "【警告】あなたのアカウントが不正に使われました",
-                    "あなたのIDが、攻撃に使われました。パスワードを直ちに変更してください。\n" +
+                    Vary("あなたのIDが、攻撃に使われました。パスワードを直ちに変更してください。\n",
+                         "昨夜、あなたのIDで不正なログインがありました。心当たりがなければ、すぐにパスワードを変えてください。\n",
+                         "監査ログに、あなたのIDから身に覚えのない操作が残っています。パスワードを直ちに変更してください。\n") +
                     (last ? "<b>次に同じことが起きた場合は、契約を解除し、警察に相談します。</b>" : "<b>同じことが続く場合は、相応の処分を検討します。</b>") +
                     "\n付箋にパスワードを書いていないか、確認してください。");
             }
             if (career.ConsecutiveOvertime(n - 1) >= 5)
-                Mail("WARN-GO4-" + n, "カスタマーサポート部 中村", "大丈夫ですか？",
-                    "毎朝、夜勤明けのあなたを見かけますが、顔色が良くないです。\n無理しないでくださいね。缶コーヒーばかり飲んでいると、倒れちゃいますよ。");
+                Mail("WARN-GO4-" + n, "カスタマーサポート部 中村", Vary("大丈夫ですか？", "ちゃんと寝てますか", "顔色、悪いですよ"),
+                    Vary("毎朝、夜勤明けのあなたを見かけますが、顔色が良くないです。\n無理しないでくださいね。缶コーヒーばかり飲んでいると、倒れちゃいますよ。",
+                         "今朝、エレベーターで会ったとき、目が真っ赤でした。\n残業代も出ないのに、毎晩残るのはやめてください。体を壊したら元も子もないです。",
+                         "前の夜勤の人も、最後はこんな感じでした。\nお願いだから、今夜は時間になったら帰ってください。"));
             if (n == 15 || n == 22 || n == 28)
             {
                 int from = n == 15 ? 8 : n == 22 ? 15 : 22, cnt = 0, mal = 0, fines = 0;
@@ -440,8 +450,11 @@ namespace NightShift.Core
                 }
                 string[] ranks = { "", "D", "C", "B", "A", "S" };
                 string avg = cnt == 0 ? "-" : ranks[Mathf.Clamp(Mathf.RoundToInt(sum / cnt), 1, 5)];
+                string comment = avg == "S" || avg == "A" ? Vary("この調子で頼みます。", "上も評価しています。ただし、手当は増えません。", "よくやっています。気を抜かないように。")
+                               : avg == "B" || avg == "C" ? Vary("引き続き、緊張感を持って業務にあたってください。", "まだ改善の余地があります。", "可もなく不可もなく、です。")
+                               : Vary("このままでは困ります。", "上から説明を求められています。改善してください。", "正直、期待外れです。");
                 Mail("WEEKLY-" + n, "情報システム部 課長 森田", "【週間評価】先週の業務について",
-                    $"先週（DAY{from}〜{n - 1}）の評価をお知らせします。\n\n平均ランク: <b>{avg}</b>\n不正な接続の許可: {mal} 件\n罰金（業務改善協力金）: {OperatorWallet.Yen(fines)}\n\n引き続き、緊張感を持って業務にあたってください。");
+                    $"先週（DAY{from}〜{n - 1}）の評価をお知らせします。\n\n平均ランク: <b>{avg}</b>\n不正な接続の許可: {mal} 件\n罰金（業務改善協力金）: {OperatorWallet.Yen(fines)}\n\n{comment}");
             }
         }
 

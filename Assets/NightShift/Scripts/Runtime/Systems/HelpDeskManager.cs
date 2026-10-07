@@ -78,10 +78,11 @@ namespace NightShift.Systems
                 TicketId = $"HD-{++_counter:0000}",
                 Definition = def,
                 Employee = employee,
-                Subject = def.subject,
                 CreatedAt = _s.Time.CurrentMinute
             };
-            t.Messages.Add(new TicketMessage { Time = t.CreatedAt, From = employee.fullName, Text = Fill(def.message, employee) });
+            // 社員ごとの口調で、件名と最初の文面を組み立てる（質問の中身は変えない）
+            t.Subject = Voice.Subject(employee, def.subject, Voice.RngFor(employee, t.TicketId + "s"));
+            t.Messages.Add(new TicketMessage { Time = t.CreatedAt, From = employee.fullName, Text = Voice.Open(employee, Fill(def.message, employee), Voice.RngFor(employee, t.TicketId + "o")) });
 
             if (def.type == HelpDeskType.Binary)
             {
@@ -143,7 +144,7 @@ namespace NightShift.Systems
             t.State = TicketState.Answered;
             float now = _s.Time.CurrentMinute;
             t.Messages.Add(new TicketMessage { Time = now, From = operatorName, Text = t.Options[index] });
-            t.Messages.Add(new TicketMessage { Time = now + 0.5f, From = t.Employee.fullName, Text = Fill(t.Definition.replyAfterAnswer, t.Employee) });
+            t.Messages.Add(new TicketMessage { Time = now + 0.5f, From = t.Employee.fullName, Text = Voice.Reply(t.Employee, Fill(t.Definition.replyAfterAnswer, t.Employee), Voice.RngFor(t.Employee, t.TicketId + "r")) });
             if (index == t.CorrectIndex) _s.Evaluation.HelpDeskCorrect++; else _s.Evaluation.HelpDeskIncorrect++;
             AddReference(t, now + 1f);
             _s.Logs.Add(now, "HELPDESK", t.Employee.deviceId, t.Employee.fullName, "TICKET", "ANSWERED", t.TicketId);
@@ -198,7 +199,7 @@ namespace NightShift.Systems
             {
                 t.State = TicketState.Resolved;
                 _s.Evaluation.RemoteResolved++;
-                t.Messages.Add(new TicketMessage { Time = now + 0.5f, From = t.Employee.fullName, Text = Fill(t.Definition.successReply, t.Employee) });
+                t.Messages.Add(new TicketMessage { Time = now + 0.5f, From = t.Employee.fullName, Text = Voice.Reply(t.Employee, Fill(t.Definition.successReply, t.Employee), Voice.RngFor(t.Employee, t.TicketId + "ok")) });
                 _s.Logs.Add(now, "HELPDESK", t.Employee.deviceId, t.Employee.fullName, "TICKET", "RESOLVED", t.TicketId);
                 AddReference(t, now + 1f);
                 if (ActiveSession != null && ActiveSession.Ticket == t) Disconnect();
@@ -206,7 +207,7 @@ namespace NightShift.Systems
             else
             {
                 _s.Evaluation.RemoteReportsWrong++;
-                t.Messages.Add(new TicketMessage { Time = now + 0.5f, From = t.Employee.fullName, Text = Fill(t.Definition.failureReply, t.Employee) });
+                t.Messages.Add(new TicketMessage { Time = now + 0.5f, From = t.Employee.fullName, Text = Voice.Reply(t.Employee, Fill(t.Definition.failureReply, t.Employee), Voice.RngFor(t.Employee, t.TicketId + "ng" + t.Reports)) });
                 if (t.Reports >= t.Definition.maxReports)
                 {
                     t.State = TicketState.Failed;
@@ -229,7 +230,7 @@ namespace NightShift.Systems
                     && t.FirstResponseAt < 0 && now - t.CreatedAt >= t.Definition.reminderAfterMinutes)
                 {
                     t.ReminderSent = true;
-                    t.Messages.Add(new TicketMessage { Time = now, From = t.Employee.fullName, Text = Fill(t.Definition.reminderMessage, t.Employee) });
+                    t.Messages.Add(new TicketMessage { Time = now, From = t.Employee.fullName, Text = Voice.Reminder(t.Employee, Fill(t.Definition.reminderMessage, t.Employee), Voice.RngFor(t.Employee, t.TicketId + "m")) });
                     var tt = t;
                     _s.Notifications.Notify(NotificationType.HelpDeskTicket, "ITサポート受付", $"{t.TicketId} {t.Employee.fullName} から追加のメッセージ", now, () => _s.Ui?.OpenHelpDesk(tt));
                     Changed?.Invoke(t);
