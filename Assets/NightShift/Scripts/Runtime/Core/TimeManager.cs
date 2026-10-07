@@ -12,6 +12,8 @@ namespace NightShift.Core
         public float StartMinute { get; }
         public float RealSecondsPerGameMinute { get; set; }
         public float DebugTimeScale { get; set; } = 1f;
+        /// <summary>待ち時間の早送り（何もすることがない間だけ 1 より大きくなる）</summary>
+        public float PacingScale { get; set; } = 1f;
         public bool Running { get; private set; }
         public bool Paused { get; set; }
 
@@ -33,7 +35,7 @@ namespace NightShift.Core
         public float Tick(float unscaledDeltaTime)
         {
             if (!Running || Paused) return 0f;
-            float delta = unscaledDeltaTime / RealSecondsPerGameMinute * DebugTimeScale;
+            float delta = unscaledDeltaTime / RealSecondsPerGameMinute * DebugTimeScale * PacingScale;
             CurrentMinute += delta;
             int whole = (int)Math.Floor(CurrentMinute);
             if (whole != _lastWholeMinute)

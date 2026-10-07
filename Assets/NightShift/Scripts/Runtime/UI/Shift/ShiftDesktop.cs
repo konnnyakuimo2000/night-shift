@@ -782,7 +782,7 @@ namespace NightShift.UI.Shift
         public void Tick()
         {
             var s = _d.S;
-            _clock.text = $"{_d.Game.Database.GetDay(s.Day.dayNumber).dateLabel.Split(' ')[0]}  {s.Time.Now}";
+            _clock.text = $"{(s.FastForwarding ? "▶▶ " : "")}{_d.Game.Database.GetDay(s.Day.dayNumber).dateLabel.Split(' ')[0]}  {s.Time.Now}";
             _counts.text = _d.Unlocked(Data.Features.HelpDesk)
                 ? $"接続要求 {s.Requests.Pending.Count}   受付 {s.HelpDesk.OpenCount}"
                 : $"接続要求 {s.Requests.Pending.Count}";

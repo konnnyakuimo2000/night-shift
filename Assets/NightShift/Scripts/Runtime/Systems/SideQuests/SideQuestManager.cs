@@ -338,6 +338,23 @@ namespace NightShift.Systems.SideQuests
         }
 
         public QuestJob Job(string id) => _jobs.Find(j => j.Id == id);
+
+        /// <summary>次に予約している処理の時刻（無ければ -1）。待ち時間の早送りで、ここを飛び越さない</summary>
+        public float NextTimer
+        {
+            get
+            {
+                if (Ended) return -1;
+                float t = -1;
+                foreach (var x in _timers) if (t < 0 || x.time < t) t = x.time;
+                foreach (var j in _jobs) if (!j.Finished && (t < 0 || j.Start + j.Minutes < t)) t = j.Start + j.Minutes;
+                return t;
+            }
+        }
+
+        /// <summary>サブクエストでプレイヤーが今していること（解読の期限・結果待ちの賭け・建玉）</summary>
+        public bool HasWork =>
+            !Ended && (Route<Sq03Route>()?.DeadlineRunning == true || Leisure.PendingBet != null || Leisure.Open != null);
         public bool JobRunning(string id) => _jobs.Exists(j => j.Id == id && !j.Finished);
 
         bool Stopped(QuestJob j) => S.Security.IsIsolated(j.Device) || S.Security.IsBlocked(j.SourceIp) || (j.Target != null && S.Security.IsBlocked(j.Target));
