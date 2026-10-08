@@ -29,9 +29,13 @@ namespace NightShift.Systems.SideQuests
         public override void Offer()
         {
             State.stage = "INVITE";
-            Mail("INVITE", From, Address, "あなたが働いている間にも、相場は動いています",
-                "今夜の変動予定と、取引端末の案内をお送りします。\n買いと売り、どちらからでも参加できます。\n\n" +
-                "※ 当通信の見通しは、上昇・下落を約束するものではありません。",
+            Mail("INVITE", From, Address, ChainMail.Subject(ChainMail.Style.Market, "あなたが働いている間にも、相場は動いています"),
+                ChainMail.Body(ChainMail.Style.Market, "夜間相場通信　創刊号",
+                    "↑↑↑ 上がる？？　↓↓↓ 下がる？？\n" +
+                    "夜勤のアナタも、寝ている間に動く相場に参加できる時代です！！\n\n" +
+                    "今夜の変動予定と、取引端末の案内をお送りします。\n買いと売り、どちらからでも参加できます。\n\n" +
+                    "※ 当通信の見通しは、上昇・下落を約束するものではありません。",
+                    "配信の停止は、このメールへの返信で受け付けます。"),
                 replies: new[] { "案内を受け取る", "配信を停止する" });
         }
 
@@ -42,10 +46,13 @@ namespace NightShift.Systems.SideQuests
             {
                 State.Mark("REPLIED");
                 Career.SetFlag(InvitedFlag);
-                Mail("GUIDE", From, Address, "取引端末のご案内",
-                    "社内購買に「MIDNIGHT FX」（¥2,000）が並んでいます。\n" +
-                    "遊興口座に入金し、NEX/CRD を買い・売りで取引できます。証拠金 ¥500〜¥5,000・倍率 1／5／10 倍。\n" +
-                    "残りの証拠金が 20% を切ると強制決済されます（損失は証拠金まで）。終業時には自動で決済されます。", time: Now + 1);
+                Mail("GUIDE", From, Address, ChainMail.Subject(ChainMail.Style.Market, "取引端末のご案内"),
+                    ChainMail.Body(ChainMail.Style.Market, "MIDNIGHT FX　ご案内",
+                        "社内購買に「MIDNIGHT FX」（¥2,000）が並んでいます！！\n\n" +
+                        "→ 遊興口座に入金し、NEX/CRD を買い・売りで取引\n" +
+                        "→ 証拠金 ¥500〜¥5,000・倍率 1／5／10 倍\n" +
+                        "→ 残りの証拠金が 20% を切ると強制決済（損失は証拠金まで）\n" +
+                        "→ 終業時には自動で決済されます"), time: Now + 1);
                 Q.Note("MIDNIGHT FX が社内購買に並びました（業務開始前に購入できます）。");
             }
             else Q.Close(this, QuestResult.Declined, "配信を停止しました。");
@@ -61,9 +68,10 @@ namespace NightShift.Systems.SideQuests
             var rel = A.Releases;
             A.Price(0);
             string times = string.Join("、", rel.ConvertAll(t => T(t)));
-            Mail("OUTLOOK-" + Day, From, Address, A.SpikeNight ? "【急変夜】今夜の見通し" : "今夜の見通し",
-                $"今夜の架空経済指標の発表予定: {times}\n" +
-                (A.SpikeNight ? "<b>今夜は大きな値動きが予想されます。</b>上がるか下がるかは分かりません。\n" : "発表の前後は値動きが大きくなることがあります。方向は分かりません。\n"));
+            Mail("OUTLOOK-" + Day, From, Address, ChainMail.Subject(ChainMail.Style.Market, A.SpikeNight ? "【急変夜】今夜の見通し" : "今夜の見通し"),
+                ChainMail.Body(ChainMail.Style.Market, $"夜間相場通信　DAY{Day} 号",
+                    $"今夜の架空経済指標の発表予定: <b>{times}</b>\n\n" +
+                    (A.SpikeNight ? "<b>今夜は大きな値動きが予想されます！！</b>\n上がるか下がるかは分かりません。" : "発表の前後は値動きが大きくなることがあります。\n方向は分かりません。")));
         }
 
         public void OnOrderPlaced()
@@ -81,8 +89,11 @@ namespace NightShift.Systems.SideQuests
             if (Qualified && !State.Has("WARRIOR_MAIL"))
             {
                 State.Mark("WARRIOR_MAIL");
-                Mail("WARRIOR", From, Address, "夜明けまで生き残った方へ",
-                    "急変の夜を越えて、利益を残しました。\n専業になるなら、朝の精算のあとでお選びください。\n※ これまでの成績は、今後の利益を保証するものではありません。", time: Now + 1);
+                Mail("WARRIOR", From, Address, ChainMail.Subject(ChainMail.Style.Market, "夜明けまで生き残った方へ"),
+                    ChainMail.Body(ChainMail.Style.Market, "祝・急変夜 突破！！",
+                        "急変の夜を越えて、利益を残しました。\n" +
+                        "専業になるなら、朝の精算のあとでお選びください。\n\n" +
+                        "※ これまでの成績は、今後の利益を保証するものではありません。"), time: Now + 1);
             }
         }
 
@@ -106,8 +117,11 @@ namespace NightShift.Systems.SideQuests
                 && !State.Has("SPIKE_RETRY_" + Day) && !Q.TaskDayReserved(Day + 1, this))
             {
                 L.spikeDay = Day + 1;
-                Mail("SPIKE-" + (Day + 1), From, Address, "【予告】明日の夜は急変が予想されます",
-                    $"DAY{Day + 1} の夜、架空経済指標の大きな発表があります。\n値動きの方向は分かりません。\n取引される場合は、証拠金と倍率にご注意ください。",
+                Mail("SPIKE-" + (Day + 1), From, Address, ChainMail.Subject(ChainMail.Style.Market, "【予告】明日の夜は急変が予想されます"),
+                    ChainMail.Body(ChainMail.Style.Market, "緊急予告！！　明日の夜は急変",
+                        $"DAY{Day + 1} の夜、架空経済指標の大きな発表があります。\n" +
+                        "値動きの方向は分かりません。\n" +
+                        "取引される場合は、証拠金と倍率にご注意ください。"),
                     nextMorning: true);
             }
         }

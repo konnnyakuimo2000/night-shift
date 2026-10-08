@@ -375,6 +375,29 @@ namespace NightShift.Tests
                 q.DebugOffer("SQ05");
                 yield return Mail(d, "SQ05-INVITE", "Q05_メール_SQ05案内");
 
+                // チェーンメール風に飾ったギャンブル・FXのメール
+                Fresh();
+                d = NewDesktop(20, null, 10f); q = d.S.Quests;
+                q.DebugOffer("SQ04");
+                var inv4 = d.S.Mail.Find("SQ04-INVITE");
+                d.S.Mail.SendReply(inv4, 0, inv4.Replies[0]);
+                Advance(d.S, 2);
+                yield return Mail(d, "SQ04-GUIDE", "Q06_メール_SQ04手引き");
+                var r4 = q.Route<NightShift.Systems.SideQuests.Sq04Route>();
+                r4.LoanOffer();
+                Advance(d.S, 3);
+                yield return Mail(d, "SQ04-LOAN", "Q07_メール_追加資金");
+                CareerRecord.Current.leisure.gamblePlays = 5;
+                r4.OnBetResolved(true);
+                Advance(d.S, 2);
+                yield return Mail(d, "SQ04-VIP", "Q08_メール_VIP席");
+                var fxCareer = Fresh();
+                fxCareer.AddItem(Items.FxTerminal);
+                d = NewDesktop(20, null, 10f); q = d.S.Quests;
+                q.DebugOffer("SQ05");
+                q.Route<NightShift.Systems.SideQuests.Sq05Route>().OnShiftStart();
+                yield return Mail(d, "SQ05-OUTLOOK-20", "Q09_メール_SQ05今夜の見通し");
+
                 // ================= SQ03 在籍確認 =================
                 var career = Fresh();
                 d = NewDesktop(20, null, 10f); q = d.S.Quests;
