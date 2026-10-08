@@ -42,7 +42,7 @@ namespace NightShift.UI.Shift
         void Build()
         {
             var p = ToolStyle.Page(_w);
-            float y = ToolStyle.Header(p, "社内購買", "仕事に使う機材・ツールを買えます。代金は給与から精算されます（会社は1円も出しません）。", "folder", Accent, false);
+            float y = ToolStyle.Header(p, "社内購買", "仕事に使う機材・ツールを買えます。代金は給与から精算されます（会社は1円も出しません）。", "nexus", Accent, false);
             _balance = ToolStyle.Text(p, "", 0, 0, 260, 28, 18, Color.white, TextAnchor.MiddleRight, true);
             _balance.rectTransform.AnchorTopRight(18, 8, 300, 26);
             var balLabel = ToolStyle.Text(p, "所持金", 0, 0, 100, 16, 11, new Color(1, 1, 1, 0.8f), TextAnchor.MiddleRight);

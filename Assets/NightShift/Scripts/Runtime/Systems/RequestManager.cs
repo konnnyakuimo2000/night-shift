@@ -24,6 +24,8 @@ namespace NightShift.Systems
         public void Submit(EventInstance e)
         {
             e.RequestId = $"REQ-{++_counter:0000}";
+            // 申請理由（サブクエストの対象要求は、依頼メールの内容を備考に持つので付けない）
+            if (e.Reason == null && e.QuestTag == null) e.Reason = RequestReasons.For(e, _s.Seed);
             e.Kind = EventKind.ConnectionRequest;
             e.State = EventState.Pending;
             e.GeneratedTime = _s.Time.CurrentMinute;

@@ -35,8 +35,11 @@ namespace NightShift.UI.Shift
             d.S = s;
 
             // 壁紙のロゴ
-            var logo = UIFactory.Label(root.transform, $"{gm.Database.companyName}\n{gm.Database.systemName}", 26, TextAnchor.LowerRight, new Color(1, 1, 1, 0.08f));
-            logo.rectTransform.Stretch(0, 0, 30, 50);
+            var wall = NexusLogo.Create(root.transform, 0, 0, 72, Color.white, true, 0.16f);
+            wall.anchorMin = wall.anchorMax = new Vector2(1, 0); wall.pivot = new Vector2(1, 0);
+            wall.anchoredPosition = new Vector2(-40, 60);
+            var logo = UIFactory.Label(root.transform, gm.Database.systemName, 18, TextAnchor.LowerRight, new Color(1, 1, 1, 0.12f));
+            logo.rectTransform.Stretch(0, 0, 44, 38);
             logo.fontStyle = FontStyle.Bold;
 
             // モニターに貼った付箋（ウィンドウの下になる）
@@ -651,26 +654,15 @@ namespace NightShift.UI.Shift
             if (extraFile != null) { file.AddRange(extraFile); file.Add(MenuItem.Sep()); }
             file.Add(new MenuItem("一時停止(P)", d.OpenPause, Core.GameSettings.KeyLabel(Core.GameSettings.Pause)));
             file.Add(new MenuItem("閉じる(C)", () => d.Windows.Active?.RequestClose(), Core.GameSettings.KeyLabel(Core.GameSettings.CloseWindow)));
-            var edit = new List<MenuItem>
-            {
-                new MenuItem("コピー(C)", null, "Ctrl+C", false),
-                new MenuItem("貼り付け(P)", null, "Ctrl+V", false),
-            };
             var v = view ?? new List<MenuItem>();
             if (v.Count > 0) v.Add(MenuItem.Sep());
             v.Add(new MenuItem("メインメニュー(M)", () => MainMenuView.Open(d)));
             v.Add(new MenuItem("ネットワークマップ(N)", () => NetworkMonitorView.Open(d), null, d.Unlocked(Data.Features.NetworkMap)));
-            var help = new List<MenuItem>
-            {
-                new MenuItem("メール（業務連絡）(B)", () => MailboxView.Open(d)),
-                new MenuItem("バージョン情報(A)", () => d.ShowStatus($"{d.Game.Database.systemName} {d.Game.Database.systemVersion}")),
-            };
+            // 押せない「編集」や、中身の薄い「ヘルプ」は置かない（使える項目だけ）
             return new List<KeyValuePair<string, List<MenuItem>>>
             {
                 new KeyValuePair<string, List<MenuItem>>("ファイル(F)", file),
-                new KeyValuePair<string, List<MenuItem>>("編集(E)", edit),
                 new KeyValuePair<string, List<MenuItem>>("表示(V)", v),
-                new KeyValuePair<string, List<MenuItem>>("ヘルプ(H)", help),
             };
         }
     }
@@ -813,7 +805,8 @@ namespace NightShift.UI.Shift
         RectTransform _root;
         readonly List<Toast> _toasts = new List<Toast>();
 
-        class Toast { public RectTransform Rt; public float Life; }
+        class Toast { public RectTransform Rt; public float Life; public NotificationType Type; public int Count = 1; public Text Body; public Notification Last; }
+        public const int MaxToasts = 3;
 
         public static NotificationToaster Build(Transform parent, ShiftDesktop d)
         {
@@ -829,6 +822,19 @@ namespace NightShift.UI.Shift
 
         public void Show(Notification n)
         {
+            // 新しい接続要求は1枚にまとめる（一覧は接続監視で見る）
+            if (n.Type == NotificationType.ConnectionRequest)
+            {
+                var same = _toasts.Find(x => x.Type == NotificationType.ConnectionRequest);
+                if (same != null && same.Body != null)
+                {
+                    same.Count++;
+                    same.Last = n;
+                    same.Body.text = $"新しい接続要求が {same.Count} 件あります。\n（最新: {n.Body}）";
+                    same.Life = Core.GameSettings.Current.notificationSeconds;
+                    return;
+                }
+            }
             var panel = UIFactory.Panel(_root, RetroTheme.Raised, "Toast");
             var rt = panel.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0, 0);
@@ -845,14 +851,14 @@ namespace NightShift.UI.Shift
             body.rectTransform.Stretch(46, 23, 6, 4);
             var ch = panel.gameObject.AddComponent<ClickHandler>();
             float life = Core.GameSettings.Current.notificationSeconds;
-            var toast = new Toast { Rt = rt, Life = alert ? life + 6f : life };
+            var toast = new Toast { Rt = rt, Life = alert ? life + 6f : life, Type = n.Type, Body = body, Last = n };
             ch.OnClick = () =>
             {
-                n.OnClick?.Invoke();
+                toast.Last?.OnClick?.Invoke();
                 Remove(toast);
             };
             _toasts.Insert(0, toast);
-            while (_toasts.Count > 5) Remove(_toasts[_toasts.Count - 1]);
+            while (_toasts.Count > MaxToasts) Remove(_toasts[_toasts.Count - 1]);
             Layout();
         }
 

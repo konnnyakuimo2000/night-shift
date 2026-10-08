@@ -494,6 +494,10 @@ namespace NightShift.Tests
                 d.ShowMonitor(1);
                 Tools.Launch(d.Stations[0], Items.GambleTerminal);
                 yield return Shot("Q40_ツール_NIGHT CLUB", 1.2f);
+                // 結果が出た状態（リールが止まる）
+                d.S.Time.JumpTo(d.S.Time.CurrentMinute + 3f);
+                q.Tick(d.S.Time.CurrentMinute, 1f);
+                yield return Shot("Q40b_ツール_NIGHT CLUB（結果）", 0.6f);
 
                 career = Fresh();
                 foreach (var id in new[] { Items.GambleTerminal, Items.FxTerminal }) career.AddItem(id);
@@ -589,6 +593,22 @@ namespace NightShift.Tests
                     yield return null;
                 }
                 yield return WideShot("Q65_横長画面_ログイン", () => { Clear(); _gm.ShowLogin(); });
+                {
+                    // 評価画面（業務記録を日本語の要点だけに）
+                    Clear();
+                    var es = new ShiftSession(db, db.GetDay(20), 7, "night01");
+                    var ev = es.Evaluation;
+                    ev.CorrectAllow = 31; ev.CorrectBlock = 12; ev.MaliciousAllow = 1; ev.ExpiredLegit = 2;
+                    ev.HelpDeskCorrect = 3; ev.RemoteResolved = 1; ev.SecurityActionsCorrect = 2;
+                    var er = ev.Compute();
+                    var eslip = Payroll.Compute(20, er, ev, db.payroll);
+                    EvaluationScreen.Build(_gm.ScreenLayer, db.GetDay(20), er, eslip, null, true, 52300, () => { }, () => { }, "");
+                    yield return Shot("Q69_評価画面（業務記録）", 9f);
+                }
+                Clear(); _gm.ShowTitle();
+                yield return Shot("Q67_タイトル（ロゴ）", 1.0f);
+                Clear(); _gm.ShowClockIn();
+                yield return Shot("Q68_タイムカード（ロゴ）", 1.0f);
                 yield return WideShot("Q66_横長画面_本編エンド", () => _gm.DebugPreview("END6"));
                 CareerRecord.SetCurrentForTests(new CareerRecord { seed = 7 });
 
@@ -615,6 +635,43 @@ namespace NightShift.Tests
             finally
             {
                 NightShift.Systems.SideQuests.SideQuestManager.WalletProvider = originalWallet;
+                CareerRecord.SetCurrentForTests(_original);
+                CareerRecord.SaveDisabled = false;
+            }
+        }
+
+        /// <summary>マニュアルの全ページを撮る（DAY20 時点で見えるページ）。出力: Logs/Screenshots/M*.png</summary>
+        [UnityTest, Category("Screenshots"), Explicit("画面の確認用"), Timeout(900000)]
+        public IEnumerator CaptureManuals()
+        {
+            _original = CareerRecord.Current;
+            CareerRecord.SaveDisabled = true;
+            try
+            {
+                yield return Setup(false);
+                foreach (var f in Directory.GetFiles(_dir, "M*.png")) File.Delete(f);
+                CareerRecord.SetCurrentForTests(new CareerRecord { seed = 7, trust = 70 });
+                var d = NewDesktop(20, null, 1f);
+                int docNo = 1;
+                foreach (var doc in d.S.Day.attachments)
+                {
+                    if (doc == null) continue;
+                    d = NewDesktop(20, null, 1f);
+                    DocumentView.Open(d, doc);
+                    yield return Shot($"M{docNo}_00_{doc.documentId}", 0.8f);
+                    int pages = d.VisiblePages(doc).Count;
+                    for (int i = 1; i < pages; i++)
+                    {
+                        var next = d.GetComponentsInChildren<RetroButton>().FirstOrDefault(b => b.Label.text.StartsWith("次のページ"));
+                        if (next == null) break;
+                        next.Button.onClick.Invoke();
+                        yield return Shot($"M{docNo}_{i:00}_{doc.documentId}", 0.5f);
+                    }
+                    docNo++;
+                }
+            }
+            finally
+            {
                 CareerRecord.SetCurrentForTests(_original);
                 CareerRecord.SaveDisabled = false;
             }

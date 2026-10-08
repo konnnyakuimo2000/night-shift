@@ -13,6 +13,7 @@ namespace NightShift.UI.Screens
         public static GameObject Build(RectTransform parent, EndingResolver.GameOver go, string operatorName, Action retryNight, Action retryWeek, Action toTitle)
         {
             var root = UIFactory.Solid(parent, new Color(0.08f, 0.08f, 0.09f), "GameOver");
+            SoundtrackCue.Attach(root.gameObject, SoundtrackScene.Aftermath);
             root.rectTransform.Stretch();
             var paper = UIFactory.Solid(root.transform, new Color(0.95f, 0.94f, 0.9f), "Paper");
             paper.rectTransform.anchorMin = paper.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
@@ -20,6 +21,7 @@ namespace NightShift.UI.Screens
             paper.rectTransform.sizeDelta = new Vector2(620, 640);
             var ink = new Color(0.1f, 0.1f, 0.1f);
             UIFactory.Label(paper.transform, "社 内 報", 20, 16, 580, 30, 22, TextAnchor.MiddleCenter, ink, true).fontStyle = FontStyle.Bold;
+            NexusLogo.Create(paper.transform, 24, 12, 32, ink, true);
             UIFactory.Solid(paper.transform, ink, "Rule").rectTransform.Place(20, 52, 580, 2);
             UIFactory.Label(paper.transform, "人事異動のお知らせ", 20, 64, 580, 26, 18, TextAnchor.MiddleCenter, ink).fontStyle = FontStyle.Bold;
             UIFactory.Label(paper.transform, $"情報システム部　夜間IT運用担当　{operatorName}\n契約終了", 20, 100, 580, 50, 16, TextAnchor.MiddleCenter, ink);
@@ -57,6 +59,7 @@ namespace NightShift.UI.Screens
         public static GameObject Build(RectTransform parent, EndingResolver.Ending ending, FinalOutcome outcome, string operatorName, OperatorWallet wallet, Action toTitle)
         {
             var outer = UIFactory.Solid(parent, Color.black, "Ending");
+            SoundtrackCue.Attach(outer.gameObject, outcome == FinalOutcome.Critical ? SoundtrackScene.Aftermath : SoundtrackScene.Dawn);
             outer.rectTransform.Stretch();
             // 横長の画面でも中央に（中身は 1280×800 の座標で並べる）
             var root = UIFactory.Solid(outer.transform, Color.black, "Frame");

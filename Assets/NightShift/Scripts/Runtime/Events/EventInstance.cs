@@ -51,6 +51,7 @@ namespace NightShift.Events
         public string ExpectedDeviceIp;   // 社員の登録端末のIP（なりすましの判定用）
         public bool AutoDecided;          // 自動審査ツール・遮断リストで自動処理された
         public string Note;               // 備考（AI向けの偽の指示など）
+        public string Reason;             // 申請理由（社員の口調の一言。判断の材料ではない）
 
         public object Owner;              // ThreatScenarioRun など
         public string QuestTag;           // サブクエストの対象要求（自動審査・AIの自動処理の対象外。null = 通常）

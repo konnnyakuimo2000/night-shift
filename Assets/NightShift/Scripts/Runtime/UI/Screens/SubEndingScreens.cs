@@ -15,6 +15,8 @@ namespace NightShift.UI.Screens
             var def = SubEndings.Get(endingId);
             bool bad = endingId == "SE-HB01" || endingId == "SE-M01";
             var root = UIFactory.Solid(parent, bad ? new Color(0.12f, 0.01f, 0.02f) : new Color(0.03f, 0.03f, 0.05f), "SubEnding");
+            bool bleak = bad || endingId == "SE-HT01" || endingId == "SE-N01" || endingId == "SE-N02";
+            SoundtrackCue.Attach(root.gameObject, bleak ? SoundtrackScene.Aftermath : SoundtrackScene.Dawn);
             root.rectTransform.Stretch();
             var paper = UIFactory.Solid(root.transform, new Color(0.95f, 0.94f, 0.9f), "Paper");
             paper.rectTransform.anchorMin = paper.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
@@ -46,7 +48,7 @@ namespace NightShift.UI.Screens
             UIFactory.Button(paper.transform, "タイトルへ(T)", 340, 620, 200, 32, toTitle, "exit");
             if (retry != null) { var k1 = root.gameObject.AddComponent<KeyAction>(); k1.Key = KeyCode.R; k1.Action = retry; }
             var k2 = root.gameObject.AddComponent<KeyAction>(); k2.Key = KeyCode.T; k2.Action = toTitle;
-            AudioFx.Chime();
+            if (bleak) AudioFx.PowerDown(); else AudioFx.Chime();
             return root.gameObject;
         }
     }

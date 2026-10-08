@@ -208,6 +208,7 @@ namespace NightShift.UI
         public static Sprite Icon(string name)
         {
             if (string.IsNullOrEmpty(name)) return null;
+            if (name == "nexus") return NexusLogo.Emblem;   // 会社のロゴ
             if (_icons.TryGetValue(name, out var s)) return s;
             var c = new IconCanvas(16);
             IconPainter.Paint(name, c);
@@ -218,6 +219,7 @@ namespace NightShift.UI
 
         public static Sprite BigIcon(string name)
         {
+            if (name == "nexus") return NexusLogo.Emblem;
             string key = name + "@32";
             if (_icons.TryGetValue(key, out var s)) return s;
             var c = new IconCanvas(16);

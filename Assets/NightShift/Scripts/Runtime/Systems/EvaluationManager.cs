@@ -133,21 +133,15 @@ namespace NightShift.Systems
             r.Rank = r.Overall >= 92 ? "S" : r.Overall >= 80 ? "A" : r.Overall >= 65 ? "B" : r.Overall >= 50 ? "C" : "D";
 
             void S(string k, object v) => r.Stats.Add(new KeyValuePair<string, string>(k, v.ToString()));
+            // 業務記録は要点だけ（細かい内訳は「振り返り」で見る）
             S("こなした仕事", $"{TasksDone} 件（評価 +{TaskPoints:0.0} 点）");
-            S("Correct Allow", CorrectAllow);
-            S("Correct Block", CorrectBlock);
-            S("False Positive", FalsePositive);
-            S("Malicious Allow", MaliciousAllow);
-            S("Policy Violation Allow", PolicyViolation);
-            S("Expired Requests", ExpiredLegit + ExpiredBlock);
-            S("Help Desk Correct Answers", HelpDeskCorrect);
-            S("Help Desk Incorrect Answers", HelpDeskIncorrect);
-            S("Remote Tickets Resolved", RemoteResolved);
-            S("Remote Tickets Failed", RemoteFailed);
-            S("Unresolved Tickets", Unresolved);
-            S("Average Response Time", $"{avg:0.0} min");
-            if (SecurityActionsCorrect + SecurityActionsWrong > 0) S("Security Actions (OK / NG)", $"{SecurityActionsCorrect} / {SecurityActionsWrong}");
-            if (DamageCount > 0) S("Incidents", DamageCount);
+            S("接続要求", $"正しい許可 {CorrectAllow} 件 ／ 正しい拒否 {CorrectBlock} 件");
+            int wrong = MaliciousAllow + PolicyViolation + FalsePositive + ExpiredLegit + ExpiredBlock;
+            S("間違い・期限切れ", wrong == 0 ? "なし" : $"不正な許可 {MaliciousAllow} ／ ルール違反の許可 {PolicyViolation} ／ 止めすぎ {FalsePositive} ／ 期限切れ {ExpiredLegit + ExpiredBlock}");
+            if (TicketsTotal > 0) S("問い合わせ", $"解決 {HelpDeskCorrect + RemoteResolved} 件 ／ 失敗 {HelpDeskIncorrect + RemoteFailed} 件 ／ 未解決 {Unresolved} 件");
+            S("平均応答", $"{avg:0.0} 分");
+            if (SecurityActionsCorrect + SecurityActionsWrong > 0) S("遮断・隔離・報告", $"正しい {SecurityActionsCorrect} 件 ／ 誤り {SecurityActionsWrong} 件");
+            if (DamageCount > 0) S("被害", $"{DamageCount} 件");
             return r;
         }
 

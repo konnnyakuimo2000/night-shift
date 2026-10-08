@@ -76,7 +76,7 @@ namespace NightShift.UI.Shift
             F("dest", "接続先:", 0, 160); F("access", "利用システム:", 270, 180); y += 26;
             F("perm", "必要な権限:", 0, 160); F("state", "状態:", 270, 180); y += 26;
             F("decided", "処理時刻:", 0, 160); y += 30;
-            _hint = UIFactory.Label(dg, DefaultHint, 0, y, 540, 36, 12, TextAnchor.UpperLeft);
+            _hint = UIFactory.Label(dg, DefaultHint, 0, y, 540, 44, 11, TextAnchor.UpperLeft);
             _hint.color = RetroTheme.HintText;
             // サブクエストの対象要求: 関係する依頼メールへの導線（正解・悪意の答えは表示しない）
             _questMail = UIFactory.Button(dg, "依頼メールを確認", 404, y, 136, 24, OpenQuestMail, "mail");
@@ -87,14 +87,13 @@ namespace NightShift.UI.Shift
             _block = UIFactory.Button(ag, $"接続を拒否 [{Core.GameSettings.KeyLabel(Core.GameSettings.Block)}]", 0, 38, 196, 32, () => Decide(PlayerAction.Block), "lock");
             UIFactory.Separator(ag, 0, 80, 196);
             UIFactory.Button(ag, $"社員情報を参照 [{Core.GameSettings.KeyLabel(Core.GameSettings.Lookup)}]", 0, 90, 196, 26, LookupEmployee, "people");
-            UIFactory.Button(ag, "閉じる(C)", 0, 122, 196, 26, _w.RequestClose, "exit");
             if (_d.Unlocked(Data.Features.FirewallBlock))
             {
-                _fwBtn = UIFactory.Button(ag, "接続元を遮断", 0, 154, 96, 24, BlockSource, "lock");
+                _fwBtn = UIFactory.Button(ag, "接続元を遮断", 0, 122, 96, 24, BlockSource, "lock");
                 _fwBtn.Label.fontSize = 11; // 幅に収める
             }
             if (_d.Unlocked(Data.Features.Report))
-                _reportBtn = UIFactory.Button(ag, "報告", 100, 154, 96, 24, ReportSelected, "warning");
+                _reportBtn = UIFactory.Button(ag, "報告", 100, 122, 96, 24, ReportSelected, "warning");
 
             if (_d.Unlocked(Data.Features.NetworkMap)) _w.Accelerators[KeyCode.M] = () => NetworkMonitorView.Open(_d);
             if (_d.Unlocked(Data.Features.SystemLog)) _w.Accelerators[KeyCode.L] = () => LogViewerView.Open(_d, null);
@@ -219,8 +218,10 @@ namespace NightShift.UI.Shift
             _allow.Interactable = _block.Interactable = pending;
             bool quest = !string.IsNullOrEmpty(e.QuestMailId) && _d.S.Mail.Find(e.QuestMailId) != null;
             _questMail.gameObject.SetActive(quest);
-            _hint.rectTransform.sizeDelta = new Vector2(quest ? 398 : 540, 36);
-            _hint.text = string.IsNullOrEmpty(e.Note) ? (e.AutoDecided ? "※ この要求は自動的に処理されました。" : DefaultHint) : "備考: " + e.Note;
+            _hint.rectTransform.sizeDelta = new Vector2(quest ? 398 : 540, 44);
+            // 申請理由（社員の一言）と、備考・案内
+            string second = !string.IsNullOrEmpty(e.Note) ? "備考: " + e.Note : e.AutoDecided ? "※ この要求は自動的に処理されました。" : DefaultHint;
+            _hint.text = string.IsNullOrEmpty(e.Reason) ? second : $"<size=12><color=#202040>申請理由: {e.Reason}</color></size>\n{second}";
             _hint.color = string.IsNullOrEmpty(e.Note) ? RetroTheme.HintText : RetroTheme.Text;
             if (_fwBtn != null) _fwBtn.Interactable = !_d.S.Security.IsBlocked(e.SourceIp);
             if (_reportBtn != null) _reportBtn.Interactable = true;

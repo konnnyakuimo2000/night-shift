@@ -32,15 +32,10 @@ namespace NightShift.UI.Shift
                 _free = ToolStyle.Field(box, "空き資金", 200, 0, 200, 70);
                 _locked = ToolStyle.Field(box, "拘束", 0, 22, 200, 70);
                 _debt = ToolStyle.Field(box, "借入残", 200, 22, 200, 70);
-                float x = 0;
-                foreach (int v in new[] { 1000, 5000, 10000 })
-                {
-                    int amount = v;
-                    ToolStyle.Button(box, "入金 " + Yen(v), x, 48, 100, 24, () => _status(_d.S.Quests.Leisure.Deposit(amount)), accent, false);
-                    x += 104;
-                }
-                ToolStyle.Button(box, "全額出金", x, 48, 90, 24, () => _status(_d.S.Quests.Leisure.Withdraw(_d.S.Quests.Leisure.Free)), accent, false);
-                ToolStyle.Button(box, "借入・返済…", x + 94, 48, 100, 24, () => LeisureAccountView.Open(_d), accent, false);
+                // 入出金は3つだけ（細かい額は「借入・返済」の口座画面で）
+                ToolStyle.Button(box, "入金 ¥5,000", 0, 48, 120, 24, () => _status(_d.S.Quests.Leisure.Deposit(5000)), accent, false);
+                ToolStyle.Button(box, "全額出金", 126, 48, 100, 24, () => _status(_d.S.Quests.Leisure.Withdraw(_d.S.Quests.Leisure.Free)), accent, false);
+                ToolStyle.Button(box, "借入・返済…", 232, 48, 110, 24, () => LeisureAccountView.Open(_d), accent, false);
             }
 
             public void Refresh()
@@ -79,17 +74,15 @@ namespace NightShift.UI.Shift
         LeisureUi.AccountPanel _account;
         readonly List<(int amount, FlatButton b)> _stakes = new List<(int, FlatButton)>();
         int _stake = 500;
-        readonly Text[] _reels = new Text[3];
+        readonly Image[] _reels = new Image[3];
         readonly Image[] _reelBg = new Image[3];
+        Image _payline;
         Text _result, _stats, _caps, _hist;
         FlatButton _spin, _capBtn, _stopBtn;
         static readonly int[] CapSteps = { 0, 3000, 5000, 10000, 20000 };
-        static readonly Color[] SymbolColor =
-        {
-            new Color(0.85f, 0.05f, 0.05f), new Color(0.1f, 0.1f, 0.12f), new Color(0.85f, 0.6f, 0f), new Color(0.75f, 0f, 0.3f), new Color(0.2f, 0.55f, 0.1f)
-        };
         System.Random _blur = new System.Random();
 
+        RectTransform _more;   // 上限設定と履歴（「詳細」で開く）
         protected override float RefreshInterval => 0.08f;
         LeisureAccount A => S.Quests.Leisure;
 
@@ -100,18 +93,29 @@ namespace NightShift.UI.Shift
             _account = new LeisureUi.AccountPanel(ToolStyle.Box(p, 0, 1, y, 90, "遊興口座（給料の財布とは別）"), D, accent, s => W.SetStatus(0, s));
             y += 98;
 
-            // リール
-            var reel = ToolStyle.Box(p, 0, 1, y, 150);
+            // リール（金の縁の筐体に、3つの窓）
+            var reel = ToolStyle.Box(p, 0, 1, y, 166);
+            var cab = UIFactory.Solid(reel, new Color(0.65f, 0.42f, 0.05f), "Cabinet");
+            cab.rectTransform.Place(8, 0, 548, 120);
+            var cabIn = UIFactory.Solid(cab.transform, new Color(0.25f, 0.02f, 0.06f), "Velvet");
+            cabIn.rectTransform.Stretch(4, 4, 4, 4);
             for (int i = 0; i < 3; i++)
             {
-                var bg = UIFactory.Image(reel, RetroTheme.Field, Color.white, "Reel");
-                bg.rectTransform.Place(20 + i * 180, 4, 160, 96);
+                var bg = UIFactory.Image(cabIn.transform, SlotArt.ReelBackground, Color.white, "Reel");
+                bg.rectTransform.Place(14 + i * 176, 6, 160, 100);
                 _reelBg[i] = bg;
-                _reels[i] = ToolStyle.Text(bg.transform, "７", 40, Color.black, TextAnchor.MiddleCenter, true);
-                _reels[i].rectTransform.Stretch();
+                _reels[i] = UIFactory.Image(bg.transform, SlotArt.Symbol(0), Color.white, "Symbol");
+                _reels[i].rectTransform.anchorMin = _reels[i].rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                _reels[i].rectTransform.sizeDelta = new Vector2(84, 84);
+                _reels[i].preserveAspect = true;
             }
-            _result = ToolStyle.Text(reel, "", 0, 106, 560, 30, 18, accent, TextAnchor.MiddleCenter, true);
-            y += 158;
+            // 当たりの線（中央の横線）
+            _payline = UIFactory.Solid(cabIn.transform, new Color(0.9f, 0.1f, 0.1f, 0.55f), "Payline");
+            _payline.rectTransform.anchorMin = new Vector2(0, 0.5f); _payline.rectTransform.anchorMax = new Vector2(1, 0.5f);
+            _payline.rectTransform.sizeDelta = new Vector2(0, 2);
+            _payline.raycastTarget = false;
+            _result = ToolStyle.Text(reel, "", 0, 124, 560, 30, 20, accent, TextAnchor.MiddleCenter, true);
+            y += 174;
 
             // 賭け金と［回す］
             var bet = ToolStyle.Box(p, 0, 1, y, 64, "賭け金を選んで、回す");
@@ -133,30 +137,40 @@ namespace NightShift.UI.Shift
             int row = 0;
             foreach (var (symbol, mul, per) in LeisureAccount.Paytable)
             {
-                string sym = LeisureAccount.Symbols[symbol];
-                var t = ToolStyle.Text(pay, $"{sym} {sym} {sym}", 0, row * 21, 150, 20, 13, SymbolColor[symbol], TextAnchor.MiddleLeft, true);
-                ToolStyle.Text(pay, $"×{mul}　（{per / 10f:0.0}%）", 150, row * 21, 120, 20, 13, ToolStyle.Ink, TextAnchor.MiddleLeft);
+                for (int k = 0; k < 3; k++)
+                {
+                    var ic = UIFactory.Image(pay, SlotArt.Symbol(symbol), Color.white, "Pay");
+                    ic.rectTransform.Place(k * 22, row * 22, 20, 20);
+                }
+                ToolStyle.Text(pay, $"×{mul}　（{per / 10f:0.0}%）", 74, row * 22, 190, 20, 13, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
                 row++;
             }
-            var lim = ToolStyle.Box(p, 0.5f, 1, y, 112, "自分で決める上限");
+            _more = UIFactory.Rect("More", p).Stretch();
+            _more.gameObject.SetActive(false);
+            var lim = ToolStyle.Box(_more, 0.5f, 1, y, 112, "自分で決める上限");
             _capBtn = ToolStyle.Button(lim, "", 0, 0, 250, 24, () => A.NightCap = Next(CapSteps, A.NightCap), accent, false);
             _stopBtn = ToolStyle.Button(lim, "", 0, 28, 250, 24, () => A.StopLoss = Next(CapSteps, A.StopLoss), accent, false);
             _caps = ToolStyle.Text(lim, "", 0, 56, 260, 30, 11, ToolStyle.Muted, TextAnchor.UpperLeft);
             y += 120;
 
             var stats = ToolStyle.Box(p, 0, 1, y, 36);
-            _stats = ToolStyle.Text(stats, "", 0, 0, 560, 18, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _stats = ToolStyle.Text(stats, "", 0, 0, 440, 18, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            var toggle = ToolStyle.Button(stats, "詳細 ▼", 0, 0, 100, 20, null, accent, false);
+            toggle.Rect.AnchorTopRight(0, -1, 100, 20);
+            toggle.OnClick = () => { _more.gameObject.SetActive(!_more.gameObject.activeSelf); toggle.SetText(_more.gameObject.activeSelf ? "詳細 ▲" : "詳細 ▼"); };
             y += 44;
-            _hist = LeisureUi.History(ToolStyle.Box(p, 0, 1, y, 0, "履歴（過去の結果は、次の結果を予測しません）"));
+            _hist = LeisureUi.History(ToolStyle.Box(_more, 0, 1, y, 0, "履歴（過去の結果は、次の結果を予測しません）"));
         }
 
         static int Next(int[] steps, int cur) { int i = Array.IndexOf(steps, cur); return steps[(i + 1) % steps.Length]; }
 
         void ShowReel(int i, int symbol, bool spinning)
         {
-            _reels[i].text = LeisureAccount.Symbols[symbol];
-            _reels[i].color = spinning ? new Color(0.45f, 0.45f, 0.5f) : SymbolColor[symbol];
-            _reelBg[i].color = spinning ? new Color(0.92f, 0.92f, 0.92f) : Color.white;
+            _reels[i].sprite = SlotArt.Symbol(symbol);
+            // 回転中は絵柄が流れてぼやける（上下に揺らし、色を落とす）
+            _reels[i].color = spinning ? new Color(1f, 1f, 1f, 0.45f) : Color.white;
+            _reels[i].rectTransform.anchoredPosition = spinning ? new Vector2(0, _blur.Next(-24, 25)) : Vector2.zero;
+            _reelBg[i].color = spinning ? new Color(0.9f, 0.9f, 0.9f) : Color.white;
         }
 
         protected override void Refresh()
@@ -182,11 +196,15 @@ namespace NightShift.UI.Shift
                     ShowReel(i, stopped ? final.Reels[i] : _blur.Next(LeisureAccount.Symbols.Length), !stopped);
                 }
                 _result.text = "回転中…";
+                _result.color = LeisureUi.Club;
             }
             else if (A.LastSpin != null)
             {
                 for (int i = 0; i < 3; i++) ShowReel(i, A.LastSpin.Reels[i], false);
-                _result.text = A.LastSpin.Multiplier > 0 ? $"{A.LastSpin.Multiplier}倍！　+{LeisureUi.Yen(A.LastPayout)}" : "外れ";
+                bool win = A.LastSpin.Multiplier > 0;
+                _result.text = win ? (A.LastSpin.Multiplier >= 20 ? $"★ JACKPOT ★　{A.LastSpin.Multiplier}倍！　+{LeisureUi.Yen(A.LastPayout)}" : $"{A.LastSpin.Multiplier}倍！　+{LeisureUi.Yen(A.LastPayout)}") : "外れ";
+                _result.color = win ? new Color(0.75f, 0.5f, 0f) : ToolStyle.Muted;
+                if (_payline) _payline.color = win ? new Color(1f, 0.8f, 0.1f, 0.9f) : new Color(0.9f, 0.1f, 0.1f, 0.55f);
             }
             else
             {
@@ -270,9 +288,14 @@ namespace NightShift.UI.Shift
             y += 78;
 
             var stats = ToolStyle.Box(p, 0, 1, y, 36);
-            _stats = ToolStyle.Text(stats, "", 0, 0, 640, 18, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _stats = ToolStyle.Text(stats, "", 0, 0, 540, 18, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            var more = UIFactory.Rect("More", p).Stretch();
+            more.gameObject.SetActive(false);
+            var toggle = ToolStyle.Button(stats, "履歴 ▼", 0, 0, 100, 20, null, accent, false);
+            toggle.Rect.AnchorTopRight(0, -1, 100, 20);
+            toggle.OnClick = () => { more.gameObject.SetActive(!more.gameObject.activeSelf); toggle.SetText(more.gameObject.activeSelf ? "履歴 ▲" : "履歴 ▼"); };
             y += 44;
-            _hist = LeisureUi.History(ToolStyle.Box(p, 0, 1, y, 0, "履歴"));
+            _hist = LeisureUi.History(ToolStyle.Box(more, 0, 1, y, 0, "履歴"));
         }
 
         void Place(int side)

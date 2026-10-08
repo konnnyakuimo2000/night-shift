@@ -71,7 +71,7 @@ namespace NightShift.UI.Screens
             var wm = WindowManager.Create(host);
             var w = wm.Open(new WindowSpec
             {
-                Id = "eval", Title = $"業務評価 - DAY {day.dayNumber} {day.title}", Icon = "doc", Width = 980, Height = 740,
+                Id = "eval", Title = $"業務評価 - DAY {day.dayNumber} {day.title}", Icon = "nexus", Width = 980, Height = 740,
                 Closable = false, Minimizable = false, Maximizable = false, Centered = true, StatusCells = 1
             }, out _);
             w.SetStatus(0, "クリック / Enter で演出をスキップ");
@@ -198,14 +198,14 @@ namespace NightShift.UI.Screens
             var sg = UIFactory.Group(c, "業務記録", 0, 382, 600, 220);
             var sgFade = sg.gameObject.AddComponent<CanvasGroup>();
             sgFade.alpha = 0;
-            int col = 0, row = 0;
+            // 1行に1項目（項目名と、その中身を文章で）
+            int row = 0;
             foreach (var kv in r.Stats)
             {
-                float x = col * 296;
-                UIFactory.Label(sg, kv.Key, x, row * 22, 170, 20, 11);
-                UIFactory.ValueBox(sg, x + 172, row * 22, 112, 20, kv.Value);
+                if (row >= 9) break;
+                UIFactory.Label(sg, kv.Key, 0, row * 22, 128, 20, 12);
+                UIFactory.ValueBox(sg, 130, row * 22, 452, 20, kv.Value);
                 row++;
-                if (row >= 8) { row = 0; col++; }
             }
             anim.Add(t, 0.4f, p => sgFade.alpha = p, AudioFx.Reveal);
             t += 0.4f;

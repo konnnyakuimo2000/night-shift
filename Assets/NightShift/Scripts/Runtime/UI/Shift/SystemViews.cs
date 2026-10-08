@@ -12,6 +12,7 @@ namespace NightShift.UI.Shift
     /// <summary>「社内情報システム」メインメニュー</summary>
     public class MainMenuView : MonoBehaviour
     {
+        RetroButton _endBtn;
         public const string Id = "mainmenu";
         ShiftDesktop _d;
         RetroWindow _w;
@@ -57,7 +58,7 @@ namespace NightShift.UI.Shift
         {
             var w = d.OpenWindow(new WindowSpec
             {
-                Id = Id, Title = $"{d.Game.Database.systemName} - メニュー", Icon = "network", Width = 600, Height = 470,
+                Id = Id, Title = $"{d.Game.Database.systemName} - メニュー", Icon = "nexus", Width = 600, Height = 470,
                 Closable = false, Maximizable = false, Position = new Vector2(16, 12),
                 Menus = MenuBar(d), StatusCells = 3, StatusWidths = new float[] { 130, 60 }
             }, out bool created);
@@ -104,11 +105,14 @@ namespace NightShift.UI.Shift
                 b.Icon.rectTransform.sizeDelta = new Vector2(32, 32);
                 b.Interactable = unlocked;
                 if (unlocked) _w.Accelerators[keys[i]] = actions[i];
+                if (i == 6) _endBtn = b;
                 y += 50;
             }
 
             // 右側: ロゴ・イラスト・お知らせ
-            var title = UIFactory.Label(c, _d.Game.Database.systemName, 300, 6, 285, 40, 26, TextAnchor.MiddleCenter);
+            var emblem = UIFactory.Image(c, NexusLogo.Emblem, Color.white, "Emblem");
+            emblem.rectTransform.Place(308, 9, 36, 36);
+            var title = UIFactory.Label(c, _d.Game.Database.systemName, 340, 6, 245, 40, 26, TextAnchor.MiddleCenter);
             title.color = RetroTheme.Navy;
             title.fontStyle = FontStyle.Bold;
             UIFactory.Solid(c, RetroTheme.Navy, "Line1").rectTransform.Place(304, 4, 278, 2);
@@ -124,10 +128,10 @@ namespace NightShift.UI.Shift
             var net = UIFactory.Image(art.transform, RetroTheme.BigIcon("network"), Color.white, "Net");
             net.rectTransform.Place(214, 90, 48, 48);
 
-            UIFactory.Button(c, "メールを見る(B)", 304, 232, 136, 26, () => MailboxView.Open(_d), "mail");
+            // メールはタスクバーの［メール］から開く（入口を重ねない）
             _w.Accelerators[KeyCode.B] = () => MailboxView.Open(_d);
             bool srvOk = _d.Unlocked(Data.Features.ServerManagement);
-            var lockBtn = UIFactory.Button(c, "サーバー運用管理", 446, 232, 136, 26, () => ServerManagementView.Open(_d), srvOk ? "server" : "lock");
+            var lockBtn = UIFactory.Button(c, "サーバー運用管理", 304, 232, 278, 26, () => ServerManagementView.Open(_d), srvOk ? "server" : "lock");
             lockBtn.Interactable = srvOk;
 
             var ng = UIFactory.Group(c, "お知らせ", 300, 266, 286, 134);
@@ -144,6 +148,8 @@ namespace NightShift.UI.Shift
             var s = _d.S;
             _w.SetStatus(2, s.Time.Now);
             if (Time.frameCount % 15 != 0) return;
+            // 業務終了は、終了時刻を過ぎてから（それまでは押してもエラーになるだけなので出さない）
+            if (_endBtn != null) _endBtn.gameObject.SetActive(s.Phase == ShiftPhase.Grace || s.Phase == ShiftPhase.Complete);
             var sb = new StringBuilder();
             if (!_d.ShiftStarted) sb.AppendLine("業務開始前です。メールで業務連絡を確認し、\n[業務開始] で業務を開始してください。");
             else

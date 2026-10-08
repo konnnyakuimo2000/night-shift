@@ -60,6 +60,9 @@ namespace NightShift.Core
 
         // ---- サウンド ----
         public float volume = 0.6f;
+        public float musicVolume = 0.55f;
+        public float ambienceVolume = 0.4f;
+        public float effectsVolume = 1f;
         public bool clickSound = true;
         public bool notifySound = true;
 
@@ -168,13 +171,21 @@ namespace NightShift.Core
             try
             {
                 var json = PlayerPrefs.GetString(PrefKey, "");
-                if (!string.IsNullOrEmpty(json)) s = JsonUtility.FromJson<GameSettings>(json);
+                if (!string.IsNullOrEmpty(json)) s = FromJson(json);
             }
             catch { }
             if (s == null) s = new GameSettings();
             if (System.Array.IndexOf(UiScales, s.uiScalePercent) < 0) s.uiScalePercent = Mathf.Clamp(s.uiScalePercent, UiScales[0], 100);
             s.EnsureBindings();
             return s;
+        }
+
+        /// <summary>旧設定にない音量項目は既定値を保ち、保存済みの0（ミュート）は上書きしない。</summary>
+        public static GameSettings FromJson(string json)
+        {
+            var settings = new GameSettings();
+            JsonUtility.FromJsonOverwrite(json, settings);
+            return settings;
         }
 
         /// <summary>新しく追加されたアクションに既定のキーを補う</summary>
@@ -275,7 +286,7 @@ namespace NightShift.Core
 
         public void ApplyAudio()
         {
-            UI.AudioFx.Volume = Mathf.Clamp01(volume);
+            UI.AudioFx.Volume = Mathf.Clamp01(volume) * Mathf.Clamp01(effectsVolume);
             UI.AudioFx.ClickEnabled = clickSound;
             UI.AudioFx.NotifyEnabled = notifySound;
         }

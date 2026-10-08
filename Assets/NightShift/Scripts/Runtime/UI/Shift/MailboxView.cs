@@ -17,7 +17,6 @@ namespace NightShift.UI.Shift
         RetroWindow _w;
         TableView _table;
         RectTransform _preview;
-        RetroButton _inboxButton;
         RetroButton _start;
         StartButtonPulse _startPulse;
         Text _checklist;
@@ -54,10 +53,9 @@ namespace NightShift.UI.Shift
 
             // ツールバー
             UIFactory.Button(c, "受信(F5)", 0, 0, 90, 24, Refresh, "mail");
-            foreach (var (label, x) in new[] { ("返信", 94f), ("転送", 168f), ("削除", 242f) })
-                UIFactory.Button(c, label, x, 0, 70, 24, null).Interactable = false;
-            if (_d.Unlocked(Data.Features.Store))
-                UIFactory.Button(c, "社内購買システム", 320, 0, 150, 24, () => StoreView.Open(_d), "folder");
+            // 購買は業務開始前にしか注文できないので、業務開始前だけ出す
+            if (_d.Unlocked(Data.Features.Store) && !_d.ShiftStarted)
+                UIFactory.Button(c, "社内購買システム", 96, 0, 150, 24, () => StoreView.Open(_d), "nexus");
             if (_onStart != null)
             {
                 _start = UIFactory.Button(c, "業務開始", 0, 0, 240, 30, StartShift, "clock");
@@ -80,22 +78,9 @@ namespace NightShift.UI.Shift
                 foreach (var r in _d.RequiredReading()) if (r.Read && r.Id != ShiftDesktop.BriefingReadId) _docsRead++;
             }
 
-            // フォルダー
-            var folders = UIFactory.Image(c, RetroTheme.Field, Color.white, "Folders");
-            folders.rectTransform.Place(0, 32, 110, 574);
-            _inboxButton = UIFactory.FlatButton(folders.transform, "受信トレイ", Refresh, "mail");
-            _inboxButton.Label.alignment = TextAnchor.MiddleLeft;
-            _inboxButton.Rect.Place(2, 2, 106, 22);
-            _inboxButton.SetLatched(true);
-            var sent = UIFactory.FlatButton(folders.transform, "送信済み", null, "folder");
-            sent.Label.alignment = TextAnchor.MiddleLeft; sent.Rect.Place(2, 26, 106, 22); sent.Interactable = false;
-            var trash = UIFactory.FlatButton(folders.transform, "ごみ箱", null, "folder");
-            trash.Label.alignment = TextAnchor.MiddleLeft; trash.Rect.Place(2, 50, 106, 22); trash.Interactable = false;
-
-            // 一覧
-            // 一覧は左の細い列、本文は右側に縦いっぱい
-            _table = TableView.Create(c, 114, 32, 330, 574,
-                new TableColumn("", 18), new TableColumn("件名", 188), new TableColumn("受信日時", 90));
+            // 一覧は左の列、本文は右側に縦いっぱい（使えないフォルダーは置かない）
+            _table = TableView.Create(c, 0, 32, 444, 574,
+                new TableColumn("", 18), new TableColumn("件名", 302), new TableColumn("受信日時", 90));
             _table.SelectionChanged += o => Show(o as MailMessage);
 
             // プレビュー
@@ -182,7 +167,7 @@ namespace NightShift.UI.Shift
             list.InsertRange(0, pinned);
             _table.SetRows(list, m => new[] { m.Read ? "" : "●", (m.Pinned ? "★ " : "") + ListSubject(m), ShortDate(m.DateLabel) });
             int unread = _d.S.Mail.UnreadCount;
-            _inboxButton.SetText(unread > 0 ? $"受信トレイ ({unread})" : "受信トレイ");
+
             _w.SetStatus(1, $"{list.Count} 通 / 未読 {unread} 通");
             _dirty = false;
         }

@@ -51,17 +51,16 @@ namespace NightShift.UI.Screens
                 l.rectTransform.StretchH(i * 20, 1);
             }
 
-            var title = UIFactory.Label(root.transform, "NIGHT//SHIFT", 72, TextAnchor.MiddleCenter, new Color(0.85f, 0.9f, 1f), true);
-            title.rectTransform.StretchH(200, 100);
+            // メインタイトルだけを大きく（サブタイトルは置かない）
+            var title = UIFactory.Label(root.transform, "NIGHT//SHIFT", 128, TextAnchor.MiddleCenter, new Color(0.85f, 0.9f, 1f), true);
+            title.rectTransform.StretchH(150, 190);
             title.fontStyle = FontStyle.Bold;
-            var cursor = UIFactory.Label(root.transform, "_", 72, TextAnchor.MiddleCenter, new Color(0.85f, 0.9f, 1f), true);
-            cursor.rectTransform.StretchH(200, 100, 560, 0);
+            title.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var cursor = UIFactory.Label(root.transform, "_", 128, TextAnchor.MiddleCenter, new Color(0.85f, 0.9f, 1f), true);
+            cursor.rectTransform.StretchH(150, 190, 930, 0);
+            cursor.horizontalOverflow = HorizontalWrapMode.Overflow;
             cursor.gameObject.AddComponent<Blink>().Target = cursor;
-
-            var sub = UIFactory.Label(root.transform, "Corporate IT Operations / Night Duty", 16, TextAnchor.MiddleCenter, new Color(0.55f, 0.65f, 0.8f), true);
-            sub.rectTransform.StretchH(300, 24);
-            var corp = UIFactory.Label(root.transform, "NEXUS CORPORATION  情報システム部  夜間IT運用担当", 13, TextAnchor.MiddleCenter, new Color(0.45f, 0.5f, 0.6f));
-            corp.rectTransform.StretchH(330, 20);
+            NexusLogo.Create(root.transform, 28, 24, 48, new Color(0.7f, 0.78f, 0.92f), true, 0.9f);
 
             float by = -90;
             RetroButton Centered(string label, Action a, string icon, float h)
@@ -143,6 +142,7 @@ namespace NightShift.UI.Screens
             var root = UIFactory.Solid(parent, new Color(0.08f, 0.08f, 0.09f), "ClockIn");
             root.rectTransform.Stretch();
 
+            NexusLogo.CreateCentered(root.transform, 26, 52, new Color(0.75f, 0.75f, 0.75f));
             var hint = UIFactory.Label(root.transform, $"{company}  本社ビル 通用口  —  夜間入館", 14, TextAnchor.MiddleCenter, new Color(0.6f, 0.6f, 0.6f));
             hint.rectTransform.StretchH(90, 24);
 
@@ -274,7 +274,7 @@ namespace NightShift.UI.Screens
             banner.rectTransform.StretchH(0, 44);
             var bt = UIFactory.Label(banner.transform, $"{db.companyName}\n{db.systemName} {db.systemVersion}", 12, TextAnchor.MiddleLeft, Color.white);
             bt.rectTransform.Stretch(52, 0, 4, 0);
-            var bic = UIFactory.Image(banner.transform, RetroTheme.BigIcon("network"), Color.white, "Logo");
+            var bic = UIFactory.Image(banner.transform, NexusLogo.Emblem, Color.white, "Logo");
             bic.rectTransform.Place(10, 6, 32, 32);
 
             UIFactory.Label(c, "ユーザーID(U):", 20, 60, 100, 20);
