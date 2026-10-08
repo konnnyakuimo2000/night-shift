@@ -405,7 +405,12 @@ namespace NightShift.Tests
                 yield return Mail(d, "SQ03-OFFER", "Q10_SQ03_最初のメール（返信の選択）");
                 var offer = d.S.Mail.Find("SQ03-OFFER");
                 d.S.Mail.SendReply(offer, 0, offer.Replies[0]);
-                Advance(d.S, 7);
+                Advance(d.S, 2.5f);
+                var seen = d.S.Mail.Find("SQ03-H1-SEEN");
+                if (seen != null) d.S.Quests.OnMailAction(seen, "VERIFY");
+                Advance(d.S, 3.5f);
+                yield return Mail(d, "SQ03-VERIFY-REPLY", "Q10b_SQ03_総務からの照会の返事");
+                Advance(d.S, 1);
                 yield return Mail(d, "SQ03-H2-REMOTE", "Q11_SQ03_リモート依頼");
                 var r3 = q.Route<NightShift.Systems.SideQuests.Sq03Route>();
                 HorrorRemoteView.Open(d, r3);
@@ -431,6 +436,9 @@ namespace NightShift.Tests
                 ConnectionMonitorView.Open(d, d.S.Requests.Pending.FirstOrDefault(e => e.QuestTag == "SQ03-PERSIST"));
                 yield return Shot("Q21_SQ03_永続接続の要求", 1f);
                 yield return Mail(d, "SQ03-H3-TRUE", "Q22_SQ03_担当変更");
+                var answer = d.S.Mail.Find("SQ03-H3-ANSWER");
+                if (answer != null) d.S.Mail.SendReply(answer, 0, "ここにはいない");
+                yield return Mail(d, "SQ03-RETURNED", "Q23b_SQ03_配送エラー（GOOD）");
                 d.S.Quests.RequestUi("CONFIRM_TRUE", r3);
                 yield return Shot("Q23_SQ03_担当変更の確認", 0.8f);
 

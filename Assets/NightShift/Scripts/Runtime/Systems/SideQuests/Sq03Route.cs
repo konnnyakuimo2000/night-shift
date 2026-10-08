@@ -123,8 +123,19 @@ namespace NightShift.Systems.SideQuests
             string who = ga != null ? $"総務部 {ga.fullName}" : "総務部";
             S.Logs.Add(Now, "NIGHT-OPS", "総務部", S.OperatorName, "MAIL", "SENT", $"在籍照会: {Name}");
             float at = S.Day.endMinute - Now < 3 ? Now + 0.5f : Now + 3;
+            // 照会に答える総務の社員は、問い合わせと同じ口調で書く（中身は同じ）
+            string[] byPersona =
+            {
+                $"照会の件、確認いたしました。\n{Name}という社員は、在籍しておりません。過去の名簿にも見当たりません。\n登録はなさらず、対応はお止めください。",
+                "確認しました。その名前の社員はいません。\n登録せず、対応を止めてください。",
+                "調べたけど、そんな人いないよ？\n登録しないで、対応もやめといて。",
+                "あの…何度も見たんですが、その名前の方はいません…\n登録しないで、対応も止めてください…なんだか、気味が悪いです…",
+                "該当者なし。\n登録不要。対応を止めること。",
+                "そんな社員はいません。古い名簿まで全部見ました。\n登録はしないこと。それと、その件にはもう返事をしないほうがいい。",
+                "確認しました〜！その名前の人はいないみたいです。\n登録しないで、対応も止めちゃってくださいね〜。…ちょっと怖いですね。"
+            };
             Mail("VERIFY-REPLY", who, "soumu@" + MailManager.CompanyDomain, "Re: 在籍照会（" + Name + "）",
-                "その名前の社員はいません。登録せず、対応を止めてください。", time: at);
+                byPersona[(int)Voice.Of(ga)], time: at);
         }
 
         // ================= H2 =================
@@ -207,8 +218,13 @@ namespace NightShift.Systems.SideQuests
 
         void TrueMail()
         {
-            Mail("H3-TRUE", "総務部", "soumu-system@nexus-corp.example", "担当変更",
-                "この件の担当を変更できます。\n次の夜間担当（架空の宛先: night02@nexus-corp.example）へ、元のメールを転送します。",
+            Mail("H3-TRUE", "総務部 業務システム", "soumu-system@nexus-corp.example", "【自動通知】担当変更の手続き",
+                "■ 通知種別：担当変更\n" +
+                $"■ 対象案件：在籍確認（{Name}）\n" +
+                "■ 処理内容：元のメールを次の夜間担当へ転送\n" +
+                "■ 転送先　：night02@nexus-corp.example（架空の宛先）\n\n" +
+                "下のボタンから手続きを確定できます。\n" +
+                "――このメールはシステムから自動で送信されています。返信はできません。",
                 time: Now, pinned: true, actionKey: "TRUE", actionLabel: "次の担当者へ転送する");
         }
 
@@ -240,7 +256,11 @@ namespace NightShift.Systems.SideQuests
             {
                 _deadline = -1;
                 CancelPersistent();
-                Mail("RETURNED", "MAILER-DAEMON", "mailer-daemon@nexus-corp.example", "配送エラー", "宛先が存在しません。", time: Now);
+                Mail("RETURNED", "MAILER-DAEMON", "mailer-daemon@nexus-corp.example", "Undelivered Mail Returned to Sender",
+                    "This is the mail system at host mail.nexus-corp.example.\n\n" +
+                    "I'm sorry to have to inform you that your message could not be delivered.\n\n" +
+                    $"<{Address}>: User unknown\n\n" +
+                    "――――――――――――――――\n宛先が存在しません。", time: Now);
                 Q.Resolve(this, QuestResult.Completed, "SE-HG01");
             }
             else

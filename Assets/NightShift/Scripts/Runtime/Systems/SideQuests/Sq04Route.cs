@@ -27,6 +27,10 @@ namespace NightShift.Systems.SideQuests
             }
         }
         string From => $"{Sender.department} {Sender.fullName}";
+        string Family => Sender.fullName.Split(' ')[0];
+
+        /// <summary>同僚の口調（問い合わせと同じ Voice）で文面を選ぶ。順番: 丁寧・標準・くだけた・不安げ・ぶっきらぼう・ベテラン・明るい</summary>
+        string P(params string[] byPersona) => byPersona[(int)Voice.Of(Sender)];
         string Address => Sender.employeeId.Replace("-", "").ToLowerInvariant() + "@" + MailManager.CompanyDomain;
         LeisureAccount A => Q.Leisure;
         LeisureState L => Career.leisure;
@@ -39,9 +43,14 @@ namespace NightShift.Systems.SideQuests
             State.stage = "INVITE";
             // 社員が、回ってきたチェーンメールを転送してくる
             Mail("INVITE", From, Address, "Fw: " + ChainMail.Subject(ChainMail.Style.Club, "夜だけの会員制クラブ"),
-                ChainMail.Forward(
-                    "お疲れさまです。\n給料だけでは、機材を揃えるのも大変ですよね。\n" +
-                    "昨夜は一回で日当分になりました。面白いのが回ってきたので転送します。興味があれば、案内を送ります。",
+                ChainMail.Forward(P(
+                    $"夜分に失礼いたします。{Sender.department}の{Sender.fullName}です。\n機材のご購入で、何かとご負担が多いのではと思いご連絡いたしました。\n先日回ってきたものですが、私は一晩で日当ほどになりました。よろしければご案内をお送りいたします。",
+                    $"お疲れさまです。{Sender.fullName}です。\n給料だけで機材を揃えるのは大変ですよね。\n回ってきたメールを転送します。昨夜は一回で日当分になりました。興味があれば案内を送ります。",
+                    $"おつかれー！{Family}です\n機材高くない？給料じゃ無理っしょ笑\nこれ回ってきたんだけど、昨日一発で日当分いったｗ　気になったら返信して〜",
+                    $"あの、夜分にすみません…{Sender.fullName}です。\n余計なお世話だったらごめんなさい。機材、自腹って聞いて…\n回ってきたメールなんですけど、私これで昨夜、日当分くらい勝てちゃって…。もし興味があったら、案内送ります…",
+                    $"{Family}。\n回ってきた。昨夜これで日当分。\n興味があれば返信を。",
+                    $"どうも、{Sender.fullName}です。\n若い頃はこういうのに手を出すなと言われたもんですが…機材代、馬鹿にならんでしょう。\n昨夜は一回で日当分になりましてね。転送しておきます。気が向いたら返事をください。",
+                    $"お疲れさまです〜！{Sender.fullName}です♪\nいいもの見つけちゃいました！昨夜これで日当分当たったんですよ〜！\n転送しますね。興味あったら返信くださいっ☆"),
                     ChainMail.Body(ChainMail.Style.Club, "夜だけの会員制クラブ NIGHT CLUB",
                         "残業中のアナタ！　退屈していませんか？？\n" +
                         "赤か黒、選ぶだけ！！　当たれば賭け金が<b>2倍</b>になって戻ってきます☆\n\n" +
@@ -59,8 +68,13 @@ namespace NightShift.Systems.SideQuests
                 State.Mark("REPLIED");
                 Career.SetFlag(InvitedFlag);
                 Mail("GUIDE", From, Address, "Re: Fw: " + ChainMail.Subject(ChainMail.Style.Club, "夜だけの会員制クラブ"),
-                    "案内です。社内購買に「NIGHT CLUB」というアプリが出ているはずです（¥1,500）。\n" +
-                    "買ったら、遊興口座にお金を入れてから賭けます。給料の財布とは別です。\n\n" +
+                    P("ご返信ありがとうございます。社内購買に「NIGHT CLUB」（¥1,500）が掲載されているはずです。\n購入後、遊興口座へ入金してからご利用ください。給与の財布とは別の口座でございます。",
+                      "案内です。社内購買に「NIGHT CLUB」（¥1,500）が出ているはずです。\n買ったら遊興口座にお金を入れてから賭けます。給料の財布とは別です。",
+                      "おけ！購買に「NIGHT CLUB」ってのあるはず（¥1,500）\n買ったら遊興口座ってとこに入金してから賭けるやつ。給料とは別財布ね",
+                      "返信ありがとうございます…！購買に「NIGHT CLUB」（¥1,500）があると思います。\n買ったあと、遊興口座にお金を入れてから…です。給料のお財布とは別なので、気をつけてください…",
+                      "購買に「NIGHT CLUB」（¥1,500）。\n遊興口座に入金してから賭ける。給料とは別。",
+                      "社内購買に「NIGHT CLUB」というのがあります（¥1,500）。\n遊興口座に入れてから賭ける仕組みです。給料とは分けておきなさい。それが長続きのコツです。",
+                      "やった〜！購買に「NIGHT CLUB」（¥1,500）があるはずです♪\n遊興口座にお金を入れてから遊ぶんですよ〜。お給料とは別なので安心です☆") + "\n\n" +
                     ChainMail.Body(ChainMail.Style.Club, "NIGHT CLUB ご利用の手引き",
                         "→ 1回 ゲーム内2分で結果発表！！\n" +
                         "→ 1晩 6回まで遊べます♪\n" +
@@ -94,12 +108,28 @@ namespace NightShift.Systems.SideQuests
             if (win && !State.Has("FIRST_WIN"))
             {
                 State.Mark("FIRST_WIN");
-                ProgressMail("WIN1", "当たりましたね", "見てましたよ、当たりましたね。\nこの調子です。……まあ、次も当たるとは限りませんけど。");
+                ProgressMail("WIN1",
+                    P("おめでとうございます", "当たりましたね", "当たったじゃんｗ", "当たったんですね…！", "当たり", "まずは一勝", "おめでとうございます〜！！"),
+                    P("当たられたとのこと、おめでとうございます。\nただ、次も当たるとは限りませんので、どうかご無理なさいませんよう。",
+                      "見てましたよ、当たりましたね。\nこの調子です。……まあ、次も当たるとは限りませんけど。",
+                      "え、当たってんじゃん！やるね〜\nまぁ次はわかんないけどｗ",
+                      "当たったって見て、なんだかほっとしました…\nでも、次も当たるとは限らないので…ほどほどに、ですよ…",
+                      "当たったな。\n次は分からん。",
+                      "一勝おめでとう。\n勝った日ほど、やめ時を決めておくもんです。",
+                      "当たったんですね〜！すごいすごい♪\n次も当たるといいですね！……って、そう簡単じゃないですけど☆"));
             }
             else if (!win && !State.Has("FIRST_LOSS"))
             {
                 State.Mark("FIRST_LOSS");
-                ProgressMail("LOSS1", "最初はそんなものです", "外れましたか。最初はそんなものです。\n取り返そうとして続けるのが、一番よくないらしいですよ。");
+                ProgressMail("LOSS1",
+                    P("残念でしたね", "最初はそんなものです", "どんまい", "大丈夫ですか…？", "外れ", "負けも勉強", "ドンマイです〜！"),
+                    P("今回は残念でございました。\n取り返そうとなさるのが一番よくないと聞きます。どうかお気をつけて。",
+                      "外れましたか。最初はそんなものです。\n取り返そうとして続けるのが、一番よくないらしいですよ。",
+                      "外れたかー、どんまい！\n取り返そうとするとヤバいらしいから気をつけてｗ",
+                      "外れちゃったんですね…私が誘ったせいで、すみません…\n取り返そうとすると、もっと減るって聞くので…無理しないでください…",
+                      "外れたか。\n追うな。",
+                      "負けましたか。誰でも通る道です。\n負けを取り返そうとした者から消えていく。覚えておきなさい。",
+                      "外れちゃいましたか〜、ドンマイです！\n取り返そうとしないのがコツらしいですよ♪"));
                 LoanOffer();
             }
             if (L.gamblePlays >= LeisureAccount.VipAfterPlays && !State.Has("VIP_MAIL"))
@@ -107,10 +137,10 @@ namespace NightShift.Systems.SideQuests
                 State.Mark("VIP_MAIL");
                 Mail("VIP", "NIGHT CLUB 会員事務局", "members@nightclub.example", ChainMail.Subject(ChainMail.Style.Club, "おめでとうございます！VIP席のご案内"),
                     ChainMail.Body(ChainMail.Style.Club, "選ばれたアナタだけのVIP席",
-                        "いつもご利用ありがとうございます！！\n" +
-                        "5回以上遊んでくださった会員様だけに、特別なお席をご用意しました☆\n\n" +
-                        "VIP席では、1回 <b>¥10,000</b> まで賭けられます。\n" +
-                        "※ 当たる確率は通常の席と同じです。"),
+                        "アナタ様、いつも格別のご愛顧を賜り、誠にありがとうございます。\n" +
+                        "5回以上お遊びくださった会員様にだけ、特別なお席をご用意いたしました。\n\n" +
+                        "VIP席では、1回 <b>¥10,000</b> までお賭けいただけます。\n" +
+                        "※ 当たる確率は通常のお席と同じでございます。"),
                     time: Now + 1, actionKey: "VIP", actionLabel: "VIP席を開く");
             }
             if (Qualified && !State.Has("KING_MAIL"))
@@ -118,9 +148,10 @@ namespace NightShift.Systems.SideQuests
                 State.Mark("KING_MAIL");
                 Mail("KING", "NIGHT CLUB 会員事務局", "members@nightclub.example", ChainMail.Subject(ChainMail.Style.Club, "次の席を用意しました"),
                     ChainMail.Body(ChainMail.Style.Club, "ギャンブル王への招待状",
-                        "あなたのために、次の席を用意しました。\n" +
-                        "夜勤を辞めるなら、朝の決済のあとでお知らせください。\n\n" +
-                        "※ これまでの成績は、今後の勝ちを保証するものではありません。"), time: Now + 1);
+                        "アナタ様のために、次のお席をご用意いたしました。\n" +
+                        "夜勤をお辞めになるのでしたら、朝のご精算のあとにお知らせくださいませ。\n" +
+                        "支配人一同、お待ち申し上げております。\n\n" +
+                        "※ これまでの成績は、今後の勝ちを保証するものではございません。"), time: Now + 1);
             }
         }
 
@@ -131,8 +162,11 @@ namespace NightShift.Systems.SideQuests
             L.loanOffered = true;
             Mail("LOAN", "ナイトファイナンス", "info@night-finance.example", ChainMail.Subject(ChainMail.Style.Loan, "即日OK！追加資金のご案内"),
                 ChainMail.Body(ChainMail.Style.Loan, "審査なし！　即日ご融資！！",
-                    "遊興口座の資金が心細いときに♪\n" +
-                    "¥5,000／¥10,000／¥20,000 からお選びいただけます（利息なし・返済は3日後の朝）。\n\n" +
+                    "お客様各位\n\n" +
+                    "「あと少しで取り返せるのに…」そんなお客様の夜を、ナイトファイナンスが応援します！！\n" +
+                    "★ ¥5,000／¥10,000／¥20,000 から選べる！\n" +
+                    "★ 利息なし！　返済は3日後の朝でOK！\n\n" +
+                    "<size=11>【ご注意】</size>\n" +
                     "<b>返済日に口座と財布から返せない場合は「破産」となり、勤務は終了します。</b>\n" +
                     "購入した機材は返済に充てられません。"),
                 time: Now + 2, actionKey: "LOAN", actionLabel: "借入を申し込む");
