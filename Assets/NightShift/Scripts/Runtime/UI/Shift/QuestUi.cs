@@ -383,7 +383,7 @@ namespace NightShift.UI.Shift
         {
             var e = ScriptableObject.CreateInstance<EmployeeData>();
             e.hideFlags = HideFlags.DontSave;
-            e.employeeId = "E-0000"; e.fullName = Sq03Route.Name; e.age = 27; e.department = "総務部";
+            e.employeeId = "E-0000"; e.fullName = Sq03Route.Name; e.kana = "アマミヤ リカ"; e.age = 27; e.department = "総務部";
             return e;
         }
 

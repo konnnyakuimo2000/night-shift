@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using NightShift.Core;
 using NightShift.Data;
 using NightShift.Systems;
@@ -312,6 +313,226 @@ namespace NightShift.Tests
                 CareerRecord.SaveDisabled = false;
             }
         }
+        /// <summary>サブクエスト（SQ01〜SQ06）のメール・接続要求・怪異の演出・専用ツール・ストア・二択・エンディングを撮る。出力: Logs/Screenshots/Q*.png</summary>
+        [UnityTest, Category("Screenshots"), Explicit("画面の確認用"), Timeout(900000)]
+        public IEnumerator CaptureSideQuests()
+        {
+            _original = CareerRecord.Current;
+            var originalWallet = NightShift.Systems.SideQuests.SideQuestManager.WalletProvider;
+            CareerRecord.SaveDisabled = true;
+            try
+            {
+                yield return Setup(false);
+                foreach (var f in Directory.GetFiles(_dir, "Q*.png")) File.Delete(f);
+                var db = _gm.Database;
+                var wallet = new OperatorWallet();
+                wallet.DebugAddMoney(80000);
+                NightShift.Systems.SideQuests.SideQuestManager.WalletProvider = () => wallet;
+                CareerRecord Fresh()
+                {
+                    var c = new CareerRecord { seed = 7, trust = 70, vaccineDefinitionDay = 20 };
+                    c.AddItem(Items.Monitor1);
+                    CareerRecord.SetCurrentForTests(c);
+                    return c;
+                }
+                void Advance(ShiftSession s, float minutes)
+                {
+                    float end = s.Time.CurrentMinute + minutes;
+                    for (float t = s.Time.CurrentMinute; t <= end; t += 0.5f) { s.Time.Paused = false; s.Time.JumpTo(t); s.Quests.Tick(t, 1f); }
+                }
+                IEnumerator Mail(ShiftDesktop dd, string id, string name)
+                {
+                    var m = dd.S.Mail.Find(id);
+                    if (m == null) { Debug.LogWarning("メールがありません: " + id); yield break; }
+                    MailboxView.Open(dd, null, m);
+                    yield return Shot(name, 1f);
+                }
+
+                // ================= メール =================
+                Fresh();
+                var d = NewDesktop(20, null, 10f);
+                var q = d.S.Quests;
+                q.DebugOffer("SQ01");
+                yield return Mail(d, "SQ01-" + q.Route<NightShift.Systems.SideQuests.Sq01Route>().CurrentMailId, "Q01_メール_SQ01依頼");
+
+                Fresh();
+                d = NewDesktop(20, null, 10f); q = d.S.Quests;
+                q.DebugOffer("SQ02");
+                yield return Mail(d, "SQ02-INVITE", "Q02_メール_SQ02相談");
+
+                Fresh();
+                d = NewDesktop(20, null, 10f); q = d.S.Quests;
+                q.DebugOffer("SQ06");
+                yield return Mail(d, "SQ06-INVITE", "Q03_メール_SQ06予告");
+
+                Fresh();
+                d = NewDesktop(20, null, 10f); q = d.S.Quests;
+                q.DebugOffer("SQ04");
+                yield return Mail(d, "SQ04-INVITE", "Q04_メール_SQ04招待");
+
+                Fresh();
+                d = NewDesktop(20, null, 10f); q = d.S.Quests;
+                q.DebugOffer("SQ05");
+                yield return Mail(d, "SQ05-INVITE", "Q05_メール_SQ05案内");
+
+                // ================= SQ03 在籍確認 =================
+                var career = Fresh();
+                d = NewDesktop(20, null, 10f); q = d.S.Quests;
+                q.DebugOffer("SQ03");
+                yield return Mail(d, "SQ03-OFFER", "Q10_SQ03_最初のメール（返信の選択）");
+                var offer = d.S.Mail.Find("SQ03-OFFER");
+                d.S.Mail.SendReply(offer, 0, offer.Replies[0]);
+                Advance(d.S, 7);
+                yield return Mail(d, "SQ03-H2-REMOTE", "Q11_SQ03_リモート依頼");
+                var r3 = q.Route<NightShift.Systems.SideQuests.Sq03Route>();
+                HorrorRemoteView.Open(d, r3);
+                yield return Shot("Q12_SQ03_リモート画面（社員証）", 1.2f);
+                foreach (var b in d.GetComponentsInChildren<RetroButton>()) if (b.Label.text == "閉じる") { b.Button.onClick.Invoke(); break; }
+                yield return Shot("Q13_SQ03_応答なし（強制終了）", 0.6f);
+                foreach (var b in d.GetComponentsInChildren<RetroButton>()) if (b.Label.text == "強制終了") { b.Button.onClick.Invoke(); break; }
+                yield return Shot("Q14_SQ03_接近（FX-H02）", 0.5f);
+                yield return Shot("Q15_SQ03_強制終了の後（元の送信時刻）", 2.5f);
+                var remote = d.Windows.Find(HorrorRemoteView.Id);
+                if (remote != null) remote.Close();
+                d.S.Quests.RequestUi("FX", "DESK");
+                yield return Shot("Q16_SQ03_切断の後の映像（FX-H03）", 1.6f);
+                // 全面の演出（時計が止まる）が終わってから、時刻を進める
+                for (float until = Time.realtimeSinceStartup + 2.5f; Time.realtimeSinceStartup < until;) yield return null;
+                d.S.Time.Paused = false;
+                Advance(d.S, 25);
+                yield return Shot("Q17_SQ03_対応記録", 1f);
+                yield return Mail(d, "SQ03-H3-A", "Q18_SQ03_手がかりA（固定表示）");
+                yield return Mail(d, "SQ03-H3-ANSWER", "Q19_SQ03_解読の返信欄");
+                var atm = d.S.Mail.Inbox.FirstOrDefault(m => m.MailId.StartsWith("SQ03-ATM"));
+                if (atm != null) yield return Mail(d, atm.MailId, "Q20_SQ03_文字化けしたメール");
+                ConnectionMonitorView.Open(d, d.S.Requests.Pending.FirstOrDefault(e => e.QuestTag == "SQ03-PERSIST"));
+                yield return Shot("Q21_SQ03_永続接続の要求", 1f);
+                yield return Mail(d, "SQ03-H3-TRUE", "Q22_SQ03_担当変更");
+                d.S.Quests.RequestUi("CONFIRM_TRUE", r3);
+                yield return Shot("Q23_SQ03_担当変更の確認", 0.8f);
+
+                // 演出（赤い画面・走査線のずれ・残る窓）
+                Fresh();
+                d = NewDesktop(20, null, 30f);
+                ConnectionMonitorView.Open(d, null);
+                d.S.Quests.RequestUi("FX", "RED");
+                yield return Shot("Q24_SQ03_赤い画面（FX-H06）", 2.0f);
+                Fresh();
+                d = NewDesktop(20, null, 30f);
+                ConnectionMonitorView.Open(d, null);
+                d.S.Quests.RequestUi("FX", "SCAN");
+                d.S.Quests.RequestUi("FX", "FRAME");
+                yield return Shot("Q25_SQ03_走査線と残る窓（FX-H07・H09）", 0.8f);
+
+                // 機器保護札（ワークステーション）
+                career = Fresh();
+                career.AddItem(Items.Charm, 2);
+                d = NewDesktop(20, null, 5f);
+                d.RebuildMonitors();
+                d.ShowMonitor(1);
+                yield return Shot("Q26_SQ03_機器保護札（サブモニター）", 1f);
+
+                // ================= SQ01 / SQ02 / SQ06 の対象要求・二択 =================
+                Fresh();
+                d = NewDesktop(20, null, 10f); q = d.S.Quests;
+                q.DebugOffer("SQ06");
+                var inv = d.S.Mail.Find("SQ06-INVITE");
+                var target = q.SpawnRequest(new NightShift.Systems.SideQuests.SideQuestManager.RequestSpec
+                {
+                    Tag = "SQ06-SHOT", MailId = "SQ06-INVITE", Employee = d.S.Employees.All.First(e => e.IsActive && e.onShift),
+                    SourceIp = NightShift.Systems.SideQuests.Sq06Route.SourceIp, NodeId = "ADMIN-SRV01", AccessType = "リモート管理",
+                    Malicious = true, Note = "全社停止を含む処理 / 許可後3分 / 完了後は取り消せません",
+                    Confirm = "全社サービス停止を含む処理を許可します。"
+                });
+                ConnectionMonitorView.Open(d, target);
+                yield return Shot("Q30_SQ06_対象の接続要求（依頼メールを確認）", 1f);
+                q.RequestUi("CHOICE", new NightShift.Systems.SideQuests.MorningChoice
+                {
+                    QuestId = "SQ06", Key = "JOIN", Title = "NULL SIGNAL / 最終回答", Accept = "集団へ加わる", Decline = "加入せず離脱する",
+                    Text = "全社停止は完了しました。被害とあなたの許可記録は残ります。\n加入・離脱のどちらを選んでも現在の周回を終了します。"
+                });
+                yield return Shot("Q31_SQ06_加入か離脱かの二択", 1.5f);
+
+                // ================= ツール =================
+                career = Fresh();
+                foreach (var id in new[] { Items.GambleTerminal, Items.FxTerminal, Items.SignalDesk }) career.AddItem(id);
+                d = NewDesktop(20, null, 60f); q = d.S.Quests;
+                q.Leisure.Deposit(20000);
+                q.Leisure.PlaceBet(0, 1000);
+                d.RebuildMonitors();
+                d.ShowMonitor(1);
+                Tools.Launch(d.Stations[0], Items.GambleTerminal);
+                yield return Shot("Q40_ツール_NIGHT CLUB", 1.2f);
+
+                career = Fresh();
+                foreach (var id in new[] { Items.GambleTerminal, Items.FxTerminal }) career.AddItem(id);
+                d = NewDesktop(20, null, 90f); q = d.S.Quests;
+                q.Leisure.Deposit(20000);
+                q.Leisure.PlaceOrder(1, 3000, 5);
+                for (int i = 0; i < 30; i++) d.S.Tick(0.5f);
+                d.RebuildMonitors();
+                d.ShowMonitor(1);
+                Tools.Launch(d.Stations[0], Items.FxTerminal);
+                yield return Shot("Q41_ツール_MIDNIGHT FX", 1.2f);
+
+                d.ShowMonitor(0);
+                LeisureAccountView.Open(d);
+                yield return Shot("Q42_ツール_遊興口座（借入）", 1f);
+
+                career = Fresh();
+                career.AddItem(Items.SignalDesk);
+                d = NewDesktop(20, null, 10f); q = d.S.Quests;
+                q.DebugOffer("SQ06");
+                d.RebuildMonitors();
+                d.ShowMonitor(1);
+                Tools.Launch(d.Stations[0], Items.SignalDesk);
+                yield return Shot("Q43_ツール_SIGNAL DESK", 1.2f);
+
+                // ストア（業務開始前）: 招待・案内のあとにだけ並ぶ商品
+                career = Fresh();
+                foreach (var flag in new[] { "SQ04_INVITED", "SQ05_INVITED", "SQ06_INVITED" }) career.SetFlag(flag);
+                var st3 = career.Quest("SQ03"); st3.Mark("FX_DAY"); st3.nextTaskDay = 19;
+                Clear();
+                var ss = new ShiftSession(db, db.GetDay(20), 7, "night01");
+                var sd = ShiftDesktop.Build(_gm.ScreenLayer, _gm, ss);
+                ss.Ui = sd;
+                StoreView.Open(sd);
+                foreach (var b in sd.GetComponentsInChildren<FlatButton>()) if (b.Label.text == "ツール") { b.OnClick?.Invoke(); break; }
+                yield return Shot("Q44_ストア_サブクエストの商品", 1f);
+
+                // ================= エンディング =================
+                Fresh();
+                d = NewDesktop(20, null, 10f);
+                d.S.Quests.SendMail("SQ01", "EPILOGUE-SHOT", "（後日談）", null, "【共犯の席】", NightShift.Systems.SideQuests.SubEndings.Get("SE-E01").Text);
+                yield return Mail(d, "SQ01-EPILOGUE-SHOT", "Q50_後日談のメール");
+
+                Clear();
+                var choice = new NightShift.Systems.SideQuests.MorningChoice
+                {
+                    QuestId = "SQ04", Key = "KING", Title = "VIP招待", Accept = "夜勤を辞める", Decline = "夜勤を続ける",
+                    Text = "賭けた夜: 4 夜 / ギャンブル純利益: ¥23,500 / 借入残: なし\n\n次の席が用意されています。夜勤を辞めますか？\n（辞めると、この周回はここで終わります）"
+                };
+                MorningChoiceScreen.Build(_gm.ScreenLayer, choice, () => { }, () => { });
+                yield return Shot("Q51_朝の進路選択", 0.8f);
+
+                int n = 52;
+                foreach (var e in NightShift.Systems.SideQuests.SubEndings.All)
+                {
+                    if (!e.Terminal) continue;
+                    Clear();
+                    CareerRecord.Current.SeeSubEnding(e.Id);
+                    SubEndingScreen.Build(_gm.ScreenLayer, e.Id, "night01", "その夜からやり直す", () => { }, () => { });
+                    yield return Shot($"Q{n++}_エンド_{e.Id}_{e.Title}", 0.8f);
+                }
+            }
+            finally
+            {
+                NightShift.Systems.SideQuests.SideQuestManager.WalletProvider = originalWallet;
+                CareerRecord.SetCurrentForTests(_original);
+                CareerRecord.SaveDisabled = false;
+            }
+        }
+
         /// <summary>ツールの動き（連続した画像。あとで GIF にする）: 検査中の VACCINE・考えている SOC-AI・サーバーの負荷メーター</summary>
         [UnityTest, Category("Screenshots"), Explicit("画面の確認用"), Timeout(600000)]
         public IEnumerator CaptureToolAnimations()

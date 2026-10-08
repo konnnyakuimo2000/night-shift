@@ -46,7 +46,7 @@ namespace NightShift.UI.Shift
             public void Refresh()
             {
                 var a = _d.S.Quests.Leisure;
-                _wallet.text = Yen(_d.Game.Wallet.Balance);
+                _wallet.text = Yen((_d.S.Quests.Wallet ?? _d.Game.Wallet).Balance);
                 _free.text = Yen(a.Free);
                 _locked.text = Yen(a.Locked);
                 _debt.text = a.Debt > 0 ? $"{Yen(a.Debt)}（DAY{a.LoanDue} の朝に返済）" : "なし";

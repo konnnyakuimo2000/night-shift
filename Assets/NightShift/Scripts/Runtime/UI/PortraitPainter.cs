@@ -33,7 +33,7 @@ namespace NightShift.UI
         static readonly Color Ink = C(24, 22, 20);
 
         // 名前（読み）から性別を推定する（データに性別の項目がないため）
-        static readonly HashSet<string> FemaleNames = new HashSet<string> { "ユイ", "マユ", "チヒロ", "メグミ", "ミサキ", "サクラ", "アヤ", "ユミ", "ヨウコ", "ケイコ", "アキコ", "ナオミ", "リエ", "エリ" };
+        static readonly HashSet<string> FemaleNames = new HashSet<string> { "ユイ", "マユ", "チヒロ", "メグミ", "ミサキ", "サクラ", "アヤ", "ユミ", "ヨウコ", "ケイコ", "アキコ", "ナオミ", "リエ", "エリ", "リカ" };
         static bool IsFemale(EmployeeData e)
         {
             string kana = e.kana ?? "";
