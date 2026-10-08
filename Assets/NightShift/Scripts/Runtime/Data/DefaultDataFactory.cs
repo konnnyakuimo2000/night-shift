@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static partial class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 35;
+        public const int DataVersion = 36;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -487,8 +487,7 @@ namespace NightShift.Data
                 $"要求の {B("必要な権限")} と {B("同じ名前の行")} を、社員の権限欄で探します。",
                 "{FIG:UI_PERMISSION}",
                 $"・{B("①")} 接続要求の「必要な権限」（例: 人事システム）",
-                $"・{B("②")} 社員詳細の権限欄で同じ名前の行を探し、{Col("○ なら許可", Allow)}、{Col("× なら拒否", Deny)}。",
-                $"・社員詳細の {B("【普段使うシステム】")} は参考情報です。判断には使いません。");
+                $"・{B("②")} 社員詳細の権限欄で同じ名前の行を探し、{Col("○ なら許可", Allow)}、{Col("× なら拒否", Deny)}。");
             Page(manualSystem, "管理者権限", Features.AdminPermissions,
                 $"管理用のサーバー（ADMIN-SRV01）への接続には {B("サーバー管理者")} の権限が必要です。",
                 "{FIG:UI_ADMIN}",
@@ -535,7 +534,6 @@ namespace NightShift.Data
             Page(manualServer, "早見表（必要な権限）", "",
                 "社内のサーバーと、接続に必要な権限の一覧です。接続要求の「必要な権限」欄に表示される内容と同じです（参考資料）。",
                 "{ACCESS_TABLE}",
-                $"・{B("「管理者」とつく権限は1種類ではありません。")} {B("ローカル管理者")} は自分のPCの管理権限で、{Col("サーバー管理者", Check)} とは別です。",
                 "・サーバーの管理操作（サービス停止・再起動など）は、まだ担当範囲ではありません。");
             Page(manualServer, "ネットワークの区分", Features.NetworkMap,
                 "{FIG:NETWORK_ZONES}",
@@ -574,8 +572,9 @@ namespace NightShift.Data
                 "・[設定] → [プリンター] … プリンターの状態",
                 "・プリンターのキュー（通知領域のプリンター アイコン / control printers）… ドキュメントの状態と [プリンター] メニュー");
             Page(manualTrouble, "その他のツール", "",
-                "・タスク マネージャー（{KEY:REMOTE_TASKMGR}）… 実行中のアプリケーション・プロセス・ネットワーク状況",
-                "・エクスプローラー（{KEY:REMOTE_EXPLORER}）… ファイル・共有フォルダー",
+                "・タスク マネージャー … 実行中のアプリケーション・プロセス・ネットワーク状況",
+                "・エクスプローラー … ファイル・共有フォルダー",
+                "（キー操作は「操作マニュアル」の [リモートPCのキー操作] を参照）",
                 $"・{Col("システムのプロセスは終了しないでください。", Deny)}");
 
             // ---------------- Rules ----------------

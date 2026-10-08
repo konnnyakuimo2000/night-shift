@@ -373,13 +373,14 @@ namespace NightShift.Data
             // ---------------- マニュアルのページ ----------------
             void Page(DocumentDefinition d, string title, string feature, params string[] lines) =>
                 d.sections.Add(new DocumentSection { title = title, requiredFeature = feature, text = string.Join("\n", lines) });
-            Page(c.manualSystem, "本番業務の心得", Features.Store,
+            // 心得は「はじめに」の直後に置く（本番初日に最初に読むページ）
+            c.manualSystem.sections.Insert(1, new DocumentSection { title = "本番業務の心得", requiredFeature = Features.Store, text = string.Join("\n", new[] {
                 $"本日から {B("本番業務")} です。研修期間とは次の点が違います。",
                 $"・{B("業務時間は 00:00〜06:00")}。",
                 $"・接続要求・問い合わせは {B("いつ・いくつ届くか分かりません")}。{B("同時に届く")}こともあります。",
                 $"・接続要求には {Col("期限", Deny)} があります。期限切れは {B("罰金")}（業務改善協力金）の対象です。",
                 $"・{B("迷ったら、まず調べること。")} 全部を一度に見ようとせず、セキュリティ警告から順に。",
-                $"・業務に使う機材・ツールは {B("社内購買システム")} で購入できます（費用は給与から精算）。");
+                $"・業務に使う機材・ツールは {B("社内購買システム")} で購入できます（費用は給与から精算）。" }) });
             Page(c.manualSystem, "接続元IPの照合", Features.IpCheck,
                 $"社内の登録端末からの要求は、{B("接続元のIPアドレス")} と、社員詳細の {B("「端末IP」")} を見比べます。",
                 $"・接続要求の「接続元」の括弧内が IPアドレスです（例: 社内 (10.10.2.12)）。",
