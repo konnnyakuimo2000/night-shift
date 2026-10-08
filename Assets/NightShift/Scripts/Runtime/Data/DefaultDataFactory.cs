@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static partial class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 36;
+        public const int DataVersion = 37;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -449,6 +449,8 @@ namespace NightShift.Data
             }
             void Page(DocumentDefinition d, string title, string feature, params string[] lines) =>
                 d.sections.Add(new DocumentSection { title = title, requiredFeature = feature, text = string.Join("\n", lines) });
+            void PageFrom(DocumentDefinition d, int day, string title, params string[] lines) =>
+                d.sections.Add(new DocumentSection { title = title, minimumDay = day, text = string.Join("\n", lines) });
 
             // ===== 業務システム操作マニュアル =====
             var manualSystem = Doc("SYSTEM_MANUAL", "社内情報システム 操作マニュアル（夜間運用担当向け）", "業務システム操作マニュアル.doc", "doc", "");
@@ -456,7 +458,10 @@ namespace NightShift.Data
                 $"夜間運用担当の主な仕事は、社内ネットワークへの {B("接続要求")} を審査することです。",
                 $"届いた要求を1件ずつ選び、社員情報と照らし合わせて {Col("許可", Allow)} か {Col("拒否", Deny)} を決めます。",
                 "",
-                "下の図は、本日のルールでの判断の流れです（担当範囲が広がると段階が増えます）。",
+                B("今夜のルール"),
+                "{RULES}",
+                "",
+                "下の図は、今夜のルールでの判断の流れです（担当範囲が広がると段階が増えます）。",
                 "{FIG:REVIEW_FLOW}",
                 $"・迷ったら、まず調べること。{B("ページの赤い枠")} が、各業務で見る場所です。");
             Page(manualSystem, "接続要求の審査", Features.ConnectionMonitor,
@@ -501,7 +506,7 @@ namespace NightShift.Data
                 $"・{B("②")} 問い合わせ内容（社員からのメッセージ）",
                 $"・{B("③")} 相談 → 回答を選んで [回答を送信]。障害 → [リモート接続] で社員のPCを直します。",
                 $"・{Col("リモート接続中も業務時間は進みます。", Deny)} 手順は「トラブル対応マニュアル」を参照してください。");
-            Page(manualSystem, "社外からの接続", Features.SystemLog,
+            PageFrom(manualSystem, 6, "社外からの接続",
                 $"接続要求の {B("接続元")} が {Col("「社外」", Check)} のときは、次の3つだけを確認します。",
                 "{FIG:UI_EXTERNAL}",
                 $"・{B("①")} 利用システムが {B("「VPN接続」")} か",
@@ -515,18 +520,34 @@ namespace NightShift.Data
                 $"・{B("①")} {B("セキュリティ警告")} が出たら、要求の接続元（IPアドレス）をキーワードに入れて [検索開始]。",
                 $"・{B("②")} 同じIPが {B("前に何をしていたか")}（ポートスキャンなど）を確認します。",
                 "・行をダブルクリックすると、その接続元で絞り込みます。ログは自動では分析されません。");
+            Page(manualSystem, "セキュリティ情報", Features.SecurityInfo,
+                "[セキュリティ情報] の画面です。迷ったときに見る場所です。",
+                $"・{B("接続審査の基本ルール")} … 今夜のルールの一覧。",
+                $"・{B("セキュリティ警告の履歴")} … これまでに出た警告。{Col("警告は自動判定ではありません。", Deny)} 内容はシステムログで確かめます。");
             Page(manualSystem, "ネットワークマップ", Features.NetworkMap,
                 "通信の流れ（接続元 → 接続先）を表示します。サーバーは監視のみで、操作はできません。",
                 "社内ネットワークの区分は「社内サーバー構成資料」を参照してください。");
             Page(manualSystem, "アカウントとキー操作", "",
-                $"・ログインパスワードは [メインメニュー] → [パスワードの変更] で変更できます。{B("パスワードは他人に教えないこと。")}",
-                "・ウィンドウ切替: {KEY:SWITCH} / Alt+PageUp　・閉じる: {KEY:CLOSE}　・一時停止: {KEY:PAUSE}　・メール: {KEY:MAIL}",
-                "・接続を許可: {KEY:ALLOW}　・接続を拒否: {KEY:BLOCK}　・社員情報を参照: {KEY:LOOKUP}",
-                "・メインメニューの各システムは 1〜7 のキーでも開けます。",
-                "（キーの割り当ては {KEY:PAUSE}（一時停止）→ [システム設定] → [キー設定] で変更できます）");
+                $"ログインパスワードは [メインメニュー] → [パスワードの変更] で変更できます。{B("パスワードは他人に教えないこと。")}",
+                "",
+                B("キー操作"),
+                "　{KEY:PAUSE}　…　一時停止（システム設定・キー設定もここから）",
+                "　{KEY:SWITCH}　…　ウィンドウの切り替え（Alt+PageUp でも可）",
+                "　{KEY:CLOSE}　…　ウィンドウを閉じる",
+                "　{KEY:MAIL}　…　メール",
+                "　{KEY:ALLOW}　…　接続を許可",
+                "　{KEY:BLOCK}　…　接続を拒否",
+                "　{KEY:LOOKUP}　…　社員情報を参照",
+                "　1〜7　…　メインメニューの各システム",
+                "（キーの割り当ては {KEY:PAUSE} → [システム設定] → [キー設定] で変更できます）");
             Page(manualSystem, "リモートPCのキー操作", Features.RemoteSupport,
-                "・スタート {KEY:REMOTE_START} / ファイル名を指定して実行 {KEY:REMOTE_RUN} / エクスプローラー {KEY:REMOTE_EXPLORER}",
-                "・設定 {KEY:REMOTE_SETTINGS} / デスクトップ {KEY:REMOTE_DESKTOP} / タスク マネージャー {KEY:REMOTE_TASKMGR} / 更新 {KEY:REFRESH}",
+                "　{KEY:REMOTE_START}　…　スタート",
+                "　{KEY:REMOTE_RUN}　…　ファイル名を指定して実行",
+                "　{KEY:REMOTE_SETTINGS}　…　設定",
+                "　{KEY:REMOTE_TASKMGR}　…　タスク マネージャー",
+                "　{KEY:REMOTE_EXPLORER}　…　エクスプローラー",
+                "　{KEY:REMOTE_DESKTOP}　…　デスクトップ",
+                "　{KEY:REFRESH}　…　更新",
                 "（Windows キーや Alt+Tab は手元のPCが処理するため、上記のキーを使ってください）");
 
             // ===== 社内サーバー構成資料 =====
@@ -561,17 +582,71 @@ namespace NightShift.Data
                 $"・{B("①")} 通知領域（ネットワーク・プリンターのアイコン）",
                 $"・{B("②")} [スタート] から設定・コマンド プロンプトなどを開けます。",
                 $"・{B("③")} 直ったことを確認してから [対応完了を報告]。");
+            // 症状ごとに1ページ。「症状 → 見る場所 → 直し方 → 確認」の順に書く。新しい症状は、それが起き始める日に増える
+            string[] Fix(string symptom, string where, string fix, string check) => new[]
+            {
+                $"{B("【症状】")}　{symptom}",
+                $"{B("【見る場所】")}　{where}",
+                $"{Col("【直し方】", Check)}　{fix}",
+                $"{B("【確認】")}　{check}"
+            };
             Page(manualTrouble, "ネットワークにつながらない", "",
-                "・画面右下の通知領域のネットワーク アイコン",
-                "・[設定] → [ネットワーク]（Wi-Fi の状態、IP アドレス）",
-                "・[ネットワーク接続]（ファイル名を指定して実行: ncpa.cpl）… アダプターの有効／無効",
-                "・コマンド プロンプト（ファイル名を指定して実行: cmd）",
-                "　　ipconfig / ipconfig /all … IP アドレス・ゲートウェイの確認",
-                "　　ping <ホスト名> … 相手に届くかの確認（例: ping intranet）");
+                Fix("インターネットにもメールにもつながらない。通知領域のネットワーク アイコンに × が付いている。",
+                    "[設定] → [ネットワーク] の Wi-Fi。または [ネットワーク接続]（ファイル名を指定して実行: ncpa.cpl）のアダプター。",
+                    $"Wi-Fi が {B("オフ")} → [オン] にする。アダプターが {B("無効")} → [有効にする]。",
+                    "コマンド プロンプト（cmd）の [ping intranet] で応答が返る。"));
             Page(manualTrouble, "印刷できない", "",
-                "・[設定] → [プリンター] … プリンターの状態",
-                "・プリンターのキュー（通知領域のプリンター アイコン / control printers）… ドキュメントの状態と [プリンター] メニュー");
+                Fix("印刷したのに出てこない。",
+                    "通知領域のプリンター アイコン（または control printers）でキューを開き、プリンター名の横の状態を見る。",
+                    $"「一時停止」→ [プリンター(P)] → [印刷の一時停止] のチェックを外す。「オフラインで使用」→ 同じメニューでチェックを外す。",
+                    "ドキュメントが「印刷中」になり、キューから消える。"));
+            PageFrom(manualTrouble, 9, "感染が疑われるPC",
+                Fix("ブラウザーが急に終了した、見覚えのないファイルができた など。",
+                    "—（調べる前に、まず切り離す）",
+                    $"{Col("ネットワークから切り離す", Check)}: [設定] → [ネットワーク] で Wi-Fi をオフ、または [ネットワーク接続] でアダプターを無効に。{Col("再起動はしない（痕跡が消える）。", Deny)}",
+                    "通知領域のネットワーク アイコンに × が付いている。"));
+            PageFrom(manualTrouble, 10, "警告画面が消えない",
+                Fix("「ウイルスに感染しています」などの赤い画面が閉じられない。",
+                    $"タスク マネージャー（{B("netvoyager.exe")} = ブラウザー）。",
+                    $"[プロセス] タブで警告を出しているブラウザーを選び [プロセスの終了]。{Col("画面の「駆除ツールをインストール」は押さない（サポート詐欺）。", Deny)}",
+                    "警告の画面が消えている。"));
+            PageFrom(manualTrouble, 11, "修正プログラムの案内",
+                Fix("「修正プログラムがあります」と出続けている。",
+                    "[設定] → [修正プログラム]。",
+                    "[すべて適用] を押す（修正プログラムはソフトの弱点をふさぐもの）。",
+                    "「コンピューターは最新の状態です」と表示される。"));
+            PageFrom(manualTrouble, 12, "Wi-Fi はオンなのに使えない",
+                Fix("Wi-Fi はオンなのに、インターネットにもメールにもつながらない。",
+                    "[設定] → [ネットワーク] の IP アドレスの設定（「手動」になっていないか）。cmd の ipconfig でも確認できる。",
+                    "「IP アドレスを自動的に取得する」（DHCP）にチェックを入れる。",
+                    "[ping intranet] で応答が返る。"));
+            PageFrom(manualTrouble, 13, "名前で開けない",
+                Fix("IP アドレスを直接入れると開けるのに、intranet などの名前では開けない。",
+                    "[設定] → [ネットワーク] の DNS サーバーの設定。",
+                    "「DNS サーバーのアドレスを自動的に取得する」にチェックを入れる。",
+                    "[ping intranet] で応答が返る。"));
+            PageFrom(manualTrouble, 14, "離席中の画面ロック",
+                Fix("離席中に他人にPCを触られた気がする。",
+                    "[設定] → [画面] のスクリーン セーバー。",
+                    "「パスワードで保護する」にチェックを入れる。",
+                    "チェックが入っている。"));
+            PageFrom(manualTrouble, 15, "サーバーにつながらない",
+                Fix("共有フォルダーが開けない。インターネットは使える。",
+                    "cmd の [ping file-srv01]。PC のネットワーク設定。",
+                    $"PC の設定に問題がなく、ping が届かない → {Col("[サーバー側の障害として報告]", Check)}（PC 側では直せない）。",
+                    "—"));
+            PageFrom(manualTrouble, 18, "記録（ログ）を残す",
+                Fix("不正の疑いがあるので、調べる前に記録を残してほしい。",
+                    "[設定] → [イベントログ]。",
+                    $"[ログをフロッピーに保存]。{Col("[ログを消去] は押さない（証拠が消える）。", Deny)}",
+                    "「フロッピーに保存済み」と表示される。"));
+            PageFrom(manualTrouble, 19, "バックアップを取る",
+                Fix("ファイルのバックアップを取ってほしい。",
+                    "[設定] → [バックアップ]。",
+                    "[MO にバックアップして取り外す]（ネットワークや PC から切り離して保管する）。",
+                    "「バックアップ済み」と表示される。"));
             Page(manualTrouble, "その他のツール", "",
+                "・コマンド プロンプト（ファイル名を指定して実行: cmd）… ipconfig（IP アドレス）、ping <名前>（相手に届くか）",
                 "・タスク マネージャー … 実行中のアプリケーション・プロセス・ネットワーク状況",
                 "・エクスプローラー … ファイル・共有フォルダー",
                 "（キー操作は「操作マニュアル」の [リモートPCのキー操作] を参照）",

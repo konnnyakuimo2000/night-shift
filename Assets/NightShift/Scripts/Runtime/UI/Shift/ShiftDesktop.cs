@@ -515,7 +515,8 @@ namespace NightShift.UI.Shift
             doc != null && day != null && (string.IsNullOrEmpty(doc.requiredFeature) || day.IsUnlocked(doc.requiredFeature));
 
         static bool PageAvailable(Data.DocumentSection sec, Data.DayDefinition day) =>
-            sec != null && day != null && (string.IsNullOrEmpty(sec.requiredFeature) || day.IsUnlocked(sec.requiredFeature));
+            sec != null && day != null && day.dayNumber >= sec.minimumDay
+            && (string.IsNullOrEmpty(sec.requiredFeature) || day.IsUnlocked(sec.requiredFeature));
 
         /// <summary>今日表示されるページ（業務ごと）の番号</summary>
         public List<int> VisiblePages(Data.DocumentDefinition doc)

@@ -17,6 +17,7 @@ namespace NightShift.UI.Shift
         List<int> _pages = new List<int>();
         int _cursor;                       // _pages 内の位置
         RectTransform _toc, _body;
+        ScrollRect _tocScroll;
         Text _pageTitle, _pageNo;
         RetroButton _prev, _next;
 
@@ -46,7 +47,9 @@ namespace NightShift.UI.Shift
             tocBg.rectTransform.pivot = new Vector2(0, 1);
             tocBg.rectTransform.offsetMin = new Vector2(0, 0); tocBg.rectTransform.offsetMax = new Vector2(220, -34);
             UIFactory.Label(tocBg.transform, "目次", 6, 4, 200, 18, 12).fontStyle = FontStyle.Bold;
-            _toc = UIFactory.Rect("TocItems", tocBg.transform).Stretch(2, 26, 2, 2);
+            // ページが増えても目次がはみ出さないよう、スクロールにする
+            _tocScroll = UIFactory.Scroll(tocBg.transform, out _toc);
+            ((RectTransform)_tocScroll.transform).Stretch(2, 26, 2, 2);
 
             // ページ
             var page = UIFactory.Rect("Page", c).Stretch(228, 34, 0, 0);
@@ -106,7 +109,7 @@ namespace NightShift.UI.Shift
                 var b = UIFactory.FlatButton(_toc, $"{i + 1}. {sec.title}{mark}", () => { _cursor = idx; ShowPage(); });
                 b.Label.alignment = TextAnchor.MiddleLeft;
                 b.Label.fontSize = 12;
-                b.Rect.Place(0, y, 214, 24);
+                b.Rect.Place(0, y, 192, 24);
                 if (i == _cursor)
                 {
                     b.SetLatched(true);
@@ -114,6 +117,16 @@ namespace NightShift.UI.Shift
                     b.Label.fontStyle = FontStyle.Bold;
                 }
                 y += 25;
+            }
+            _toc.sizeDelta = new Vector2(0, y);
+            // 開いているページが目次の見える範囲に入るようにする
+            float view = ((RectTransform)_tocScroll.viewport).rect.height;
+            if (y > view && view > 0)
+            {
+                float top = _cursor * 25f, pos = _toc.anchoredPosition.y;
+                if (top < pos) pos = top;
+                else if (top + 25 > pos + view) pos = top + 25 - view;
+                _toc.anchoredPosition = new Vector2(0, Mathf.Clamp(pos, 0, y - view));
             }
         }
 

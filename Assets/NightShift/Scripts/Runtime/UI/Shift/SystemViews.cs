@@ -181,6 +181,14 @@ namespace NightShift.UI.Shift
         public static string Expand(ShiftDesktop d, string body)
         {
             body = (body ?? "").Replace("{OPERATOR}", d.S.OperatorName);
+            if (body.Contains("{RULES}"))
+            {
+                // 今夜のルール（ブリーフィング・セキュリティ情報と同じもの）
+                var rules = d.S.Day.rules;
+                var sb = new StringBuilder();
+                for (int i = 0; i < rules.Count; i++) sb.AppendLine($"　□ <b>{i + 1}.</b> {rules[i]}");
+                body = body.Replace("{RULES}", rules.Count > 0 ? sb.ToString().TrimEnd() : "　（ルールの指定はありません）");
+            }
             if (body.Contains("{ACCESS_TABLE}"))
             {
                 // 早見表: 接続先 → 利用システム → 必要な権限（1行1項目）

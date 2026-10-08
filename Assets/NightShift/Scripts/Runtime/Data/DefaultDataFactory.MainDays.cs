@@ -373,6 +373,13 @@ namespace NightShift.Data
             // ---------------- マニュアルのページ ----------------
             void Page(DocumentDefinition d, string title, string feature, params string[] lines) =>
                 d.sections.Add(new DocumentSection { title = title, requiredFeature = feature, text = string.Join("\n", lines) });
+            // 給与と評価のしくみ（本番から）。心得の次に置く
+            c.manualSystem.sections.Insert(1, new DocumentSection { title = "給与と評価のしくみ", requiredFeature = Features.Store, text = string.Join("\n", new[] {
+                $"・{B("こなした仕事の件数")} だけ、{Col("出来高手当", Allow)} と評価が増えます（正しく処理したものだけ）。",
+                $"・手が空いていると、{B("追加の接続要求")} が届きます。速く正確な人ほど、多くの件数をこなせます。",
+                $"・業務終了の予告が出たあとは、追加の要求は届きません。",
+                $"・メールには {B("返信できるもの")} があります（メールの下の返信欄から選んで送信）。",
+                $"・{B("{KEY:PAUSE}")} で一時停止。音量・キー設定などの {B("システム設定")} もここから開きます。" }) });
             // 心得は「はじめに」の直後に置く（本番初日に最初に読むページ）
             c.manualSystem.sections.Insert(1, new DocumentSection { title = "本番業務の心得", requiredFeature = Features.Store, text = string.Join("\n", new[] {
                 $"本日から {B("本番業務")} です。研修期間とは次の点が違います。",
@@ -395,6 +402,10 @@ namespace NightShift.Data
             Page(c.manualSystem, "在籍状態", Features.EmploymentStatus,
                 $"社員情報の {B("「在籍状態」")} が {B("「在籍」")} でない社員（{Col("休職・退職", Deny)}）からの接続は拒否します。",
                 "・退職した社員のIDが無効にされず残っていることがあります。");
+            Page(c.manualSystem, "メールの差出人", Features.MailSender,
+                $"本日からメールに {Col("差出人のアドレス", Check)} が表示されます。社内のアドレスは {B("@nexus-corp.example")} です。",
+                $"・名前が「情報システム部」でも、{Col("アドレスが社外なら偽物", Deny)} です。",
+                $"・{Col("パスワードの入力を求めるメールには、絶対に入力しないこと。", Deny)}");
             Page(c.manualSystem, "報告", Features.Report,
                 $"怪しいメール・不審な動きを見つけたら {Col("[報告]", Check)} で情報システム部に知らせます。",
                 $"・メールの {B("差出人のアドレス")} が社内（@nexus-corp.example）と違う、パスワードの入力を求める → 入力せずに報告。",
@@ -403,6 +414,26 @@ namespace NightShift.Data
                 $"接続要求の利用者が {B("自分のID")} で、自分の席ではない端末からの要求は {Col("拒否", Deny)}。",
                 $"・すぐに [メインメニュー] → [パスワードの変更] で {B("パスワードを変更")} してください。",
                 $"・{Col("パスワードを付箋に書いていると、狙われやすくなります。", Deny)}");
+            Page(c.manualSystem, "サーバー運用管理", Features.ServerManagement,
+                "[サーバー運用管理] の画面です。毎晩、サーバーを見回ります。",
+                $"・{B("①")} 左の一覧でサーバーを選ぶと、サービスとプロセスが表示されます。",
+                $"・{B("②")} サービスが止まっている → [再起動]。",
+                $"・{B("③")} {B("見慣れないプロセス")}（発行元が不明など）→ [プロセスを終了]。",
+                $"・{B("④")} 公開Webサーバーが {Col("改ざん", Deny)} された → 不審なプロセスを止めてから [バックアップから復元]。",
+                $"・{Col("正常なサービスを止めると業務が止まります。", Deny)} 止める前に、本当に必要か確かめること。");
+            Page(c.manualSystem, "端末の隔離", Features.Isolation,
+                $"社員のPCから {B("社外への定期的な通信")}（数分おきに同じ宛先へ POST）が続くのは、ウイルス感染のしるしです。",
+                $"・{B("①")} システムログでその行を選びます。",
+                $"・{B("②")} {Col("[端末を隔離]", Check)} で、接続元の社員の端末をネットワークから切り離します。",
+                "・最初の1台を切り離せば広がりません。駆除はその後です。");
+            Page(c.manualSystem, "ユーザー管理", Features.UserManagement,
+                "[ユーザー管理] の画面です。社員のアカウントを一時停止できます。",
+                $"・{B("退勤しているはずの管理者")} のIDで管理サーバーへの要求が来た → 要求を {Col("拒否", Deny)} し、そのアカウントを選んで {Col("[アカウントを一時停止]", Check)}。",
+                $"・{Col("関係のない社員を止めると、その社員の仕事が止まります。", Deny)}");
+            c.manualSystem.sections.Add(new DocumentSection { title = "身代金ウイルス", requiredFeature = Features.Isolation, minimumDay = 20, text = string.Join("\n", new[] {
+                $"{Col("最優先です。", Deny)} 1台の端末からファイルサーバーへの {B("ファイルの書き換え（FILE WRITE … → ….briar）")} が続いたら、ファイルを暗号化するウイルスです。",
+                $"・{B("①")} システムログで FILE WRITE の行を選びます。",
+                $"・{B("②")} {Col("[端末を隔離]", Check)}。{B("書き換えが始まってから45分以内")} に隔離しないと、全社のファイルが開けなくなります。" }) });
 
             // ---------------- 社内購買システムの商品 ----------------
             BuildStore(c);

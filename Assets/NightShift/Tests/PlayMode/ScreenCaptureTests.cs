@@ -658,8 +658,15 @@ namespace NightShift.Tests
                     if (doc == null) continue;
                     d = NewDesktop(20, null, 1f);
                     DocumentView.Open(d, doc);
-                    yield return Shot($"M{docNo}_00_{doc.documentId}", 0.8f);
                     int pages = d.VisiblePages(doc).Count;
+                    // 新しいページから開くので、先頭のページまで戻ってから撮る
+                    for (int i = 1; i < pages; i++)
+                    {
+                        var prev = d.GetComponentsInChildren<RetroButton>().FirstOrDefault(b => b.Label.text.Contains("前のページ"));
+                        if (prev == null) break;
+                        prev.Button.onClick.Invoke();
+                    }
+                    yield return Shot($"M{docNo}_00_{doc.documentId}", 0.8f);
                     for (int i = 1; i < pages; i++)
                     {
                         var next = d.GetComponentsInChildren<RetroButton>().FirstOrDefault(b => b.Label.text.StartsWith("次のページ"));

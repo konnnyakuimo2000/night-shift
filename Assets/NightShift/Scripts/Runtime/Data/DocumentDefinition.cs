@@ -30,6 +30,8 @@ namespace NightShift.Data
         [Tooltip("ページのタイトル（目次に表示）")]
         public string title;
         public string requiredFeature;
+        [Tooltip("この日から表示する（0 なら制限なし）")]
+        public int minimumDay;
         [TextArea(4, 30)] public string text;
     }
 }
