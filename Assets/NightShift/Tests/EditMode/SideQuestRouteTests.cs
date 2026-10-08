@@ -320,6 +320,53 @@ namespace NightShift.Tests
             Assert.AreEqual(0, s.Damage.Count);
         }
 
+        [TestCase("REJECT")]
+        [TestCase("INTERRUPT")]
+        [TestCase("EXPIRE")]
+        public void Hacker_N2NoReplyClosesWithoutEndingAtEndOfFollowingNight(string stop)
+        {
+            var s = HackerSecond();
+            if (stop == "EXPIRE") Advance(s, 151);
+            else
+            {
+                var e = Decide(s, "SQ06", stop == "INTERRUPT" ? PlayerAction.Allow : PlayerAction.Block, 140);
+                if (stop == "INTERRUPT") { Advance(s, 141); s.Security.Isolate(e.Device); }
+            }
+            s.Quests.OnNightEnd(); s.Quests.OnNightEnd();
+            Assert.AreEqual(QuestStatus.Active, s.Quests.Route("SQ06").State.status, "停止した夜は返信待ち");
+            string saved = CareerRecord.Current.Snapshot();
+            CareerRecord.Restore(saved);
+            s = Start(s.Day.dayNumber + 1);
+            s.Quests.OnMailShown(s.Mail.Find("SQ06-N2-STOP"));
+            Advance(s, 359);
+            Assert.AreEqual(QuestStatus.Active, s.Quests.Route("SQ06").State.status, "翌夜の業務中は返信可能");
+            s.Quests.OnNightEnd(); s.Quests.OnNightEnd();
+            var state = s.Quests.Route("SQ06").State;
+            Assert.AreEqual(QuestStatus.Resolved, state.status);
+            Assert.AreEqual(QuestResult.Abandoned, state.result);
+            Assert.That(state.endingId, Is.Null.Or.Empty, "保存・復元後も結末IDが付いていないこと");
+            Assert.IsFalse(s.Quests.Ended);
+            Assert.AreEqual(0, _wallet.SumSource("SQ06"));
+            Reply(s, "SQ06-N2-STOP", 1);
+            Assert.AreEqual(QuestStatus.Resolved, state.status, "終了後の返信では再開しない");
+            Assert.AreEqual("N2", state.stage);
+        }
+
+        [Test]
+        public void Hacker_N2ReplyDuringFollowingNightStillOpensDefenseRoute()
+        {
+            var s = HackerSecond();
+            Decide(s, "SQ06", PlayerAction.Block, 140);
+            s.Quests.OnNightEnd();
+            s = Start(s.Day.dayNumber + 1);
+            Advance(s, 359);
+            Reply(s, "SQ06-N2-STOP", 1);
+            s.Quests.OnNightEnd();
+            Assert.AreEqual(QuestStatus.Active, s.Quests.Route("SQ06").State.status);
+            Assert.AreEqual("N3", s.Quests.Route("SQ06").State.stage);
+            Assert.AreEqual(s.Day.dayNumber + 1, s.Quests.Route("SQ06").State.nextTaskDay);
+        }
+
         [TestCase(false)]
         [TestCase(true)]
         public void Hacker_DefenseDoesNotRequireN2ComplicityOrTool(bool cooperate)

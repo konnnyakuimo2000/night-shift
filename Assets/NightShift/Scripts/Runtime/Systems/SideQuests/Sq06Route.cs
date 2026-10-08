@@ -171,7 +171,7 @@ namespace NightShift.Systems.SideQuests
             if (NightDone || State.Has(State.stage + "_STOPPED")) return;
             State.Mark(State.stage + "_STOPPED");
             if (State.stage == "N2")
-                Mail("N2-STOP", "relay / NULL SIGNAL", null, "ここで降りますか", "ここで降りるか、記録を残して協力者を止めるか。\n調査を続ければ最終作業の予告を送ります。",
+                Mail("N2-STOP", "relay / NULL SIGNAL", null, "ここで降りますか", "ここで降りるか、記録を残して協力者を止めるか。\n調査を続ければ最終作業の予告を送ります。\n翌夜の終了までに返信がなければ、この件は終了します。",
                     replies: new[] { "ここで降りる", "止めるため調査する" });
         }
 
@@ -250,7 +250,15 @@ namespace NightShift.Systems.SideQuests
             }
             else if (State.stage == "N2")
             {
-                if (NightDone) Plan("N3"); else Stopped();
+                if (NightDone) Plan("N3");
+                else
+                {
+                    Stopped();
+                    // 停止した夜には締めず、翌夜の終了まで返信を待つ。メールの日付は復帰後も残る。
+                    var mail = Q.Record(Id, "N2-STOP");
+                    if (Day > (mail?.day ?? State.nextTaskDay) && (mail?.repliedIndex ?? -1) < 0)
+                        Q.Close(this, QuestResult.Abandoned);
+                }
             }
             else if (!NightDone) Q.Close(this, QuestResult.Abandoned);
         }
