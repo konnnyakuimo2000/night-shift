@@ -156,7 +156,7 @@ namespace NightShift.Systems.SideQuests
                 Day = r.day, Read = r.read, Reported = r.reported,
                 Replies = r.replies.Count > 0 ? new List<string>(r.replies) : null, FreeReply = r.freeReply,
                 RepliedIndex = r.repliedIndex, RepliedText = r.repliedText, Horror = r.horror, Pinned = r.pinned,
-                ActionKey = r.actionKey, ActionLabel = r.actionLabel, ReceivedAt = r.time
+                ActionKey = r.actionKey, ActionLabel = r.actionLabel, ReceivedAt = r.time, Picture = r.picture
             };
             _records[r.mailId] = r;
             S.Mail.Add(m, notify);
@@ -451,7 +451,7 @@ namespace NightShift.Systems.SideQuests
                 TerminalEnding?.Invoke(endingId);
             }
             else if (def != null)
-                SendMail(q.Id, "EPILOGUE", "（後日談）", null, $"【{def.Title}】", def.Text, nextMorning: true);
+                SendMail(q.Id, "EPILOGUE", "（後日談）", null, $"【{def.Title}】", def.Text, nextMorning: true).picture = endingId;
             Changed?.Invoke();
         }
 

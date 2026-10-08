@@ -22,7 +22,7 @@ namespace NightShift.Tests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            if (Application.companyName != "NightShiftPlayModeAudit")
+            if (!AuditGuard.Allowed)
                 Assert.Ignore("Run in the isolated project copy described in Docs/PLAYMODE_AUDIT.md.");
             yield return null;
             gm = GameManager.Instance;
@@ -49,7 +49,7 @@ namespace NightShift.Tests
                 gm.ShowTitle();
                 yield return null;
             }
-            if (Application.companyName == "NightShiftPlayModeAudit") PlayerPrefs.DeleteAll();
+            if (AuditGuard.Allowed) PlayerPrefs.DeleteAll();
         }
 
         FlatButton Find(string label) => desktop.GetComponentsInChildren<FlatButton>().FirstOrDefault(b => b.Label.text == label);

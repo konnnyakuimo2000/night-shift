@@ -199,34 +199,39 @@ namespace NightShift.UI.Shift
             host.anchorMin = host.anchorMax = new Vector2(0.5f, 0.5f);
             host.sizeDelta = new Vector2(600, 600);
             _figure = host;
-            if (desk)
+            Image Figure(Transform t, string name, float size)
             {
-                // 自分の机に似た映像: 机と、無人の椅子
-                var desk1 = UIFactory.Solid(host, new Color(0.18f, 0.15f, 0.12f), "Desk");
-                desk1.rectTransform.anchorMin = desk1.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-                desk1.rectTransform.sizeDelta = new Vector2(520, 40); desk1.rectTransform.anchoredPosition = new Vector2(0, -60);
-                var chair = UIFactory.Solid(host, new Color(0.1f, 0.1f, 0.12f), "Chair");
-                chair.rectTransform.anchorMin = chair.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-                chair.rectTransform.sizeDelta = new Vector2(90, 150); chair.rectTransform.anchoredPosition = new Vector2(-40, -150);
-                chair.name = "Chair";
+                var img = UIFactory.Image(t, HorrorArt.Crawler, Color.white, name);
+                img.raycastTarget = false;
+                img.rectTransform.anchorMin = img.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                img.rectTransform.sizeDelta = new Vector2(size, size);
+                if (Set.horrorMild) img.color = new Color(0.5f, 0.5f, 0.55f, 0.6f);
+                return img;
             }
-            var r = new System.Random(desk ? 7 : 3);
-            Vector2 at = new Vector2(0, desk ? 260 : 0);
-            for (int i = 0; i < 9; i++)
+            if (!desk)
             {
-                var seg = UIFactory.Solid(host, new Color(0.02f, 0.01f, 0.01f, Set.horrorMild ? 0.4f : 0.95f), "Joint");
-                seg.raycastTarget = false;
-                float len = 80 + r.Next(90);
-                var rt = seg.rectTransform;
+                // 長い髪で顔の見えない女が、画面のすぐ内側まで這い寄る
+                Figure(host, "Crawler", 480);
+                return;
+            }
+            // 切断した後の映像: 自分の机に似た机・モニター・無人の椅子。モニターの中から這い出てくる
+            RectTransform Box(string name, Color c, Vector2 size, Vector2 pos)
+            {
+                var img = UIFactory.Solid(host, c, name);
+                img.raycastTarget = false;
+                var rt = img.rectTransform;
                 rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-                rt.pivot = new Vector2(0, 0.5f);
-                rt.sizeDelta = new Vector2(len, 6 + r.Next(5));
-                rt.anchoredPosition = at;
-                float ang = (float)(r.NextDouble() * 300 - 150);
-                rt.localRotation = Quaternion.Euler(0, 0, ang);
-                at += new Vector2(Mathf.Cos(ang * Mathf.Deg2Rad), Mathf.Sin(ang * Mathf.Deg2Rad)) * len * 0.7f;
-                at = Vector2.ClampMagnitude(at, 260);
+                rt.sizeDelta = size; rt.anchoredPosition = pos;
+                return rt;
             }
+            Box("Desk", new Color(0.18f, 0.15f, 0.12f), new Vector2(560, 40), new Vector2(0, -80));
+            Box("Monitor", new Color(0.55f, 0.53f, 0.48f), new Vector2(240, 190), new Vector2(0, 40));
+            var screen = Box("Screen", new Color(0.02f, 0.03f, 0.04f), new Vector2(200, 150), new Vector2(0, 46));
+            screen.gameObject.AddComponent<RectMask2D>();
+            var inner = Figure(screen, "InScreen", 160);
+            inner.rectTransform.anchoredPosition = new Vector2(0, -10);
+            Box("Chair", new Color(0.1f, 0.1f, 0.12f), new Vector2(90, 150), new Vector2(-40, -170)).name = "Chair";
+            if (!Set.horrorMild) Figure(host, "Out", 360).gameObject.SetActive(false);
         }
 
         void EndFull()
@@ -277,11 +282,19 @@ namespace NightShift.UI.Shift
                     _fullImage.color = new Color(0.04f, 0.05f, 0.06f, 0.95f);
                     if (_figure != null)
                     {
-                        // 椅子が引かれ、何かが画面へ倒れ込む
+                        // 椅子が引かれ、モニターの中の女がこちらへ近づき、画面の外へ倒れ込む
                         var chair = _figure.Find("Chair") as RectTransform;
-                        if (chair != null) chair.anchoredPosition = new Vector2(-40 - 120 * Mathf.Clamp01(t * 2), -150);
-                        float fall = Set.horrorMild ? 0.3f : Mathf.Clamp01((t - 0.5f) * 2f);
-                        _figure.localScale = Vector3.one * (1f + fall * 0.8f);
+                        if (chair != null) chair.anchoredPosition = new Vector2(-40 - 120 * Mathf.Clamp01(t * 2), -170);
+                        var inScreen = _figure.Find("Screen/InScreen") as RectTransform;
+                        float near = Set.horrorMild ? 0.4f : Mathf.Clamp01(t / 0.6f);
+                        if (inScreen != null) { inScreen.localScale = Vector3.one * Mathf.Lerp(0.35f, 1.4f, near); inScreen.anchoredPosition = new Vector2(0, Mathf.Lerp(-10, -40, near)); }
+                        var outside = _figure.Find("Out") as RectTransform;
+                        if (outside != null)
+                        {
+                            bool show = t > 0.6f;
+                            outside.gameObject.SetActive(show);
+                            if (show) outside.localScale = Vector3.one * Mathf.Lerp(0.8f, 2.2f, (t - 0.6f) / 0.4f);
+                        }
                     }
                     break;
             }
@@ -355,17 +368,9 @@ namespace NightShift.UI.Shift
             var title = UIFactory.Image(card.transform, RetroTheme.GradientSprite(RetroTheme.TitleActiveA, RetroTheme.TitleActiveB), Color.white, "Title");
             title.rectTransform.StretchH(3, 18, 3, 3);
             UIFactory.Label(title.transform, " 社員証.bmp - 画像ビューアー", 12, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
-            var face = UIFactory.Image(card.transform, PortraitPainter.Get(Fake()), Color.white, "Photo");
+            // 写真: 長い黒髪で顔が見えない（顔は描かない）
+            var face = UIFactory.Image(card.transform, HorrorArt.IdPhoto, Color.white, "Photo");
             face.rectTransform.Place(20, 30, 120, 150);
-            face.color = GameSettings.Current.horrorMild ? new Color(0.85f, 0.85f, 0.85f) : new Color(0.95f, 0.85f, 0.85f);
-            // 写真の中の、成立しない関節の線
-            if (!GameSettings.Current.horrorMild)
-                for (int i = 0; i < 3; i++)
-                {
-                    var j = UIFactory.Solid(face.transform, new Color(0.05f, 0, 0, 0.8f), "Joint");
-                    j.rectTransform.Place(10 + i * 30, 100 - i * 20, 70, 3);
-                    j.rectTransform.localRotation = Quaternion.Euler(0, 0, 30 + i * 50);
-                }
             UIFactory.Label(card.transform, $"氏名　{Sq03Route.Name}\n所属　総務部\n社員番号　（空欄）", 150, 40, 160, 80, 12, TextAnchor.UpperLeft);
             _close = UIFactory.Button(card.transform, "閉じる", 110, 290, 100, 26, OnClose, "exit");
             _kill = UIFactory.Button(card.transform, "強制終了", 110, 290, 100, 26, OnKill, "warning");
@@ -378,15 +383,6 @@ namespace NightShift.UI.Shift
             disc.Rect.anchoredPosition = new Vector2(-6, 4);
             _w.SetStatus(0, "社員証の画像が開いたままです。");
         }
-
-        static EmployeeData Fake()
-        {
-            var e = ScriptableObject.CreateInstance<EmployeeData>();
-            e.hideFlags = HideFlags.DontSave;
-            e.employeeId = "E-0000"; e.fullName = Sq03Route.Name; e.kana = "アマミヤ リカ"; e.age = 27; e.department = "総務部";
-            return e;
-        }
-
         void OnClose()
         {
             AudioFx.Error();

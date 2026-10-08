@@ -31,6 +31,7 @@ namespace NightShift.Systems
         public string RepliedText;
         public bool Horror;                 // 怪異メール（文字化けなどの演出対象。原文は Body に残す）
         public bool Pinned;                 // 後続のメールに埋もれさせない
+        public string Picture;              // 本文の上に出す絵（エンディングの1枚絵の ID）
     }
 
     /// <summary>運用担当者の受信トレイ。業務連絡・作業依頼などはすべてメールで届く。</summary>

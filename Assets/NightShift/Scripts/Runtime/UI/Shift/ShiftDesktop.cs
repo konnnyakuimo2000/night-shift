@@ -297,9 +297,7 @@ namespace NightShift.UI.Shift
         public void HandleShortcuts(List<Shortcut> keys)
         {
             if (ShortcutInput.Capturing) return; // キー設定の入力待ち中
-            bool debug = Core.GameSettings.Current.debugMode;
-            if (debug && keys.Contains(Shortcut.ToggleDebug)) DebugPanelView.Open(this);
-            if (debug && keys.Contains(Shortcut.ToggleOverlay)) ToggleOverlay();
+            // デバッグは一時停止（Esc）のメニューから開く（デバッグのキーでは開かない）
 
             // 一時停止キー（既定 Esc）は最優先。リモート操作中・サブモニター表示中・演出中でも必ず効く
             if (keys.Contains(Shortcut.Escape))
@@ -460,7 +458,8 @@ namespace NightShift.UI.Shift
             var box = UIFactory.Panel(dim.transform, RetroTheme.Raised, "PauseBox");
             box.rectTransform.anchorMin = box.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             box.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            box.rectTransform.sizeDelta = new Vector2(300, 232);
+            bool debug = Core.GameSettings.Current.debugMode;
+            box.rectTransform.sizeDelta = new Vector2(300, debug ? 264 : 232);
             var bar = UIFactory.Image(box.transform, RetroTheme.GradientSprite(RetroTheme.TitleActiveA, RetroTheme.TitleActiveB), Color.white, "Title");
             bar.rectTransform.StretchH(3, 18, 3, 3);
             UIFactory.Label(bar.transform, " 一時停止", 12, TextAnchor.MiddleLeft, Color.white).rectTransform.Stretch();
@@ -476,14 +475,18 @@ namespace NightShift.UI.Shift
             UIFactory.Button(box.transform, "タイトルへ戻る", 50, 156, 200, 26, () =>
                 ShowModal("タイトルへ戻る", "タイトルへ戻ります。\n今夜の進み具合は失われます。よろしいですか？", "warning",
                     "タイトルへ戻る", () => { ClosePause(); Game.ShowTitle(); }, "やめる", null));
-            foreach (var (key, act) in new[] { (KeyCode.R, resume), (KeyCode.S, settings) })
+            Action debugPanel = () => { ClosePause(); DebugPanelView.Open(this); };
+            if (debug) UIFactory.Button(box.transform, "デバッグ(D)", 50, 188, 200, 26, debugPanel, "debug");
+            var pauseKeys = new List<(KeyCode, Action)> { (KeyCode.R, resume), (KeyCode.S, settings) };
+            if (debug) pauseKeys.Add((KeyCode.D, debugPanel));
+            foreach (var (key, act) in pauseKeys)
             {
                 var k = dim.gameObject.AddComponent<Screens.KeyAction>();
                 k.Key = key;
                 var a = act;
                 k.Action = () => { if (!ModalOpen) a(); };
             }
-            UIFactory.Label(box.transform, $"{Core.GameSettings.KeyLabel(Core.GameSettings.Pause)} で再開", 20, 192, 260, 18, 11, TextAnchor.MiddleCenter).color = RetroTheme.Shadow;
+            UIFactory.Label(box.transform, $"{Core.GameSettings.KeyLabel(Core.GameSettings.Pause)} で再開", 20, debug ? 224 : 192, 260, 18, 11, TextAnchor.MiddleCenter).color = RetroTheme.Shadow;
         }
 
         public void ClosePause()

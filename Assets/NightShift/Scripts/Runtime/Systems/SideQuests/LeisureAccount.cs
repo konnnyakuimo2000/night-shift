@@ -120,14 +120,28 @@ namespace NightShift.Systems.SideQuests
             return L.debt == 0 ? "完済しました。" : $"{Yen(amount)} 返済しました。残り {Yen(L.debt)}。";
         }
 
-        // ================= NIGHT CLUB（赤／黒） =================
-        public class Bet { public int Color, Amount, Ordinal; public float ResolveAt; }
+        // ================= NIGHT CLUB（スロット） =================
+        /// <summary>リールの絵柄</summary>
+        public static readonly string[] Symbols = { "７", "BAR", "ベル", "ﾁｪﾘｰ", "ﾘﾝｺﾞ" };
+        public const int Seven = 0, Bar = 1, Bell = 2, Cherry = 3, Apple = 4;
+
+        /// <summary>配当表（揃った絵柄・倍率・確率 1000 分の）。払戻し率は約 95%（長く遊ぶほど減る）</summary>
+        public static readonly (int symbol, int multiplier, int per1000)[] Paytable =
+        {
+            (Seven, 20, 10), (Bar, 10, 20), (Bell, 5, 50), (Cherry, 2, 150)
+        };
+        public static float WinChance { get { int n = 0; foreach (var p in Paytable) n += p.per1000; return n / 10f; } }
+        public static float ReturnRate { get { float r = 0; foreach (var p in Paytable) r += p.multiplier * p.per1000; return r / 10f; } }
+
+        public class Spin { public int[] Reels = new int[3]; public int Multiplier; }
+        public class Bet { public int Amount, Ordinal; public float ResolveAt, Placed; }
         public Bet PendingBet { get; private set; }
+        public Spin LastSpin { get; private set; }
+        public int LastPayout { get; private set; }
         public int PlaysTonight { get; private set; }
         public int StakedTonight { get; private set; }
         public int PaidTonight { get; private set; }
         public int LossTonight => StakedTonight - PaidTonight;
-        public static string ColorLabel(int c) => c == 0 ? "赤" : c == 1 ? "黒" : "ハウス";
 
         public int MaxStake => L.vip ? VipStake : Stakes[Stakes.Length - 1];
         public bool Vip => L.vip;
@@ -151,41 +165,55 @@ namespace NightShift.Systems.SideQuests
             return null;
         }
 
-        /// <summary>この順番の賭けの結果（0 = 赤, 1 = 黒, 2 = ハウス）。賭けの色や額では変わらない</summary>
-        public static int Outcome(int seed, int ordinal)
+        /// <summary>この順番の回転の結果。賭け金では変わらない（周回の種＋受け付けた順番で決まる）</summary>
+        public static Spin Outcome(int seed, int ordinal)
         {
             var r = new Random(unchecked(seed * 31 + 0x5104 + ordinal * 7919));
-            int v = r.Next(100);
-            return v < 48 ? 0 : v < 96 ? 1 : 2;
+            int v = r.Next(1000), acc = 0;
+            var spin = new Spin();
+            foreach (var p in Paytable)
+            {
+                acc += p.per1000;
+                if (v < acc) { spin.Reels[0] = spin.Reels[1] = spin.Reels[2] = p.symbol; spin.Multiplier = p.multiplier; return spin; }
+            }
+            // 外れ: 3つが揃わない並び（2つまでは揃うことがある）
+            do { for (int i = 0; i < 3; i++) spin.Reels[i] = r.Next(Symbols.Length); }
+            while (spin.Reels[0] == spin.Reels[1] && spin.Reels[1] == spin.Reels[2]);
+            return spin;
         }
 
-        public string PlaceBet(int color, int amount)
+        public string PlaceBet(int amount)
         {
             var why = BetBlocked(amount);
             if (why != null) return why;
-            var b = new Bet { Color = color, Amount = amount, Ordinal = ++L.betOrdinal, ResolveAt = Now + BetMinutes };
+            var b = new Bet { Amount = amount, Ordinal = ++L.betOrdinal, ResolveAt = Now + BetMinutes, Placed = Now };
             L.free -= amount; L.locked += amount; L.gambleStaked += amount;
             StakedTonight += amount; PlaysTonight++; L.gamblePlays++;
             if (!L.gambleNights.Contains(Day)) L.gambleNights.Add(Day);
             PendingBet = b;
-            Log($"賭け #{b.Ordinal} {ColorLabel(color)} に {Yen(amount)}");
+            LastSpin = null;
+            Log($"回転 #{b.Ordinal}  {Yen(amount)}");
             _q.Route<Sq04Route>()?.OnBetPlaced();
             Touch();
-            return $"{ColorLabel(color)} に {Yen(amount)} を賭けました。結果は {TimeManager.Format(b.ResolveAt)} に出ます。";
+            return $"{Yen(amount)} で回しました。";
         }
+
+        static string Reels(Spin s) => $"{Symbols[s.Reels[0]]}・{Symbols[s.Reels[1]]}・{Symbols[s.Reels[2]]}";
 
         void ResolveBet()
         {
             var b = PendingBet;
             if (b == null) return;
             PendingBet = null;
-            int result = Outcome(CareerRecord.Current.seed, b.Ordinal);
-            bool win = result == b.Color;
-            int pay = win ? b.Amount * 2 : 0;
+            var spin = Outcome(CareerRecord.Current.seed, b.Ordinal);
+            bool win = spin.Multiplier > 0;
+            int pay = b.Amount * spin.Multiplier;
             L.locked -= b.Amount;
             L.free += pay; L.gamblePaid += pay; PaidTonight += pay;
-            Log($"結果 #{b.Ordinal}: {ColorLabel(result)} — {(win ? "当たり +" + Yen(b.Amount) : "外れ −" + Yen(b.Amount))}");
-            S.Notifications.Notify(NotificationType.Info, "NIGHT CLUB", $"結果: {ColorLabel(result)}（{(win ? "当たり" : "外れ")}）", Now);
+            LastSpin = spin;
+            LastPayout = pay;
+            Log($"結果 #{b.Ordinal}: {Reels(spin)} — {(win ? $"{spin.Multiplier}倍 +{Yen(pay - b.Amount)}" : "外れ −" + Yen(b.Amount))}");
+            S.Notifications.Notify(NotificationType.Info, "NIGHT CLUB", $"{Reels(spin)}　{(win ? $"{spin.Multiplier}倍！" : "外れ")}", Now);
             if (win) L.gambleFirstWin = true; else L.gambleFirstLoss = true;
             _q.Route<Sq04Route>()?.OnBetResolved(win);
             Touch();

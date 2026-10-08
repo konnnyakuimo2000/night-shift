@@ -72,7 +72,7 @@ namespace NightShift.UI.Screens
             var w = wm.Open(new WindowSpec
             {
                 Id = "eval", Title = $"業務評価 - DAY {day.dayNumber} {day.title}", Icon = "doc", Width = 980, Height = 740,
-                Closable = false, Minimizable = false, Maximizable = false, Position = new Vector2(150, 24), StatusCells = 1
+                Closable = false, Minimizable = false, Maximizable = false, Centered = true, StatusCells = 1
             }, out _);
             w.SetStatus(0, "クリック / Enter で演出をスキップ");
             var c = w.Content;
@@ -222,6 +222,7 @@ namespace NightShift.UI.Screens
                     ("日当（深夜手当込み）", slip.basePay, false),
                     ($"評価手当（{slip.score}点）", slip.performancePay, false),
                     ($"精勤手当（{slip.rank}）", slip.rankBonus, false),
+                    ($"出来高手当（{slip.tasksDone}件）", slip.taskPay, false),
                     ("罰金・控除", slip.deduction, true),
                 };
                 float ly = 6;

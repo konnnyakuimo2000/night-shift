@@ -69,71 +69,99 @@ namespace NightShift.UI.Shift
         }
     }
 
-    // ============================================================ NIGHT CLUB
+    // ============================================================ NIGHT CLUB（スロット）
+    /// <summary>
+    /// 簡単なスロット。賭け金を選んで［回す］だけ。3つ揃えば配当表の倍率で払い戻す。
+    /// 当たる確率と払戻し率は画面に出したまま（長く遊ぶほど減る）。結果は回した順番で決まり、やり直しても変わらない。
+    /// </summary>
     public class NightClubTool : ToolWindow
     {
         LeisureUi.AccountPanel _account;
         readonly List<(int amount, FlatButton b)> _stakes = new List<(int, FlatButton)>();
         int _stake = 500;
-        Text _info, _result, _hist, _stats, _caps;
-        Image _wait;
-        FlatButton _red, _black, _capBtn, _stopBtn;
+        readonly Text[] _reels = new Text[3];
+        readonly Image[] _reelBg = new Image[3];
+        Text _result, _stats, _caps, _hist;
+        FlatButton _spin, _capBtn, _stopBtn;
         static readonly int[] CapSteps = { 0, 3000, 5000, 10000, 20000 };
+        static readonly Color[] SymbolColor =
+        {
+            new Color(0.85f, 0.05f, 0.05f), new Color(0.1f, 0.1f, 0.12f), new Color(0.85f, 0.6f, 0f), new Color(0.75f, 0f, 0.3f), new Color(0.2f, 0.55f, 0.1f)
+        };
+        System.Random _blur = new System.Random();
 
-        protected override float RefreshInterval => 0.25f;
+        protected override float RefreshInterval => 0.08f;
         LeisureAccount A => S.Quests.Leisure;
 
         protected override void Build(RectTransform p)
         {
             var accent = LeisureUi.Club;
-            float y = ToolStyle.Header(p, "NIGHT CLUB", "会員制の赤／黒。当たる確率は 赤 48%・黒 48%・ハウス 4%（どちらでもない）。", "globe", accent);
-            var acc = ToolStyle.Box(p, 0, 1, y, 90, "遊興口座（給料の財布とは別）");
-            _account = new LeisureUi.AccountPanel(acc, D, accent, s => W.SetStatus(0, s));
+            float y = ToolStyle.Header(p, "NIGHT CLUB", $"3つ揃えば当たり！　当たる確率 {LeisureAccount.WinChance:0}%・払戻し率 {LeisureAccount.ReturnRate:0}%（長く遊ぶほど減ります）", "globe", accent);
+            _account = new LeisureUi.AccountPanel(ToolStyle.Box(p, 0, 1, y, 90, "遊興口座（給料の財布とは別）"), D, accent, s => W.SetStatus(0, s));
             y += 98;
 
-            var bet = ToolStyle.Box(p, 0, 1, y, 158, "賭ける（1回 ゲーム内2分・受付後の取消不可・一夜6回まで）");
+            // リール
+            var reel = ToolStyle.Box(p, 0, 1, y, 150);
+            for (int i = 0; i < 3; i++)
+            {
+                var bg = UIFactory.Image(reel, RetroTheme.Field, Color.white, "Reel");
+                bg.rectTransform.Place(20 + i * 180, 4, 160, 96);
+                _reelBg[i] = bg;
+                _reels[i] = ToolStyle.Text(bg.transform, "７", 40, Color.black, TextAnchor.MiddleCenter, true);
+                _reels[i].rectTransform.Stretch();
+            }
+            _result = ToolStyle.Text(reel, "", 0, 106, 560, 30, 18, accent, TextAnchor.MiddleCenter, true);
+            y += 158;
+
+            // 賭け金と［回す］
+            var bet = ToolStyle.Box(p, 0, 1, y, 64, "賭け金を選んで、回す");
             float x = 0;
             foreach (int v in new[] { 500, 1000, 3000, 5000, LeisureAccount.VipStake })
             {
                 int amount = v;
-                var b = ToolStyle.Button(bet, LeisureUi.Yen(v), x, 0, 84, 26, () => { _stake = amount; Refresh(); }, accent, false);
+                var b = ToolStyle.Button(bet, LeisureUi.Yen(v), x, 4, 66, 34, () => { _stake = amount; Refresh(); }, accent, false);
                 _stakes.Add((v, b));
-                x += 88;
+                x += 70;
             }
-            _info = ToolStyle.Text(bet, "", 0, 32, 520, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft);
-            _red = ToolStyle.Button(bet, "赤 に賭ける", 0, 56, 160, 40, () => Place(0), new Color(0.65f, 0.05f, 0.05f));
-            _black = ToolStyle.Button(bet, "黒 に賭ける", 168, 56, 160, 40, () => Place(1), new Color(0.1f, 0.1f, 0.12f));
-            _wait = ToolStyle.Progress(bet, 340, 62, 200, 26, accent);
-            _result = ToolStyle.Text(bet, "", 0, 102, 540, 22, 13, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
-            y += 166;
-
-            var set = ToolStyle.Box(p, 0, 1, y, 64, "自分で決める上限（アプリ内で設定・追加料金なし）");
-            _capBtn = ToolStyle.Button(set, "", 0, 0, 200, 24, () => { NightCap = Next(CapSteps, A.NightCap); }, accent, false);
-            _stopBtn = ToolStyle.Button(set, "", 206, 0, 220, 24, () => { StopLoss = Next(CapSteps, A.StopLoss); }, accent, false);
-            _caps = ToolStyle.Text(set, "", 0, 28, 540, 18, 11, ToolStyle.Muted, TextAnchor.MiddleLeft);
+            _spin = ToolStyle.Button(bet, "回す！", 0, 0, 170, 40, () => { W.SetStatus(0, A.PlaceBet(_stake)); Refresh(); }, new Color(0.75f, 0.05f, 0.05f));
+            _spin.Rect.AnchorTopRight(0, 2, 170, 40);
+            _spin.Label.fontSize = 18;
             y += 72;
 
-            var stats = ToolStyle.Box(p, 0, 1, y, 40);
-            _stats = ToolStyle.Text(stats, "", 0, 0, 540, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
-            y += 48;
-            var hist = ToolStyle.Box(p, 0, 1, y, 0, "履歴（過去の結果は、次の結果を予測しません）");
-            _hist = LeisureUi.History(hist);
+            // 配当表
+            var pay = ToolStyle.Box(p, 0, 0.5f, y, 112, "配当表");
+            int row = 0;
+            foreach (var (symbol, mul, per) in LeisureAccount.Paytable)
+            {
+                string sym = LeisureAccount.Symbols[symbol];
+                var t = ToolStyle.Text(pay, $"{sym} {sym} {sym}", 0, row * 21, 150, 20, 13, SymbolColor[symbol], TextAnchor.MiddleLeft, true);
+                ToolStyle.Text(pay, $"×{mul}　（{per / 10f:0.0}%）", 150, row * 21, 120, 20, 13, ToolStyle.Ink, TextAnchor.MiddleLeft);
+                row++;
+            }
+            var lim = ToolStyle.Box(p, 0.5f, 1, y, 112, "自分で決める上限");
+            _capBtn = ToolStyle.Button(lim, "", 0, 0, 250, 24, () => A.NightCap = Next(CapSteps, A.NightCap), accent, false);
+            _stopBtn = ToolStyle.Button(lim, "", 0, 28, 250, 24, () => A.StopLoss = Next(CapSteps, A.StopLoss), accent, false);
+            _caps = ToolStyle.Text(lim, "", 0, 56, 260, 30, 11, ToolStyle.Muted, TextAnchor.UpperLeft);
+            y += 120;
+
+            var stats = ToolStyle.Box(p, 0, 1, y, 36);
+            _stats = ToolStyle.Text(stats, "", 0, 0, 560, 18, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            y += 44;
+            _hist = LeisureUi.History(ToolStyle.Box(p, 0, 1, y, 0, "履歴（過去の結果は、次の結果を予測しません）"));
         }
 
-        int NightCap { set => A.NightCap = value; }
-        int StopLoss { set => A.StopLoss = value; }
         static int Next(int[] steps, int cur) { int i = Array.IndexOf(steps, cur); return steps[(i + 1) % steps.Length]; }
 
-        void Place(int color)
+        void ShowReel(int i, int symbol, bool spinning)
         {
-            string msg = A.PlaceBet(color, _stake);
-            W.SetStatus(0, msg);
-            Refresh();
+            _reels[i].text = LeisureAccount.Symbols[symbol];
+            _reels[i].color = spinning ? new Color(0.45f, 0.45f, 0.5f) : SymbolColor[symbol];
+            _reelBg[i].color = spinning ? new Color(0.92f, 0.92f, 0.92f) : Color.white;
         }
 
         protected override void Refresh()
         {
-            if (_info == null || S?.Quests == null) return;
+            if (_result == null || S?.Quests == null) return;
             _account.Refresh();
             foreach (var (amount, b) in _stakes)
             {
@@ -141,38 +169,54 @@ namespace NightShift.UI.Shift
                 b.SetLatched(amount == _stake);
             }
             string blocked = A.BetBlocked(_stake);
-            _info.text = $"賭け金 {LeisureUi.Yen(_stake)}　当たれば +{LeisureUi.Yen(_stake)}　外れ・ハウスなら −{LeisureUi.Yen(_stake)}（最大損失）";
-            _red.Interactable = _black.Interactable = blocked == null;
+            _spin.Interactable = blocked == null;
             var pb = A.PendingBet;
             if (pb != null)
             {
-                float k = 1f - Mathf.Clamp01((pb.ResolveAt - S.Time.CurrentMinute) / LeisureAccount.BetMinutes);
-                _wait.fillAmount = k;
-                _result.text = $"結果待ち: {LeisureAccount.ColorLabel(pb.Color)} に {LeisureUi.Yen(pb.Amount)}（{TimeManager.Format(pb.ResolveAt)} に確定）";
+                // 左から順に止まる（回し終わるのはゲーム内2分後）
+                float k = Mathf.Clamp01((S.Time.CurrentMinute - pb.Placed) / LeisureAccount.BetMinutes);
+                var final = LeisureAccount.Outcome(Core.CareerRecord.Current.seed, pb.Ordinal);
+                for (int i = 0; i < 3; i++)
+                {
+                    bool stopped = k >= 0.45f + 0.25f * i;
+                    ShowReel(i, stopped ? final.Reels[i] : _blur.Next(LeisureAccount.Symbols.Length), !stopped);
+                }
+                _result.text = "回転中…";
+            }
+            else if (A.LastSpin != null)
+            {
+                for (int i = 0; i < 3; i++) ShowReel(i, A.LastSpin.Reels[i], false);
+                _result.text = A.LastSpin.Multiplier > 0 ? $"{A.LastSpin.Multiplier}倍！　+{LeisureUi.Yen(A.LastPayout)}" : "外れ";
             }
             else
             {
-                _wait.fillAmount = 0;
-                _result.text = blocked != null && A.PlaysTonight > 0 ? blocked : (blocked ?? "賭け金と色を選んでください。");
+                for (int i = 0; i < 3; i++) ShowReel(i, i == 1 ? LeisureAccount.Bar : LeisureAccount.Seven, false);
+                _result.text = blocked ?? "賭け金を選んで［回す！］";
             }
+            if (pb == null && blocked != null && A.LastSpin != null) W.SetStatus(0, blocked);
             _capBtn.SetText(A.NightCap > 0 ? $"一夜の支出上限: {LeisureUi.Yen(A.NightCap)}" : "一夜の支出上限: なし");
             _stopBtn.SetText(A.StopLoss > 0 ? $"この損失で新規停止: {LeisureUi.Yen(A.StopLoss)}" : "損失での新規停止: なし");
-            _caps.text = $"今夜: {A.PlaysTonight}/{LeisureAccount.NightlyLimit} 回　賭けた額 {LeisureUi.Yen(A.StakedTonight)}　払戻し {LeisureUi.Yen(A.PaidTonight)}";
-            _stats.text = $"ギャンブル純利益（ツール代込み）: {LeisureUi.Signed(A.GambleNet)}　　賭けた夜: {A.GambleNights} 夜{(A.Vip ? "　　VIP席" : "")}";
+            _caps.text = $"今夜 {A.PlaysTonight}/{LeisureAccount.NightlyLimit} 回\n賭けた額 {LeisureUi.Yen(A.StakedTonight)}　払戻し {LeisureUi.Yen(A.PaidTonight)}";
+            _stats.text = $"ギャンブル純利益（ツール代込み）: {LeisureUi.Signed(A.GambleNet)}　　遊んだ夜: {A.GambleNights} 夜{(A.Vip ? "　　VIP席" : "")}";
             _hist.text = LeisureUi.HistoryText(A);
         }
     }
 
-    // ============================================================ MIDNIGHT FX
+    // ============================================================ MIDNIGHT FX（上がる／下がる）
+    /// <summary>
+    /// 簡単な取引画面。金額を選んで［上がる］か［下がる］を押し、好きなときに［確定する］。倍率は ×5 固定。
+    /// 損失は入れた金額まで。終業時には自動で確定する。値動きの方向は予測しない。
+    /// </summary>
     public class MidnightFxTool : ToolWindow
     {
+        public const int Leverage = 5;
+        static readonly int[] Amounts = { 1000, 3000, 5000 };
         LeisureUi.AccountPanel _account;
         readonly List<Image> _bars = new List<Image>();
-        readonly List<(int v, FlatButton b)> _margins = new List<(int, FlatButton)>(), _levs = new List<(int, FlatButton)>();
-        int _margin = 500, _lev = 1;
-        Text _price, _releases, _order, _pos, _stats, _hist;
-        FlatButton _buy, _sell, _close;
-        InputField _tp, _sl, _alert;
+        readonly List<(int v, FlatButton b)> _amounts = new List<(int, FlatButton)>();
+        int _amount = 1000;
+        Text _price, _releases, _pos, _pnl, _stats, _hist, _note;
+        FlatButton _up, _down, _close;
         const int Bars = 72;
 
         protected override float RefreshInterval => 0.3f;
@@ -181,14 +225,13 @@ namespace NightShift.UI.Shift
         protected override void Build(RectTransform p)
         {
             var accent = LeisureUi.Fx;
-            float y = ToolStyle.Header(p, "MIDNIGHT FX", "架空通貨ペア NEX/CRD。値動きの方向は予測しません。損失は証拠金まで。終業時に自動で決済されます。", "network", accent);
-            var acc = ToolStyle.Box(p, 0, 1, y, 90, "遊興口座（給料の財布とは別）");
-            _account = new LeisureUi.AccountPanel(acc, D, accent, s => W.SetStatus(0, s));
+            float y = ToolStyle.Header(p, "MIDNIGHT FX", "上がるか、下がるか。選んで、好きなときに確定するだけ。損失は入れた金額まで（終業時に自動で確定）。", "network", accent);
+            _account = new LeisureUi.AccountPanel(ToolStyle.Box(p, 0, 1, y, 90, "遊興口座（給料の財布とは別）"), D, accent, s => W.SetStatus(0, s));
             y += 98;
 
-            var chart = ToolStyle.Box(p, 0, 1, y, 150, "NEX/CRD");
+            var chart = ToolStyle.Box(p, 0, 1, y, 170, "NEX/CRD（架空の通貨）");
             var area = UIFactory.Image(chart, RetroTheme.Field, new Color(0.05f, 0.08f, 0.07f), "Chart");
-            area.rectTransform.Stretch(0, 0, 170, 0);
+            area.rectTransform.Stretch(0, 0, 190, 0);
             for (int i = 0; i < Bars; i++)
             {
                 var b = UIFactory.Solid(area.transform, new Color(0.3f, 0.95f, 0.55f), "Bar");
@@ -198,62 +241,43 @@ namespace NightShift.UI.Shift
                 b.raycastTarget = false;
                 _bars.Add(b);
             }
-            _price = ToolStyle.Text(chart, "", 0, 0, 160, 34, 22, accent, TextAnchor.MiddleRight, true, true);
-            _price.rectTransform.AnchorTopRight(0, 0, 160, 34);
-            _releases = ToolStyle.Text(chart, "", 0, 0, 160, 100, 11, ToolStyle.Muted, TextAnchor.UpperRight);
-            _releases.rectTransform.AnchorTopRight(0, 38, 160, 100);
-            y += 158;
+            _price = ToolStyle.Text(chart, "", 0, 0, 180, 40, 28, accent, TextAnchor.MiddleRight, true, true);
+            _price.rectTransform.AnchorTopRight(0, 0, 180, 40);
+            _releases = ToolStyle.Text(chart, "", 0, 0, 180, 100, 11, ToolStyle.Muted, TextAnchor.UpperRight);
+            _releases.rectTransform.AnchorTopRight(0, 46, 180, 100);
+            y += 178;
 
-            var order = ToolStyle.Box(p, 0, 1, y, 128, "注文（同時に1つまで・一夜6回まで）");
+            var order = ToolStyle.Box(p, 0, 1, y, 104, "金額を選んで、上がるか下がるかを選ぶ");
             float x = 0;
-            foreach (int v in LeisureAccount.Stakes)
+            foreach (int v in Amounts)
             {
                 int amount = v;
-                var b = ToolStyle.Button(order, LeisureUi.Yen(v), x, 0, 78, 24, () => { _margin = amount; Refresh(); }, accent, false);
-                _margins.Add((v, b)); x += 82;
+                var b = ToolStyle.Button(order, LeisureUi.Yen(v), x, 0, 100, 30, () => { _amount = amount; Refresh(); }, accent, false);
+                _amounts.Add((v, b)); x += 106;
             }
-            x += 10;
-            foreach (int v in LeisureAccount.Leverages)
-            {
-                int lev = v;
-                var b = ToolStyle.Button(order, $"×{v}", x, 0, 46, 24, () => { _lev = lev; Refresh(); }, accent, false);
-                _levs.Add((v, b)); x += 50;
-            }
-            _order = ToolStyle.Text(order, "", 0, 28, 640, 18, 11, ToolStyle.Ink, TextAnchor.MiddleLeft);
-            ToolStyle.Text(order, "利益確定", 0, 52, 60, 22, 11, ToolStyle.Muted, TextAnchor.MiddleLeft);
-            _tp = ToolStyle.Input(order, 60, 52, 80, 22);
-            ToolStyle.Text(order, "損失確定", 150, 52, 60, 22, 11, ToolStyle.Muted, TextAnchor.MiddleLeft);
-            _sl = ToolStyle.Input(order, 210, 52, 80, 22);
-            ToolStyle.Text(order, "到達通知", 300, 52, 60, 22, 11, ToolStyle.Muted, TextAnchor.MiddleLeft);
-            _alert = ToolStyle.Input(order, 360, 52, 80, 22);
-            ToolStyle.Button(order, "通知を設定", 446, 52, 90, 22, SetAlert, accent, false);
-            _buy = ToolStyle.Button(order, "買い", 0, 80, 150, 30, () => Place(1), new Color(0.05f, 0.4f, 0.15f));
-            _sell = ToolStyle.Button(order, "売り", 156, 80, 150, 30, () => Place(-1), new Color(0.55f, 0.08f, 0.08f));
-            y += 136;
+            _note = ToolStyle.Text(order, "", x + 10, 0, 300, 30, 11, ToolStyle.Muted, TextAnchor.MiddleLeft);
+            _up = ToolStyle.Button(order, "▲ 上がる", 0, 38, 300, 44, () => Place(1), new Color(0.05f, 0.45f, 0.15f));
+            _down = ToolStyle.Button(order, "▼ 下がる", 320, 38, 300, 44, () => Place(-1), new Color(0.6f, 0.08f, 0.08f));
+            _up.Label.fontSize = _down.Label.fontSize = 18;
+            y += 112;
 
-            var pos = ToolStyle.Box(p, 0, 1, y, 56, "建玉");
-            _pos = ToolStyle.Text(pos, "", 0, 0, 500, 36, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
-            _close = ToolStyle.Button(pos, "決済する", 0, 0, 110, 30, () => { W.SetStatus(0, A.CloseNow()); Refresh(); }, accent);
-            _close.Rect.AnchorTopRight(0, 2, 110, 30);
-            y += 64;
+            var pos = ToolStyle.Box(p, 0, 1, y, 70, "いまの取引");
+            _pos = ToolStyle.Text(pos, "", 0, 0, 380, 22, 13, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _pnl = ToolStyle.Text(pos, "", 0, 22, 380, 30, 22, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            _close = ToolStyle.Button(pos, "確定する", 0, 0, 200, 46, () => { W.SetStatus(0, A.CloseNow()); Refresh(); }, accent);
+            _close.Rect.AnchorTopRight(0, 4, 200, 46);
+            _close.Label.fontSize = 16;
+            y += 78;
 
-            var stats = ToolStyle.Box(p, 0, 1, y, 40);
-            _stats = ToolStyle.Text(stats, "", 0, 0, 640, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
-            y += 48;
+            var stats = ToolStyle.Box(p, 0, 1, y, 36);
+            _stats = ToolStyle.Text(stats, "", 0, 0, 640, 18, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            y += 44;
             _hist = LeisureUi.History(ToolStyle.Box(p, 0, 1, y, 0, "履歴"));
-        }
-
-        static decimal ParsePrice(InputField f) => f != null && decimal.TryParse(f.text, out var v) && v > 0 ? v : 0;
-
-        void SetAlert()
-        {
-            A.Alert = ParsePrice(_alert);
-            W.SetStatus(0, A.Alert > 0 ? $"価格が {A.Alert:0.000} に到達したら通知します。" : "到達通知を解除しました。");
         }
 
         void Place(int side)
         {
-            W.SetStatus(0, A.PlaceOrder(side, _margin, _lev, ParsePrice(_tp), ParsePrice(_sl)));
+            W.SetStatus(0, A.PlaceOrder(side, _amount, Leverage));
             Refresh();
         }
 
@@ -261,8 +285,7 @@ namespace NightShift.UI.Shift
         {
             if (_price == null || S?.Quests == null) return;
             _account.Refresh();
-            foreach (var (v, b) in _margins) b.SetLatched(v == _margin);
-            foreach (var (v, b) in _levs) b.SetLatched(v == _lev);
+            foreach (var (v, b) in _amounts) b.SetLatched(v == _amount);
             var series = A.Series(Bars);
             decimal lo = decimal.MaxValue, hi = decimal.MinValue;
             foreach (var v in series) { if (v < lo) lo = v; if (v > hi) hi = v; }
@@ -276,19 +299,27 @@ namespace NightShift.UI.Shift
                 _bars[i].color = up ? new Color(0.3f, 0.95f, 0.55f) : new Color(0.95f, 0.35f, 0.3f);
             }
             _price.text = A.PriceNow.ToString("0.000");
-            var rel = new System.Text.StringBuilder(A.SpikeNight ? "<color=#C03020><b>急変夜</b></color>\n" : "");
-            rel.Append("架空指標の発表:\n");
+            var rel = new System.Text.StringBuilder(A.SpikeNight ? "<color=#C03020><b>今夜は急変夜</b></color>\n" : "");
+            rel.Append("値が動きやすい時刻:\n");
             foreach (var t in A.Releases) rel.Append(TimeManager.Format(t)).Append('\n');
             _releases.text = rel.ToString();
-            decimal fee = LeisureAccount.Fee(_margin, _lev);
-            _order.text = $"証拠金 {LeisureUi.Yen(_margin)} ×{_lev} = 想定元本 {LeisureUi.Yen(_margin * _lev)}　手数料 {LeisureUi.Yen((int)fee)}（往復・新規時）　{A.OrdersTonight}/{LeisureAccount.NightlyLimit} 回";
-            string blocked = A.OrderBlocked(_margin, _lev);
-            _buy.Interactable = _sell.Interactable = blocked == null;
+            _note.text = $"倍率 ×{Leverage}・手数料 {LeisureUi.Yen((int)LeisureAccount.Fee(_amount, Leverage))}\n今夜 {A.OrdersTonight}/{LeisureAccount.NightlyLimit} 回";
+            string blocked = A.OrderBlocked(_amount, Leverage);
+            _up.Interactable = _down.Interactable = blocked == null;
             var o = A.Open;
             _close.Interactable = o != null;
-            _pos.text = o == null ? (blocked ?? "建玉はありません。")
-                : $"{(o.Side > 0 ? "買い" : "売り")} {LeisureUi.Yen(o.Margin)} ×{o.Leverage} @ {o.Entry:0.000}　含み損益 {LeisureUi.Signed((long)Math.Round(A.UnrealizedNow))}" +
-                  $"\n<size=11>{(o.TakeProfit > 0 ? $"利益確定 {o.TakeProfit:0.000}　" : "")}{(o.StopLoss > 0 ? $"損失確定 {o.StopLoss:0.000}　" : "")}残りの証拠金が20%を切ると強制決済</size>";
+            if (o == null)
+            {
+                _pos.text = blocked ?? "金額を選んで［上がる］か［下がる］を押してください。";
+                _pnl.text = "";
+            }
+            else
+            {
+                long pnl = (long)Math.Round(A.UnrealizedNow);
+                _pos.text = $"{(o.Side > 0 ? "▲ 上がる" : "▼ 下がる")} に {LeisureUi.Yen(o.Margin)}（{o.Entry:0.000} から）";
+                _pnl.text = $"いま {LeisureUi.Signed(pnl)}";
+                _pnl.color = pnl >= 0 ? new Color(0.05f, 0.45f, 0.15f) : new Color(0.7f, 0.08f, 0.08f);
+            }
             _stats.text = $"FX純利益（確定分・手数料とツール代込み）: {LeisureUi.Signed(A.FxNet)}　取引した夜: {A.FxNights} 夜　今夜: {LeisureUi.Signed(A.PnlTonight)}";
             _hist.text = LeisureUi.HistoryText(A);
         }

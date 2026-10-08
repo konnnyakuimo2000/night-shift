@@ -19,13 +19,16 @@ namespace NightShift.UI.Screens
             var paper = UIFactory.Solid(root.transform, new Color(0.95f, 0.94f, 0.9f), "Paper");
             paper.rectTransform.anchorMin = paper.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             paper.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            paper.rectTransform.sizeDelta = new Vector2(660, 560);
+            paper.rectTransform.sizeDelta = new Vector2(660, 700);
             var ink = new Color(0.1f, 0.1f, 0.1f);
             UIFactory.Label(paper.transform, "SUB ENDING", 20, 16, 620, 30, 22, TextAnchor.MiddleCenter, ink, true).fontStyle = FontStyle.Bold;
             UIFactory.Solid(paper.transform, ink, "Rule").rectTransform.Place(20, 52, 620, 2);
             UIFactory.Label(paper.transform, $"【{endingId}　{def?.Title}】（{def?.Kind}）", 20, 66, 620, 26, 17, TextAnchor.MiddleCenter, bad ? new Color(0.6f, 0.05f, 0.05f) : ink).fontStyle = FontStyle.Bold;
             UIFactory.Label(paper.transform, $"夜間IT運用担当　{operatorName}", 20, 96, 620, 22, 13, TextAnchor.MiddleCenter, ink);
-            UIFactory.Label(paper.transform, def?.Text ?? "", 50, 130, 560, 200, 14, TextAnchor.UpperCenter, ink);
+            var art = UIFactory.Image(paper.transform, EndingArt.Get(endingId), Color.white, "Art");
+            art.rectTransform.Place(202, 124, 256, 160);
+            UIFactory.Solid(paper.transform, ink, "ArtFrame").rectTransform.Place(200, 122, 260, 2);
+            UIFactory.Label(paper.transform, def?.Text ?? "", 50, 296, 560, 150, 14, TextAnchor.UpperCenter, ink);
 
             var career = CareerRecord.Current;
             var sb = new StringBuilder("サブエンド図鑑\n");
@@ -36,11 +39,11 @@ namespace NightShift.UI.Screens
             foreach (var e in SubEndings.All)
                 if (career.subEndingsSeen.Contains(e.Id)) { sb.Append(first ? "" : "・").Append(e.Title); first = false; }
             sb.Append("）");
-            UIFactory.Label(paper.transform, sb.ToString(), 40, 360, 580, 90, 12, TextAnchor.UpperLeft, ink);
+            UIFactory.Label(paper.transform, sb.ToString(), 40, 500, 580, 90, 12, TextAnchor.UpperLeft, ink);
 
-            var b1 = UIFactory.Button(paper.transform, retryLabel + "(R)", 120, 480, 200, 32, retry, "clock");
+            var b1 = UIFactory.Button(paper.transform, retryLabel + "(R)", 120, 620, 200, 32, retry, "clock");
             b1.Interactable = retry != null;
-            UIFactory.Button(paper.transform, "タイトルへ(T)", 340, 480, 200, 32, toTitle, "exit");
+            UIFactory.Button(paper.transform, "タイトルへ(T)", 340, 620, 200, 32, toTitle, "exit");
             if (retry != null) { var k1 = root.gameObject.AddComponent<KeyAction>(); k1.Key = KeyCode.R; k1.Action = retry; }
             var k2 = root.gameObject.AddComponent<KeyAction>(); k2.Key = KeyCode.T; k2.Action = toTitle;
             AudioFx.Chime();

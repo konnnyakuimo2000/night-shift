@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static partial class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 33;
+        public const int DataVersion = 35;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -520,11 +520,11 @@ namespace NightShift.Data
                 "通信の流れ（接続元 → 接続先）を表示します。サーバーは監視のみで、操作はできません。",
                 "社内ネットワークの区分は「社内サーバー構成資料」を参照してください。");
             Page(manualSystem, "アカウントとキー操作", "",
-                $"・ログインパスワードは [システム設定] → [パスワードの変更] で変更できます。{B("パスワードは他人に教えないこと。")}",
+                $"・ログインパスワードは [メインメニュー] → [パスワードの変更] で変更できます。{B("パスワードは他人に教えないこと。")}",
                 "・ウィンドウ切替: {KEY:SWITCH} / Alt+PageUp　・閉じる: {KEY:CLOSE}　・一時停止: {KEY:PAUSE}　・メール: {KEY:MAIL}",
                 "・接続を許可: {KEY:ALLOW}　・接続を拒否: {KEY:BLOCK}　・社員情報を参照: {KEY:LOOKUP}",
                 "・メインメニューの各システムは 1〜7 のキーでも開けます。",
-                "（キーの割り当ては [システム設定] → [キー設定] で変更できます）");
+                "（キーの割り当ては {KEY:PAUSE}（一時停止）→ [システム設定] → [キー設定] で変更できます）");
             Page(manualSystem, "リモートPCのキー操作", Features.RemoteSupport,
                 "・スタート {KEY:REMOTE_START} / ファイル名を指定して実行 {KEY:REMOTE_RUN} / エクスプローラー {KEY:REMOTE_EXPLORER}",
                 "・設定 {KEY:REMOTE_SETTINGS} / デスクトップ {KEY:REMOTE_DESKTOP} / タスク マネージャー {KEY:REMOTE_TASKMGR} / 更新 {KEY:REFRESH}",
@@ -654,7 +654,7 @@ namespace NightShift.Data
                 $"接続要求の {B("端末")} と、社員情報の {B("登録端末")} が表示されるようになります。\n" +
                 $"また、{B("ログインパスワードがまだ初期設定のまま")}です。本日中に変更をお願いします。\n\n" +
                 Tasks($"・{B("接続要求の審査")} … 利用者だけでなく、{B("接続してきた端末")}も確認してください。",
-                      $"・{B("パスワードの変更")} … [システム設定] → [パスワードの変更]");
+                      $"・{B("パスワードの変更")} … [メインメニュー] → [パスワードの変更]");
             day2.briefingFooter =
                 $"社員の登録端末は、{Col("「社員情報の検索・参照」", Check)} の検索結果や詳細表示で確認できます。\n" +
                 $"ルール1は、本日から {B("「自分の登録端末から」")} の条件が加わりました。\n" +

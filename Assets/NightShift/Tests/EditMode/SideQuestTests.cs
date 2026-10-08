@@ -86,12 +86,26 @@ namespace NightShift.Tests
         [Test]
         public void Gamble_OutcomeDistribution_IsAsDisplayed_AndDeterministic()
         {
-            int[] n = new int[3];
-            for (int i = 1; i <= 20000; i++) n[LeisureAccount.Outcome(42, i)]++;
-            Assert.That(n[0] / 20000f, Is.InRange(0.46f, 0.50f));
-            Assert.That(n[1] / 20000f, Is.InRange(0.46f, 0.50f));
-            Assert.That(n[2] / 20000f, Is.InRange(0.03f, 0.05f));
-            Assert.AreEqual(LeisureAccount.Outcome(42, 7), LeisureAccount.Outcome(42, 7), "同じ順番なら同じ結果");
+            // スロット: 表示している確率どおりに当たり、払戻し率は 100% 未満（長く遊ぶほど減る）
+            const int N = 40000;
+            int wins = 0, sevens = 0;
+            long paid = 0;
+            for (int i = 1; i <= N; i++)
+            {
+                var spin = LeisureAccount.Outcome(42, i);
+                bool line = spin.Reels[0] == spin.Reels[1] && spin.Reels[1] == spin.Reels[2];
+                Assert.AreEqual(spin.Multiplier > 0, line, "3つ揃ったときだけ当たり");
+                if (spin.Multiplier > 0) wins++;
+                if (spin.Multiplier == 20) sevens++;
+                paid += spin.Multiplier;
+            }
+            Assert.That(wins / (float)N * 100f, Is.InRange(LeisureAccount.WinChance - 1f, LeisureAccount.WinChance + 1f));
+            Assert.That(sevens / (float)N, Is.InRange(0.007f, 0.013f));
+            Assert.That(paid / (float)N, Is.InRange(0.9f, 0.99f), "払戻し率は 100% 未満");
+            Assert.Less(LeisureAccount.ReturnRate, 100f);
+            var a1 = LeisureAccount.Outcome(42, 7); var a2 = LeisureAccount.Outcome(42, 7);
+            Assert.AreEqual(a1.Multiplier, a2.Multiplier, "同じ順番なら同じ結果");
+            CollectionAssert.AreEqual(a1.Reels, a2.Reels);
         }
 
         [Test]
@@ -111,7 +125,7 @@ namespace NightShift.Tests
             var a = s.Quests.Leisure;
             a.Deposit(10000);
             Assert.AreEqual(10000, _wallet.Balance);
-            a.PlaceBet(0, 1000);
+            a.PlaceBet(1000);
             Assert.AreEqual(QuestStatus.Active, CareerRecord.Current.Quest("SQ04").status, "最初の手動ベットで Active");
             Assert.IsNotNull(a.BetBlocked(1000), "結果待ちの間は次を受け付けない");
             Assert.AreEqual(9000, a.Free);
@@ -119,11 +133,11 @@ namespace NightShift.Tests
             Advance(s, s.Time.CurrentMinute + 2.5f);
             Assert.IsNull(a.PendingBet);
             Assert.AreEqual(0, a.Locked);
-            bool win = LeisureAccount.Outcome(42, 1) == 0;
-            Assert.AreEqual(win ? 11000 : 9000, a.Free);
-            Assert.AreEqual((win ? 1000 : -1000) - LeisureAccount.GambleToolPrice, a.GambleNet, "純利益はツール代込み");
+            int mul = LeisureAccount.Outcome(42, 1).Multiplier;
+            Assert.AreEqual(9000 + 1000 * mul, a.Free);
+            Assert.AreEqual(1000 * mul - 1000 - LeisureAccount.GambleToolPrice, a.GambleNet, "純利益はツール代込み");
             Advance(s, s.Time.CurrentMinute + 3f);
-            Assert.AreEqual(win ? 11000 : 9000, a.Free, "同じ賭けは二度払い戻さない");
+            Assert.AreEqual(9000 + 1000 * mul, a.Free, "同じ回転は二度払い戻さない");
         }
 
         [Test]
@@ -138,7 +152,7 @@ namespace NightShift.Tests
             for (int i = 0; i < LeisureAccount.NightlyLimit; i++)
             {
                 Assert.IsNull(a.BetBlocked(500), $"{i + 1} 回目");
-                a.PlaceBet(1, 500);
+                a.PlaceBet(500);
                 Advance(s, s.Time.CurrentMinute + 2.5f);
             }
             Assert.IsNotNull(a.BetBlocked(500), "一夜6回まで");

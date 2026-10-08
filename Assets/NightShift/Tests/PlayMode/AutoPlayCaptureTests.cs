@@ -34,7 +34,7 @@ namespace NightShift.Tests
 
         [UnitySetUp] public IEnumerator Setup()
         {
-            if (Application.companyName != "NightShiftPlayModeAudit") Assert.Ignore("Requires isolated audit project copy.");
+            if (!AuditGuard.Allowed) Assert.Ignore("Requires isolated audit project copy.");
             yield return null;
             gm = GameManager.Instance; Assert.IsNotNull(gm);
             gm.ShowTitle(); yield return null;
@@ -60,7 +60,7 @@ namespace NightShift.Tests
             }
             if (cam != null) { cam.targetTexture = null; UnityEngine.Object.Destroy(cam.gameObject); }
             if (target != null) { target.Release(); UnityEngine.Object.Destroy(target); }
-            if (Application.companyName == "NightShiftPlayModeAudit") PlayerPrefs.DeleteAll();
+            if (AuditGuard.Allowed) PlayerPrefs.DeleteAll();
             yield return null;
         }
 

@@ -26,6 +26,11 @@ namespace NightShift.Systems
         public int CorrectAllow, CorrectBlock, FalsePositive, MaliciousAllow, PolicyViolation, ExpiredLegit, ExpiredBlock;
         public int ExpectedAllowTotal, ExpectedBlockTotal;
         public int HelpDeskCorrect, HelpDeskIncorrect, RemoteResolved, RemoteFailed, Unresolved;
+        /// <summary>正しくこなした仕事の数（正しい許可・拒否・問い合わせの正答・リモートでの解決）。件数が多いほど評価と給与が上がる</summary>
+        public int TasksDone => CorrectAllow + CorrectBlock + HelpDeskCorrect + RemoteResolved;
+        /// <summary>件数による評価の加点（1件 0.2 点・最大 10 点）</summary>
+        public const float PointsPerTask = 0.2f, MaxTaskPoints = 10f;
+        public float TaskPoints => Math.Min(MaxTaskPoints, TasksDone * PointsPerTask);
         public int TicketsTotal;
         public int RemoteReportsWrong;
         public bool SeniorHelped;          // 先輩に手伝ってもらった夜（精勤手当なし）
@@ -122,10 +127,13 @@ namespace NightShift.Systems
             r.Categories.Add(new CategoryScore { Key = "AVAILABILITY", Label = "AVAILABILITY", Score = Clamp(availability), Comment = FalsePositive + ExpiredLegit > 0 ? $"正常業務の停止 {FalsePositive + ExpiredLegit} 件" : "正常業務への影響なし" });
 
             float overall = Clamp(security) * 0.30f + Clamp(accuracy) * 0.20f + Clamp(helpdesk) * 0.20f + Clamp(response) * 0.10f + Clamp(availability) * 0.20f;
+            // 正確さを9割、こなした件数を1割（速く正確に多くこなすほど上がる）
+            overall = overall * 0.9f + TaskPoints;
             r.Overall = Clamp(overall);
             r.Rank = r.Overall >= 92 ? "S" : r.Overall >= 80 ? "A" : r.Overall >= 65 ? "B" : r.Overall >= 50 ? "C" : "D";
 
             void S(string k, object v) => r.Stats.Add(new KeyValuePair<string, string>(k, v.ToString()));
+            S("こなした仕事", $"{TasksDone} 件（評価 +{TaskPoints:0.0} 点）");
             S("Correct Allow", CorrectAllow);
             S("Correct Block", CorrectBlock);
             S("False Positive", FalsePositive);

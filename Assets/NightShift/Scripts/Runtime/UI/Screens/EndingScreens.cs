@@ -17,20 +17,22 @@ namespace NightShift.UI.Screens
             var paper = UIFactory.Solid(root.transform, new Color(0.95f, 0.94f, 0.9f), "Paper");
             paper.rectTransform.anchorMin = paper.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             paper.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            paper.rectTransform.sizeDelta = new Vector2(620, 460);
+            paper.rectTransform.sizeDelta = new Vector2(620, 640);
             var ink = new Color(0.1f, 0.1f, 0.1f);
             UIFactory.Label(paper.transform, "社 内 報", 20, 16, 580, 30, 22, TextAnchor.MiddleCenter, ink, true).fontStyle = FontStyle.Bold;
             UIFactory.Solid(paper.transform, ink, "Rule").rectTransform.Place(20, 52, 580, 2);
             UIFactory.Label(paper.transform, "人事異動のお知らせ", 20, 64, 580, 26, 18, TextAnchor.MiddleCenter, ink).fontStyle = FontStyle.Bold;
             UIFactory.Label(paper.transform, $"情報システム部　夜間IT運用担当　{operatorName}\n契約終了", 20, 100, 580, 50, 16, TextAnchor.MiddleCenter, ink);
-            var stamp = UIFactory.Label(paper.transform, "GAME OVER", 20, 160, 580, 40, 28, TextAnchor.MiddleCenter, new Color(0.7f, 0.05f, 0.05f), true);
+            var art = UIFactory.Image(paper.transform, EndingArt.Get(go.Id), Color.white, "Art");
+            art.rectTransform.Place(182, 156, 256, 160);
+            var stamp = UIFactory.Label(paper.transform, "GAME OVER", 20, 330, 580, 40, 28, TextAnchor.MiddleCenter, new Color(0.7f, 0.05f, 0.05f), true);
             stamp.fontStyle = FontStyle.Bold;
-            UIFactory.Label(paper.transform, $"【{go.Id} {go.Title}】", 20, 210, 580, 24, 15, TextAnchor.MiddleCenter, ink).fontStyle = FontStyle.Bold;
-            UIFactory.Label(paper.transform, go.Reason, 40, 240, 540, 80, 13, TextAnchor.UpperCenter, ink);
-            var b1 = UIFactory.Button(paper.transform, "その夜からやり直す(R)", 40, 340, 170, 30, retryNight, "clock");
-            var b2 = UIFactory.Button(paper.transform, "週の初日からやり直す(W)", 220, 340, 180, 30, retryWeek, "clock");
+            UIFactory.Label(paper.transform, $"【{go.Id} {go.Title}】", 20, 380, 580, 24, 15, TextAnchor.MiddleCenter, ink).fontStyle = FontStyle.Bold;
+            UIFactory.Label(paper.transform, go.Reason, 40, 410, 540, 80, 13, TextAnchor.UpperCenter, ink);
+            var b1 = UIFactory.Button(paper.transform, "その夜からやり直す(R)", 40, 520, 170, 30, retryNight, "clock");
+            var b2 = UIFactory.Button(paper.transform, "週の初日からやり直す(W)", 220, 520, 180, 30, retryWeek, "clock");
             b2.Interactable = retryWeek != null;
-            UIFactory.Button(paper.transform, "タイトルへ(T)", 410, 340, 170, 30, toTitle, "exit");
+            UIFactory.Button(paper.transform, "タイトルへ(T)", 410, 520, 170, 30, toTitle, "exit");
             var k1 = root.gameObject.AddComponent<KeyAction>(); k1.Key = KeyCode.R; k1.Action = retryNight;
             var k3 = root.gameObject.AddComponent<KeyAction>(); k3.Key = KeyCode.T; k3.Action = toTitle;
             if (retryWeek != null) { var k2 = root.gameObject.AddComponent<KeyAction>(); k2.Key = KeyCode.W; k2.Action = retryWeek; }
@@ -54,8 +56,13 @@ namespace NightShift.UI.Screens
 
         public static GameObject Build(RectTransform parent, EndingResolver.Ending ending, FinalOutcome outcome, string operatorName, OperatorWallet wallet, Action toTitle)
         {
-            var root = UIFactory.Solid(parent, Color.black, "Ending");
-            root.rectTransform.Stretch();
+            var outer = UIFactory.Solid(parent, Color.black, "Ending");
+            outer.rectTransform.Stretch();
+            // 横長の画面でも中央に（中身は 1280×800 の座標で並べる）
+            var root = UIFactory.Solid(outer.transform, Color.black, "Frame");
+            root.rectTransform.anchorMin = root.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            root.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            root.rectTransform.sizeDelta = new Vector2(1280, 800);
             if (ending.TrueRoute) BuildChat(root.rectTransform, ending, operatorName, choice =>
             {
                 ending.Text += choice == 0
@@ -66,7 +73,7 @@ namespace NightShift.UI.Screens
                 BuildNewspaper(root.rectTransform, ending, outcome, operatorName, wallet, toTitle);
             });
             else BuildNewspaper(root.rectTransform, ending, outcome, operatorName, wallet, toTitle);
-            return root.gameObject;
+            return outer.gameObject;
         }
 
         // ---------------- 前任者との対話（END3） ----------------
@@ -129,9 +136,13 @@ namespace NightShift.UI.Screens
             UIFactory.Solid(paper.transform, ink, "Rule").rectTransform.Place(20, 78, 720, 3);
             var head = UIFactory.Label(paper.transform, ending.Headline, 20, 90, 720, 70, 24, TextAnchor.MiddleCenter, ink);
             head.fontStyle = FontStyle.Bold;
-            UIFactory.Label(paper.transform, ending.Text, 40, 170, 680, 260, 14, TextAnchor.UpperLeft, ink);
-            UIFactory.Label(paper.transform, Epilogue(career), 40, 440, 680, 60, 13, TextAnchor.UpperLeft, new Color(0.35f, 0.3f, 0.25f));
-            var stamp = UIFactory.Label(paper.transform, $"{ending.Id}「{ending.Title}」 — {ending.Kind}", 20, 520, 720, 30, 18, TextAnchor.MiddleCenter, new Color(0.6f, 0.05f, 0.05f));
+            var art = UIFactory.Image(paper.transform, EndingArt.Get(ending.Id), new Color(0.92f, 0.9f, 0.84f), "Art");
+            // 写真は見出しの下の中央に、記事はその下に全幅で
+            art.rectTransform.Place(220, 166, 320, 200);
+            UIFactory.Solid(paper.transform, ink, "ArtRule").rectTransform.Place(220, 368, 320, 1);
+            UIFactory.Label(paper.transform, ending.Text, 40, 380, 680, 180, 13, TextAnchor.UpperCenter, ink);
+            UIFactory.Label(paper.transform, Epilogue(career), 40, 566, 680, 50, 13, TextAnchor.UpperCenter, new Color(0.35f, 0.3f, 0.25f));
+            var stamp = UIFactory.Label(paper.transform, $"{ending.Id}「{ending.Title}」 — {ending.Kind}", 20, 640, 720, 30, 18, TextAnchor.MiddleCenter, new Color(0.6f, 0.05f, 0.05f));
             stamp.fontStyle = FontStyle.Bold;
 
             // 成績表

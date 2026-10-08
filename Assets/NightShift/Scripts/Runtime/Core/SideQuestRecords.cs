@@ -63,6 +63,7 @@ namespace NightShift.Core
         public string actionLabel;
         public bool pinned;               // 後続のメールに埋もれさせない（重要な手がかり）
         public bool horror;               // 怪異メール（文字化けなどの演出対象）
+        public string picture;            // 本文の上に出す絵（後日談のサブエンド ID）
     }
 
     /// <summary>給与とは別の入金・支出（個別入金・遊興口座など）。txId で一度だけ</summary>

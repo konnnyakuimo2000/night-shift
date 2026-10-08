@@ -86,7 +86,7 @@ namespace NightShift.UI.Screens
                 var w = wm.Open(new WindowSpec
                 {
                     Id = "settings", Title = "設定", Icon = "gear", Width = 560, Height = 440,
-                    Minimizable = false, Maximizable = false, Position = new Vector2(360, 160)
+                    Minimizable = false, Maximizable = false, Centered = true
                 }, out bool created);
                 if (created) SettingsPanel.Build(w.Content);
             };
@@ -265,7 +265,7 @@ namespace NightShift.UI.Screens
             var w = wm.Open(new WindowSpec
             {
                 Id = "login", Title = $"{db.systemName} - ログイン", Icon = "lock", Width = 400, Height = 250,
-                Closable = true, Minimizable = false, Maximizable = false, Position = new Vector2(440, 250)
+                Closable = true, Minimizable = false, Maximizable = false, Centered = true
             }, out _);
             w.CanClose = () => { onCancel(); return false; };
             var c = w.Content;

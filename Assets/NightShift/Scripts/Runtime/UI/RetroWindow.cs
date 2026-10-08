@@ -20,6 +20,8 @@ namespace NightShift.UI
         public int StatusCells;           // 0 = ステータスバーなし
         public float[] StatusWidths;      // 右側セルの幅（先頭セルは可変）
         public Vector2? Position;
+        /// <summary>画面の中央に置く（画面の横幅が変わっても中央。ログイン・評価など）</summary>
+        public bool Centered;
         public bool ShowInTaskbar = true;
     }
 

@@ -35,10 +35,9 @@ namespace NightShift.UI.Shift
                 M("   社内購買システム", () => StoreView.Open(d), "folder", Data.Features.Store),
                 MenuItem.Sep(),
                 new MenuItem("   メール（業務連絡・マニュアル）", () => MailboxView.Open(d)) { Icon = "mail" },
-                new MenuItem("   パスワードの変更", () => PasswordChangeView.Open(d)) { Icon = "lock" },
                 new MenuItem(d.Game.Account.WrittenDown ? "   パスワードの付箋をはがす" : "   パスワードを付箋に書いて貼る", d.ToggleStickyNote, null, d.Game.Account.Changed) { Icon = "doc" },
                 MenuItem.Sep(),
-                new MenuItem("6. システム設定", () => SettingsView.Open(d)) { Icon = "gear" },
+                new MenuItem("6. パスワードの変更", () => PasswordChangeView.Open(d)) { Icon = "lock" },
                 new MenuItem("7. 業務終了", () => TryEndShift(d)) { Icon = "exit" },
             };
         }
@@ -71,11 +70,7 @@ namespace NightShift.UI.Shift
         static List<KeyValuePair<string, List<MenuItem>>> MenuBar(ShiftDesktop d)
         {
             var menus = ShiftDesktop.StandardMenus(d);
-            menus.Insert(3, new KeyValuePair<string, List<MenuItem>>("ツール(T)", new List<MenuItem>
-            {
-                new MenuItem("システム設定(S)", () => SettingsView.Open(d)),
-                new MenuItem("デバッグ(D)", () => DebugPanelView.Open(d), "F12", Core.GameSettings.Current.debugMode),
-            }));
+            // 画面・音・キーなどの設定とデバッグは、一時停止（Esc）のメニューからだけ開く
             return menus;
         }
 
@@ -84,8 +79,8 @@ namespace NightShift.UI.Shift
             var c = _w.Content;
             var g = UIFactory.Group(c, "メインメニュー", 0, 0, 290, 400);
             float y = 0;
-            string[] labels = { "1.  ネットワーク接続監視", "2.  社員情報の検索・参照", "3.  システムログの検索・参照", "4.  ITサポート受付管理", "5.  セキュリティ情報", "6.  システム設定", "7.  業務終了" };
-            string[] icons = { "network", "people", "log", "helpdesk", "shield", "gear", "exit" };
+            string[] labels = { "1.  ネットワーク接続監視", "2.  社員情報の検索・参照", "3.  システムログの検索・参照", "4.  ITサポート受付管理", "5.  セキュリティ情報", "6.  パスワードの変更", "7.  業務終了" };
+            string[] icons = { "network", "people", "log", "helpdesk", "shield", "lock", "exit" };
             Action[] actions =
             {
                 () => ConnectionMonitorView.Open(_d, null),
@@ -93,7 +88,7 @@ namespace NightShift.UI.Shift
                 () => LogViewerView.Open(_d, null),
                 () => HelpDeskView.Open(_d, null),
                 () => SecurityInfoView.Open(_d),
-                () => SettingsView.Open(_d),
+                () => PasswordChangeView.Open(_d),
                 () => TryEndShift(_d)
             };
             string[] features = { Data.Features.ConnectionMonitor, Data.Features.EmployeeDirectory, Data.Features.SystemLog, Data.Features.HelpDesk, Data.Features.SecurityInfo, null, null };
@@ -284,13 +279,8 @@ namespace NightShift.UI.Shift
                 Menus = ShiftDesktop.StandardMenus(d), Position = new Vector2(360, 120)
             }, out bool created);
             if (!created) return;
-            SettingsPanel.Build(w.Content, extra =>
-            {
-                UIFactory.Button(extra, "パスワードの変更(P)...", 0, 0, 200, 26, () => PasswordChangeView.Open(d), "lock");
-                var noteBtn = UIFactory.Button(extra, "付箋を貼る／はがす...", 210, 0, 180, 26, d.ToggleStickyNote, "doc");
-                noteBtn.Interactable = d.Game.Account.Changed;
-            });
-            w.Accelerators[KeyCode.P] = () => PasswordChangeView.Open(d);
+            // 画面・音・キーなどの設定だけ（パスワードの変更は本編の操作なので、メインメニューから）
+            SettingsPanel.Build(w.Content);
         }
     }
 

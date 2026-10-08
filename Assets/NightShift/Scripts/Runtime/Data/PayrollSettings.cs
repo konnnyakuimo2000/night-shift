@@ -18,6 +18,8 @@ namespace NightShift.Data
         public int trainingLastDay = 7;
         [Tooltip("総合評価 1 点あたりの評価手当")]
         public int payPerScorePoint = 10;
+        [Tooltip("出来高手当: 正しくこなした仕事1件あたり")]
+        public int payPerTask = 40;
         [Tooltip("1夜の罰金・控除の上限（振込手数料を含む）")]
         public int maxDeductionPerNight = 2500;
         [Tooltip("精勤手当（ランク別）")]

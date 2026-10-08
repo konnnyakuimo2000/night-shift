@@ -73,6 +73,7 @@ namespace NightShift.UI
             if (size.x > 200 && pos.x + width > size.x) pos.x = Mathf.Max(0, size.x - width);
             if (size.y > 200 && pos.y + height > size.y) pos.y = Mathf.Max(0, size.y - height);
             w.SetPosition(pos.x, pos.y);
+            if (spec.Centered) w.gameObject.AddComponent<CenterWindow>().Container = Container;
             Focus(w);
             return w;
         }
@@ -224,6 +225,26 @@ namespace NightShift.UI
             _switchHeld = null;
             if (_switcher != null) Destroy(_switcher.gameObject);
             _switcher = null;
+        }
+    }
+
+    /// <summary>ウィンドウを画面の中央に置く。画面の大きさが決まるまで（最初の数フレーム）待ち、動かされたらやめる</summary>
+    public class CenterWindow : MonoBehaviour
+    {
+        public RectTransform Container;
+        int _frames;
+
+        void LateUpdate()
+        {
+            var w = GetComponent<RetroWindow>();
+            if (w == null || Container == null) { Destroy(this); return; }
+            var size = Container.rect.size;
+            if (size.x > 200 && size.y > 200)
+            {
+                var rect = w.Rect.rect.size;
+                w.SetPosition(Mathf.Max(0, (size.x - rect.x) / 2f), Mathf.Max(0, (size.y - rect.y) / 2f));
+            }
+            if (++_frames >= 3) Destroy(this);
         }
     }
 }

@@ -285,6 +285,13 @@ namespace NightShift.UI.Shift
                 y += 34;
             }
 
+            // 後日談などの1枚絵
+            if (!string.IsNullOrEmpty(m.Picture))
+            {
+                var art = UIFactory.Image(_preview, EndingArt.Get(m.Picture), Color.white, "Picture");
+                art.rectTransform.Place(0, y, 256, 160);
+                y += 166;
+            }
             // 返信（選択式・自由入力）
             if (m.Replies != null || m.FreeReply) y = BuildReply(m, y);
             if (m.Horror && (BodyFor(m) != m.Body || _original.Contains(m.MailId)))

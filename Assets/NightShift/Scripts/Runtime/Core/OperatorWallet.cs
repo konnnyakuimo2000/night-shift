@@ -16,6 +16,8 @@ namespace NightShift.Core
         public int basePay;
         public int performancePay;
         public int rankBonus;
+        public int taskPay;          // 出来高手当（こなした仕事の件数分）
+        public int tasksDone;
         public int deduction;
         public int total;
         public List<string> deductionNotes = new List<string>();
@@ -161,7 +163,9 @@ namespace NightShift.Core
                 score = r.Overall,
                 rank = r.Rank,
                 basePay = p.BasePayFor(day),
-                performancePay = r.Overall * p.payPerScorePoint
+                performancePay = r.Overall * p.payPerScorePoint,
+                tasksDone = ev.TasksDone,
+                taskPay = ev.TasksDone * p.payPerTask
             };
             switch (r.Rank)
             {
@@ -204,7 +208,7 @@ namespace NightShift.Core
                 slip.deduction = p.maxDeductionPerNight;
                 slip.deductionNotes.Add($"（上限 {OperatorWallet.Yen(p.maxDeductionPerNight)}）");
             }
-            slip.total = Mathf.Max(p.minimumPay, slip.basePay + slip.performancePay + slip.rankBonus - slip.deduction);
+            slip.total = Mathf.Max(p.minimumPay, slip.basePay + slip.performancePay + slip.rankBonus + slip.taskPay - slip.deduction);
             return slip;
         }
     }

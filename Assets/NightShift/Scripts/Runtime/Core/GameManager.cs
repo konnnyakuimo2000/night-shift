@@ -550,6 +550,7 @@ namespace NightShift.Core
             sb.AppendLine($"　日当（深夜手当込み）{Y(slip.basePay)}");
             sb.AppendLine($"　評価手当（{slip.score}点）　{Y(slip.performancePay)}");
             sb.AppendLine($"　精勤手当（{slip.rank}）　{Y(slip.rankBonus)}");
+            if (slip.taskPay > 0) sb.AppendLine($"　出来高手当（{slip.tasksDone}件）　{Y(slip.taskPay)}");
             if (slip.deduction > 0) sb.AppendLine($"　罰金・控除　　　−{Y(slip.deduction)}（{string.Join("、", slip.deductionNotes)}）");
             sb.AppendLine($"　<b>支給額　　　　　{Y(slip.total)}</b>");
             sb.AppendLine();

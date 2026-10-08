@@ -489,7 +489,7 @@ namespace NightShift.Tests
                 foreach (var id in new[] { Items.GambleTerminal, Items.FxTerminal, Items.SignalDesk }) career.AddItem(id);
                 d = NewDesktop(20, null, 60f); q = d.S.Quests;
                 q.Leisure.Deposit(20000);
-                q.Leisure.PlaceBet(0, 1000);
+                q.Leisure.PlaceBet(1000);
                 d.RebuildMonitors();
                 d.ShowMonitor(1);
                 Tools.Launch(d.Stations[0], Items.GambleTerminal);
@@ -545,6 +545,62 @@ namespace NightShift.Tests
                 };
                 MorningChoiceScreen.Build(_gm.ScreenLayer, choice, () => { }, () => { });
                 yield return Shot("Q51_朝の進路選択", 0.8f);
+
+                // エンディングの1枚絵（本編・ゲームオーバー・サブエンド）を一覧で
+                Clear();
+                var sheet = UIFactory.Solid(_gm.ScreenLayer, new Color(0.08f, 0.08f, 0.1f), "ArtSheet");
+                sheet.rectTransform.Stretch();
+                var ids = new System.Collections.Generic.List<string> { "END1", "END2", "END3", "END4", "END6", "GO1", "GO2", "GO3", "GO4" };
+                foreach (var e in NightShift.Systems.SideQuests.SubEndings.All) ids.Add(e.Id);
+                for (int i = 0; i < ids.Count; i++)
+                {
+                    int cx = i % 5, cy = i / 5;
+                    var img = UIFactory.Image(sheet.transform, EndingArt.Get(ids[i]), Color.white, ids[i]);
+                    img.rectTransform.Place(14 + cx * 252, 8 + cy * 158, 240, 150);
+                    UIFactory.Label(sheet.transform, ids[i], 14 + cx * 252, 8 + cy * 158 + 134, 240, 16, 11, TextAnchor.MiddleLeft, Color.white, true);
+                }
+                yield return Shot("Q60_エンディング絵_一覧", 0.8f);
+                _gm.DebugPreview("GO2");
+                yield return Shot("Q61_ゲームオーバー（絵入り）", 0.8f);
+                _gm.DebugPreview("END6");
+                yield return Shot("Q62_本編エンド（絵入りの新聞）", 1.0f);
+                CareerRecord.SetCurrentForTests(new CareerRecord { seed = 7 });
+
+                // 横長の画面（16:9）でも、ログイン画面・本編エンドが中央に来るか
+                IEnumerator WideShot(string name, System.Action build)
+                {
+                    var wide = new RenderTexture(1600, 900, 24);
+                    _cam.targetTexture = wide;
+                    yield return null;
+                    build();
+                    for (int i = 0; i < 6; i++) yield return null;
+                    Canvas.ForceUpdateCanvases();
+                    _cam.Render();
+                    var prevRt = RenderTexture.active;
+                    RenderTexture.active = wide;
+                    var tex = new Texture2D(1600, 900, TextureFormat.RGB24, false);
+                    tex.ReadPixels(new Rect(0, 0, 1600, 900), 0, 0);
+                    tex.Apply();
+                    RenderTexture.active = prevRt;
+                    File.WriteAllBytes(Path.Combine(_dir, name + ".png"), tex.EncodeToPNG());
+                    UnityEngine.Object.Destroy(tex);
+                    _cam.targetTexture = _rt;
+                    wide.Release();
+                    yield return null;
+                }
+                yield return WideShot("Q65_横長画面_ログイン", () => { Clear(); _gm.ShowLogin(); });
+                yield return WideShot("Q66_横長画面_本編エンド", () => _gm.DebugPreview("END6"));
+                CareerRecord.SetCurrentForTests(new CareerRecord { seed = 7 });
+
+                // 一時停止（Esc）のメニュー: 設定とデバッグはここからだけ
+                bool dbg = GameSettings.Current.debugMode;
+                GameSettings.Current.debugMode = true;
+                d = NewDesktop(20, null, 5f);
+                yield return Shot("Q63_メインメニュー（パスワードの変更）", 0.6f);
+                d.OpenPause();
+                yield return Shot("Q64_一時停止メニュー（設定・デバッグ）", 0.6f);
+                GameSettings.Current.debugMode = dbg;
+                CareerRecord.SetCurrentForTests(new CareerRecord { seed = 7 });
 
                 int n = 52;
                 foreach (var e in NightShift.Systems.SideQuests.SubEndings.All)

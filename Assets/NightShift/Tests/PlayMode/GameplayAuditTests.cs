@@ -27,7 +27,7 @@ namespace NightShift.Tests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            if (Application.companyName != "NightShiftPlayModeAudit")
+            if (!AuditGuard.Allowed)
                 Assert.Ignore("Run in the isolated project copy described in Docs/PLAYMODE_AUDIT.md.");
             yield return null;
             gm = GameManager.Instance;
@@ -54,7 +54,7 @@ namespace NightShift.Tests
                 typeof(GameManager).GetField("_completeTimer", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(gm, -1f);
                 gm.ShowTitle(); yield return null;
             }
-            if (Application.companyName == "NightShiftPlayModeAudit") PlayerPrefs.DeleteAll();
+            if (AuditGuard.Allowed) PlayerPrefs.DeleteAll();
         }
 
         IEnumerator Day(int day = 20, bool start = false)
