@@ -35,7 +35,7 @@ namespace NightShift.UI.Shift
             b.AppendLine("\n【関連ログ】");
             foreach (var log in S.Logs.Entries)
                 if (log.Source == Sq06Route.SourceIp || log.Source == Sq06Route.FakeDevice || log.Detail.Contains("SQ06") || log.Detail.Contains("NULL SIGNAL"))
-                    b.AppendLine($"{TimeManager.Format(log.Time)} {log.Source} → {log.Destination} {log.Result}\n{log.Detail}");
+                    b.AppendLine($"{TimeManager.Format(log.Time)} {log.Source} → {log.Destination} {log.Result}\n{LogViewerView.VisibleDetail(S, log)}");
             _record.text = b.ToString();
         }
     }

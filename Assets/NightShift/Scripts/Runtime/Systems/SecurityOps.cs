@@ -95,6 +95,12 @@ namespace NightShift.Systems
             DeviceIsolated?.Invoke(device);
             if (IsInfected(device) || (QuestTargetCheck != null && QuestTargetCheck(device))) _s.Evaluation.SecurityActionsCorrect++;
             else _s.Evaluation.SecurityActionsWrong++;
+            // その端末から届いている保留中の要求は、自動的に拒否（実際の要求の端末で照合する）
+            foreach (var e in new List<EventInstance>(_s.Requests.Pending))
+                if (e.Device == device) { e.AutoDecided = true; _s.Requests.Decide(e, PlayerAction.Block); }
+            // リモートサポートの画面にも、通信できない状態として反映する（管理用の接続は残る）
+            foreach (var t in _s.HelpDesk.Tickets)
+                if (t.PC != null && t.PC.Hostname == device) t.PC.SetQuarantined(true);
             Changed?.Invoke();
             return $"{device} をネットワークから隔離しました。";
         }

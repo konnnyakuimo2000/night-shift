@@ -569,12 +569,15 @@ namespace NightShift.UI
             }
             _content.sizeDelta = new Vector2(0, rows.Count * RowHeight);
             _empty.gameObject.SetActive(rows.Count == 0);
-            if (Selected != null && !_data.Contains(Selected)) Selected = null;
             Paint();
+            // 選んでいたものが一覧から消えたら、選択を外したことを知らせる（連動する詳細・ボタンも解除）
+            if (Selected != null && !_data.Contains(Selected)) Select(null);
         }
 
+        /// <summary>選ぶ。一覧にないものは選べない（null として扱う）</summary>
         public void Select(object data)
         {
+            if (data != null && !_data.Contains(data)) data = null;
             Selected = data;
             Paint();
             SelectionChanged?.Invoke(data);

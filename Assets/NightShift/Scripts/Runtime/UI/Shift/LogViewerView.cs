@@ -70,15 +70,17 @@ namespace NightShift.UI.Shift
             _w.Accelerators[KeyCode.F5] = Apply;
             _w.SetStatus(0, "行をダブルクリックすると、その接続元で絞り込みます。");
             _d.S.Logs.Added += OnAdded;
+            _d.S.Servers.Changed += OnServersChanged;
             Apply();
         }
 
         void OnDestroy()
         {
-            if (_d != null && _d.S != null) _d.S.Logs.Added -= OnAdded;
+            if (_d != null && _d.S != null) { _d.S.Logs.Added -= OnAdded; _d.S.Servers.Changed -= OnServersChanged; }
         }
 
         void OnAdded(LogEntry e) => _dirty = true;
+        void OnServersChanged() => _dirty = true;
 
         void Clear()
         {
@@ -94,7 +96,7 @@ namespace NightShift.UI.Shift
             kw = kw.Trim().ToUpperInvariant();
             return (e.Source ?? "").ToUpperInvariant().Contains(kw) || (e.Destination ?? "").ToUpperInvariant().Contains(kw)
                 || (e.User ?? "").ToUpperInvariant().Contains(kw) || (e.EventType ?? "").ToUpperInvariant().Contains(kw)
-                || (e.Result ?? "").ToUpperInvariant().Contains(kw) || (e.Detail ?? "").ToUpperInvariant().Contains(kw);
+                || (e.Result ?? "").ToUpperInvariant().Contains(kw) || (DetailText(e) ?? "").ToUpperInvariant().Contains(kw);
         }
 
         void Apply()
@@ -114,15 +116,22 @@ namespace NightShift.UI.Shift
             _table.SetRows(_filtered, e => new[] { TimeManager.FormatWithSeconds(e.Time), e.Source, e.Destination, e.User, e.EventType, e.Result, DetailText(e) });
             if (_follow.Value && atBottom) _table.ScrollToBottom();
             _w.SetStatus(1, $"表示 {_filtered.Count} / 全 {_d.S.Logs.Entries.Count} 件");
+            RenderDetail(SelectedEntry); // 復元で文字化けが直ったら、選択中の詳細も直す
             _dirty = false;
         }
 
         LogEntry SelectedEntry => _table.Selected as LogEntry;
 
-        /// <summary>書き換えられた（V2 GARBLE）サーバーのログは、意味のない文字に化けて読めない</summary>
-        string DetailText(LogEntry e)
+        string DetailText(LogEntry e) => VisibleDetail(_d.S, e);
+
+        /// <summary>
+        /// 書き換えられた（V2 GARBLE）サーバーのログは、意味のない文字に化けて読めない。
+        /// 一覧・詳細・検索・ツールはすべてこれを通す（元のログは壊さない。復元すれば読める）
+        /// </summary>
+        public static string VisibleDetail(ShiftSession s, LogEntry e)
         {
-            var st = _d.S.Servers.Find(e.Destination) ?? _d.S.Servers.Find(e.Source);
+            if (e == null) return "";
+            var st = s.Servers.Find(e.Destination) ?? s.Servers.Find(e.Source);
             return st != null && st.Garbled ? HorrorFx.Garble(e.Detail, e.Sequence) : e.Detail;
         }
 
@@ -137,10 +146,9 @@ namespace NightShift.UI.Shift
         void IsolateSelected()
         {
             var e = SelectedEntry;
-            Data.EmployeeData emp = null;
-            if (e != null) foreach (var x in _d.S.Employees.All) if (_d.S.Employees.GetIp(x) == e.Source) emp = x;
-            if (emp == null) { AudioFx.Error(); _w.SetStatus(0, "選択行の接続元は社員の端末ではありません。"); return; }
-            _w.SetStatus(0, _d.S.Security.Isolate(emp.deviceId));
+            string device = e != null ? _d.DeviceForIp(e.Source) : null;
+            if (device == null) { AudioFx.Error(); _w.SetStatus(0, "選択行の接続元は社員の端末ではありません。"); return; }
+            _w.SetStatus(0, _d.S.Security.Isolate(device));
         }
 
         void ReportSelected()
@@ -160,7 +168,12 @@ namespace NightShift.UI.Shift
         void ShowDetail(LogEntry e)
         {
             _d.SelectLog(e);
-            _detail.text = e == null ? "" : $"[{TimeManager.FormatWithSeconds(e.Time)}] {e.Source} → {e.Destination}  利用者: {e.User}  種別: {e.EventType}  結果: {e.Result}\n{e.Detail}";
+            RenderDetail(e);
+        }
+
+        void RenderDetail(LogEntry e)
+        {
+            _detail.text = e == null ? "" : $"[{TimeManager.FormatWithSeconds(e.Time)}] {e.Source} → {e.Destination}  利用者: {e.User}  種別: {e.EventType}  結果: {e.Result}\n{DetailText(e)}";
         }
 
         void Update()

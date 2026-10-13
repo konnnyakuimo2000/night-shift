@@ -75,6 +75,7 @@ namespace NightShift.RemotePC
         public bool BackupDone;                     // MO にバックアップして取り外した
         public bool FileServerReachable = true;     // ファイルサーバーの障害（R9）
         public string ReportKind = "PC";            // 報告の種類（PC側で解決 / サーバー側の障害）
+        public bool Quarantined;                    // 端末隔離ツールで社内ネットワークから切り離されている（リモート管理の接続だけ残る）
         public const string BrowserProcess = "netvoyager.exe";
 
         public event Action Changed;
@@ -86,7 +87,7 @@ namespace NightShift.RemotePC
         public string Gateway => WifiConnected ? DefaultGateway : "";
         public string DNS => WifiConnected ? (DnsAuto ? ProfileDns : "10.10.99.99") : "";
         /// <summary>手で入れた固定アドレスは社内のネットワークと合わないため、DHCP がオフだとつながらない</summary>
-        public bool InternetConnectivity => WifiConnected && DHCPEnabled && !string.IsNullOrEmpty(IPAddress) && !string.IsNullOrEmpty(Gateway);
+        public bool InternetConnectivity => WifiConnected && DHCPEnabled && !Quarantined && !string.IsNullOrEmpty(IPAddress) && !string.IsNullOrEmpty(Gateway);
         public bool CanPrint => PrinterOnline && !PrintQueuePaused && InternetConnectivity;
 
         public static VirtualPCState Create(VirtualPCProfile p, EmployeeData employee, string ip, Random rng)
@@ -133,6 +134,7 @@ namespace NightShift.RemotePC
         public void NotifyChanged() => Changed?.Invoke();
 
         public void SetWiFi(bool on) { WiFiEnabled = on; NotifyChanged(); }
+        public void SetQuarantined(bool on) { Quarantined = on; NotifyChanged(); }
         public void SetAdapter(bool on) { NetworkAdapterEnabled = on; NotifyChanged(); }
         public void SetQueuePaused(bool paused) { PrintQueuePaused = paused; NotifyChanged(); }
         public void SetPrinterOnline(bool online) { PrinterOnline = online; NotifyChanged(); }
@@ -224,6 +226,7 @@ namespace NightShift.RemotePC
                 case "BackupDone": return B(BackupDone);
                 case "FileServerReachable": return B(FileServerReachable);
                 case "ReportKind": return ReportKind;
+                case "Quarantined": return B(Quarantined);
                 default: return null;
             }
         }

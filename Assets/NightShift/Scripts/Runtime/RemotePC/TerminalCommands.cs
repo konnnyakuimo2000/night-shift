@@ -30,6 +30,27 @@ namespace NightShift.RemotePC
             { "www.example.com", "93.184.216.34" }, { "example.com", "93.184.216.34" }
         };
 
+        public const string IntranetIp = "10.10.0.15";
+        public const string FileServerIp = "10.10.0.30";
+        public enum Resolution { Ok, NoNetwork, NameNotFound }
+
+        /// <summary>
+        /// ゲーム内の名前解決（ブラウザーと ping で共通）。IP アドレスの直接指定は DNS を使わない。
+        /// DNS の設定が間違っていると、名前は引けない（通信自体はできる）。実際の DNS には問い合わせない。
+        /// 知らない名前は、DNS が正常なら社外のサイトとして扱う（ip は null）。
+        /// </summary>
+        public static Resolution Resolve(VirtualPCState pc, string host, out string ip)
+        {
+            ip = null;
+            if (string.IsNullOrEmpty(host)) return Resolution.NameNotFound;
+            if (host == "127.0.0.1" || host.Equals("localhost", StringComparison.OrdinalIgnoreCase)) { ip = "127.0.0.1"; return Resolution.Ok; }
+            if (!pc.InternetConnectivity) return Resolution.NoNetwork;
+            if (System.Text.RegularExpressions.Regex.IsMatch(host, @"^\d{1,3}(\.\d{1,3}){3}$")) { ip = host; return Resolution.Ok; }
+            if (!pc.DnsAuto) return Resolution.NameNotFound;
+            KnownHosts.TryGetValue(host, out ip);
+            return Resolution.Ok;
+        }
+
         static TerminalCommands()
         {
             Register("help", Help);
@@ -142,7 +163,7 @@ namespace NightShift.RemotePC
             sb.AppendLine();
             sb.AppendLine($"{target} [{ip}] に ping を送信しています 32 バイトのデータ:");
             bool reachable = loopback || (pc.InternetConnectivity && (ip == pc.Gateway || ip.StartsWith("10.") || ip.StartsWith("172.16.") || KnownHosts.ContainsValue(ip)));
-            if (ip == "10.10.0.30" && !pc.FileServerReachable) reachable = false; // ファイルサーバー側の障害
+            if (ip == FileServerIp && !pc.FileServerReachable) reachable = false; // ファイルサーバー側の障害
             if (!pc.InternetConnectivity && !loopback)
             {
                 for (int i = 0; i < 4; i++) sb.AppendLine("PING: 転送に失敗しました。一般エラーです。");

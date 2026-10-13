@@ -70,7 +70,7 @@ namespace NightShift.UI.Remote
                         toggle.SetLatched(pc.WiFiEnabled);
                         if (!pc.NetworkAdapterEnabled) toggle.Interactable = false;
                         UIFactory.Label(g, "状態:", 0, 26, 80, 20);
-                        string status = !pc.NetworkAdapterEnabled ? "アダプターが無効です" : !pc.WiFiEnabled ? "切断" : $"接続済み ({pc.Ssid})";
+                        string status = !pc.NetworkAdapterEnabled ? "アダプターが無効です" : !pc.WiFiEnabled ? "切断" : pc.Quarantined ? "隔離中（管理者により切断）" : $"接続済み ({pc.Ssid})";
                         UIFactory.ValueBox(g, 84, 26, 220, 20, status);
                         UIFactory.Label(g, "IP アドレス:", 0, 52, 80, 20);
                         UIFactory.ValueBox(g, 84, 52, 220, 20, string.IsNullOrEmpty(pc.IPAddress) ? "-" : pc.IPAddress);
@@ -761,7 +761,9 @@ namespace NightShift.UI.Remote
             {
                 if (_current == null) return;
                 var pc = _d.PC;
-                if (!pc.InternetConnectivity)
+                string host = HostOf(_current);
+                var res = RemotePC.TerminalCommands.Resolve(pc, host, out string ip);
+                if (res == RemotePC.TerminalCommands.Resolution.NoNetwork || (ip == RemotePC.TerminalCommands.FileServerIp && !pc.FileServerReachable))
                 {
                     _w.SetTitle("ページを表示できません - ブラウザー");
                     _page.text = "<size=16><b>ページを表示できません</b></size>\n\n" +
@@ -770,7 +772,17 @@ namespace NightShift.UI.Remote
                                  "・[更新] ボタンをクリックするか、後でやり直してください。";
                     return;
                 }
-                if (_current.Contains("intranet"))
+                if (res == RemotePC.TerminalCommands.Resolution.NameNotFound)
+                {
+                    // 通信はできるが、名前から IP アドレスを引けない（DNS の設定）
+                    _w.SetTitle("サーバーが見つかりません - ブラウザー");
+                    _page.text = "<size=16><b>サーバーが見つかりません</b></size>\n\n" +
+                                 $"サーバー名 {host} の IP アドレスが見つかりませんでした。\n\n" +
+                                 "・アドレスのつづりを確認してください。\n" +
+                                 "・DNS サーバーの設定を確認してください。";
+                    return;
+                }
+                if (ip == RemotePC.TerminalCommands.IntranetIp)
                 {
                     _w.SetTitle("NEXUS イントラネット - ブラウザー");
                     _page.text = "<size=16><b>NEXUS CORPORATION イントラネット</b></size>\n\n" +
@@ -780,8 +792,19 @@ namespace NightShift.UI.Remote
                 else
                 {
                     _w.SetTitle(_current + " - ブラウザー");
-                    _page.text = $"<size=14><b>{_current}</b></size>\n\n社外のWebサイトです。\n（ページは正常に表示されました）";
+                    bool inside = ip != null && (ip.StartsWith("10.") || ip.StartsWith("172.16."));
+                    _page.text = $"<size=14><b>{_current}</b></size>\n\n{(inside ? "社内のサーバーです。" : "社外のWebサイトです。")}\n（ページは正常に表示されました）";
                 }
+            }
+
+            /// <summary>URL からホスト名（または IP アドレス）を取り出す</summary>
+            static string HostOf(string url)
+            {
+                string h = url;
+                int i = h.IndexOf("://", System.StringComparison.Ordinal);
+                if (i >= 0) h = h.Substring(i + 3);
+                int j = h.IndexOfAny(new[] { '/', ':', '?' });
+                return j >= 0 ? h.Substring(0, j) : h;
             }
         }
     }

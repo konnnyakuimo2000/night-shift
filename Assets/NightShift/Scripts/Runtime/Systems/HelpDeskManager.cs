@@ -95,6 +95,8 @@ namespace NightShift.Systems
             {
                 t.PC = VirtualPCState.Create(def.pcProfile, employee, _s.Employees.GetIp(employee), _s.Rng);
                 ApplyFault(t, def);
+                // 隔離済みの端末なら、後から作った PC も通信できない状態で始まる
+                t.PC.Quarantined = _s.Security.IsIsolated(employee.deviceId);
                 // 感染している端末なら、見慣れないプロセスが動いている（手がかり）
                 string virus = _s.Security.InfectionOf(employee.deviceId);
                 if (virus != null)

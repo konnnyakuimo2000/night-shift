@@ -373,7 +373,7 @@ namespace NightShift.UI.Shift
             foreach (var l in S.Logs.Entries)
             {
                 if (l.Result == "FAIL") { fails.TryGetValue(l.Source, out int n); fails[l.Source] = n + 1; }
-                if (l.Detail != null && l.Detail.StartsWith("FILE READ")) { reads.TryGetValue(l.User, out int n); reads[l.User] = n + 1; }
+                if (LogViewerView.VisibleDetail(S, l).StartsWith("FILE READ")) { reads.TryGetValue(l.User, out int n); reads[l.User] = n + 1; }
             }
             var found = new List<string>();
             foreach (var kv in fails) if (kv.Value >= 5) found.Add($"{kv.Key} からログイン失敗 {kv.Value} 回（遮断を推奨）");

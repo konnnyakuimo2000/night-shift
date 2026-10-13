@@ -155,8 +155,7 @@ namespace NightShift.Systems
             if (st.Restoring) return "復元中は操作できません。";
             svc.Running = true;
             // 終了させた正規のプロセスを戻す
-            st.Processes.AddRange(st.Killed);
-            st.Killed.Clear();
+            ReturnKilled(st);
             _s.Logs.Add(_s.Time.CurrentMinute, st.Id, "-", _s.OperatorName, "SERVICE", "RESTART", svc.Name);
             Changed?.Invoke();
             return $"{svc.Name} を再起動しました。";
@@ -174,6 +173,13 @@ namespace NightShift.Systems
             return $"{st.Id} の復元を開始しました（約{RestoreMinutes:0}分、その間サービスは停止します）。";
         }
 
+        /// <summary>終了させた正規のプロセスを戻す（同じものを二重に戻さない）</summary>
+        static void ReturnKilled(ServerState st)
+        {
+            foreach (var p in st.Killed) if (!st.Processes.Contains(p)) st.Processes.Add(p);
+            st.Killed.Clear();
+        }
+
         public void Tick(float now)
         {
             foreach (var st in _servers)
@@ -183,6 +189,7 @@ namespace NightShift.Systems
                 bool wasBad = st.Defaced || st.Garbled;
                 st.Defaced = false; st.Garbled = false;
                 st.Processes.RemoveAll(p => p.Suspicious);
+                ReturnKilled(st); // バックアップの状態に戻るので、終了させた正規のプロセスも動いている
                 foreach (var svc in st.Services) svc.Running = true;
                 if (wasBad) _s.Evaluation.SecurityActionsCorrect++;
                 else _s.Evaluation.SecurityActionsWrong++;

@@ -394,7 +394,7 @@ namespace NightShift.UI.Shift
             if (_lastRecent >= 0 && recent > _lastRecent) ToolFx.Flash(_recent);
             if (_lastFails >= 0 && fails > _lastFails) ToolFx.Flash(_fails);
             _lastRecent = recent; _lastFails = fails;
-            _rows.SetItems(list, e => new ToolList.Row($"{TimeManager.Format(e.Time)}　{e.EventType}", $"{e.Source} → {e.Destination}　{e.User}　{e.Detail}",
+            _rows.SetItems(list, e => new ToolList.Row($"{TimeManager.Format(e.Time)}　{e.EventType}", $"{e.Source} → {e.Destination}　{e.User}　{LogViewerView.VisibleDetail(S, e)}",
                 e.Result, e.Result == "FAIL" ? Tone.Warn : Tone.Neutral, e.Result == "FAIL" ? "warning" : "log"));
         }
     }
@@ -411,36 +411,60 @@ namespace NightShift.UI.Shift
         protected override void Build(RectTransform p)
         {
             float y = ToolStyle.Header(p, "遮断コンソール", "接続元のIPや範囲を、まとめて遮断します。遮断した接続元からの要求は自動で拒否されます。", "firewall", ToolStyle.Red);
-            var ig = ToolStyle.Box(p, 0, 1, y, 146, "遮断する接続元");
+            var ig = ToolStyle.Box(p, 0, 1, y, 170, "遮断する接続元");
             _range = ToolStyle.Input(ig, 0, 0, 280, 34);
-            ToolStyle.Button(ig, "遮断する", 290, 0, 140, 34, BlockNow, ToolStyle.Red);
-            ToolStyle.Text(ig, "選んだ接続要求・ログの接続元が自動で入ります。\n末尾を「*」にすると範囲で遮断します（例: 198.51.100.*）。", 0, 42, 440, 36, 11, ToolStyle.Muted);
-            _led = ToolLed.Create(ig, 0, 88, 12);
-            _auto = ToolStyle.Text(ig, "", 18, 84, 420, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
-            var lg = ToolStyle.Box(p, 0, 1, y + 156, 0, "遮断中の接続元");
+            _range.onValueChanged.AddListener(_ => ShowTarget());
+            _go = ToolStyle.Button(ig, "遮断する", 290, 0, 140, 34, BlockNow, ToolStyle.Red);
+            _target = ToolStyle.Text(ig, "", 0, 40, 440, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            ToolStyle.Text(ig, "選んだ接続要求・ログの接続元の範囲が入ります（メールを選んでも変わりません）。\n末尾を「*」にすると範囲で遮断します（例: 198.51.100.*）。", 0, 62, 440, 36, 11, ToolStyle.Muted);
+            _led = ToolLed.Create(ig, 0, 108, 12);
+            _auto = ToolStyle.Text(ig, "", 18, 104, 420, 20, 12, ToolStyle.Ink, TextAnchor.MiddleLeft, true);
+            var lg = ToolStyle.Box(p, 0, 1, y + 180, 0, "遮断中の接続元");
             _list = ToolList.Create(lg, ToolStyle.Red, "まだ何も遮断していません。");
-            W.SetStatus(0, "選んだ要求の接続元の範囲は自動で入力されます。");
-            D.SelectionChanged += Prefill;
-            Prefill();
+            W.SetStatus(0, "選んだ要求・ログの接続元の範囲が入力されます。");
+            D.SelectionKindChanged += Prefill;
+            Prefill(SelectionKind.Request);
+        }
+
+        FlatButton _go;
+        Text _target;
+
+        string Typed => (_range.text ?? "").Trim();
+
+        /// <summary>実行対象をボタンの近くに出す（確認画面・実行と同じ文字列）</summary>
+        void ShowTarget()
+        {
+            if (_target == null) return;
+            string t = Typed;
+            bool ok = t.Length >= 4;
+            _target.text = ok ? $"対象: <color=#B00000>{t}</color>{(t.EndsWith("*") ? "（範囲）" : "")}" : "<color=#8890A0>対象: なし（接続元を入力してください）</color>";
+            _go.Interactable = ok;
         }
 
         void BlockNow()
         {
-            string t = (_range.text ?? "").Trim();
+            string t = Typed; // 確認画面と実行で同じ対象を使う
             if (t.Length < 4) { AudioFx.Error(); W.SetStatus(0, "遮断する接続元を入力してください。"); return; }
-            W.SetStatus(0, S.Security.Block(t));
-            Refresh();
+            D.ShowModal("接続元の遮断", $"{t} からの通信を遮断します。\nよろしいですか？", "lock", "遮断する", () =>
+            {
+                W.SetStatus(0, S.Security.Block(t));
+                Refresh();
+            }, "やめる", null);
         }
 
-        protected override void OnClosed() { if (D != null) D.SelectionChanged -= Prefill; }
+        protected override void OnClosed() { if (D != null) D.SelectionKindChanged -= Prefill; }
 
-        void Prefill()
+        /// <summary>要求・ログを選び直したときだけ入れ直す（メールの選択では手入力を書き換えない）</summary>
+        void Prefill(SelectionKind kind)
         {
-            var e = D.SelectedRequest;
-            string ip = e != null ? e.SourceIp : D.SelectedLog?.Source;
-            if (string.IsNullOrEmpty(ip) || _range == null) return;
-            int dot = ip.LastIndexOf('.');
-            if (dot > 0) _range.text = ip.Substring(0, dot + 1) + "*";
+            if (_range == null || kind == SelectionKind.Mail) return;
+            string ip = D.TargetIp;
+            if (ip != null)
+            {
+                int dot = ip.LastIndexOf('.');
+                _range.text = ip.Substring(0, dot + 1) + "*";
+            }
+            ShowTarget();
         }
 
         protected override void Refresh()
@@ -586,18 +610,24 @@ namespace NightShift.UI.Shift
             var lg = ToolStyle.Box(p, 0, 1, y + 84, 0, "社内の端末（選んだ接続要求の端末は自動で選ばれます）");
             _list = ToolList.Create(lg, ToolStyle.Red, "端末がありません。");
             _list.SelectionChanged += _ => RefreshSelection();
-            D.SelectionChanged += FollowSelection;
+            D.SelectionKindChanged += FollowSelection;
+            Refresh();
+            FollowSelection(SelectionKind.Request);
         }
 
-        protected override void OnClosed() { if (D != null) D.SelectionChanged -= FollowSelection; }
+        protected override void OnClosed() { if (D != null) D.SelectionKindChanged -= FollowSelection; }
 
-        /// <summary>メインモニターで選んだ要求・ログの端末を選んでおく（隔離するかはプレイヤーが決める）</summary>
-        void FollowSelection()
+        /// <summary>
+        /// メインモニターで最後に選んだ要求・ログの端末を選んでおく（隔離するかはプレイヤーが決める）。
+        /// 端末が分からない行を選んだら、前の端末を残さず選択を外す。メールの選択では変えない
+        /// </summary>
+        void FollowSelection(SelectionKind kind)
         {
-            string device = D.SelectedRequest?.Device;
-            string ip = D.SelectedLog?.Source;
-            foreach (var e in S.Employees.All)
-                if (e.deviceId == device || (ip != null && S.Employees.GetIp(e) == ip)) { _list.Select(e); return; }
+            if (_list == null || kind == SelectionKind.Mail) return;
+            string device = D.TargetDevice;
+            EmployeeData match = null;
+            if (device != null) foreach (var e in S.Employees.All) if (e.IsActive && e.deviceId == device) { match = e; break; }
+            _list.Select(match);
         }
 
         void IsolateSelected()
@@ -758,7 +788,7 @@ namespace NightShift.UI.Shift
                 for (int i = from; i < kv.Value.Count; i++)
                 {
                     var l = kv.Value[i];
-                    sb.AppendLine($"  {TimeManager.Format(l.Time)}  {l.Source} → {EmployeeDetailView.ServiceLabel(l.Destination)}  {l.EventType} {l.Result}  <color=#666E7C>{l.Detail}</color>");
+                    sb.AppendLine($"  {TimeManager.Format(l.Time)}  {l.Source} → {EmployeeDetailView.ServiceLabel(l.Destination)}  {l.EventType} {l.Result}  <color=#666E7C>{LogViewerView.VisibleDetail(S, l)}</color>");
                 }
                 sb.AppendLine();
             }

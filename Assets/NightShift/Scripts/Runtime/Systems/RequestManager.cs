@@ -36,16 +36,15 @@ namespace NightShift.Systems
             _pending.Add(e);
             if (e.IsMalicious) _s.Security.MarkHostile(e.SourceIp);
 
-            // 遮断中の接続元・停止中のアカウント・隔離した端末からの要求は自動的に拒否（通知しない）
-            string auto = _s.Security.IsBlocked(e.SourceIp) ? "遮断中の接続元"
-                : e.Employee != null && _s.Security.IsSuspended(e.Employee.employeeId) ? "停止中のアカウント"
-                : _s.Security.IsIsolated(e.Device) ? "隔離中の端末" : null;
+            // 遮断中の接続元・停止中のアカウント・隔離した端末からの要求は自動的に拒否（通知しない）。
+            // 拒否を確定してから登録を知らせる（自動審査・SOC-AI が先に許可できないように）
+            string auto = ForcedDenyReason(e);
             if (auto != null)
             {
                 _s.Logs.Add(e.GeneratedTime, e.SourceIp, e.DestinationLabel, UserLabel(e), "FW", "DENY", $"{e.RequestId} 自動拒否（{auto}）");
                 e.AutoDecided = true;
-                Created?.Invoke(e);
                 Decide(e, PlayerAction.Block);
+                Created?.Invoke(e);
                 return;
             }
 
@@ -65,12 +64,29 @@ namespace NightShift.Systems
             Created?.Invoke(e);
         }
 
+        /// <summary>防御の設定（遮断・停止・隔離）で必ず拒否する要求なら、その理由。なければ null</summary>
+        public string ForcedDenyReason(EventInstance e)
+        {
+            if (e == null) return null;
+            if (_s.Security.IsBlocked(e.SourceIp)) return "遮断中の接続元";
+            if (e.Employee != null && _s.Security.IsSuspended(e.Employee.employeeId)) return "停止中のアカウント";
+            if (_s.Security.IsIsolated(e.Device)) return "隔離中の端末";
+            return null;
+        }
+
         public static string UserLabel(EventInstance e) =>
             string.IsNullOrEmpty(e.DisplayEmployeeId) || e.DisplayEmployeeId == "-" ? e.DisplayUser : $"{e.DisplayUser} ({e.DisplayEmployeeId})";
 
         public void Decide(EventInstance e, PlayerAction action)
         {
             if (e == null || e.State != EventState.Pending) return;
+            // 遮断・停止・隔離の対象は、誰が許可しても（手動・自動審査・SOC-AI）拒否として確定する
+            if (action == PlayerAction.Allow && ForcedDenyReason(e) is string forced)
+            {
+                action = PlayerAction.Block;
+                e.AutoDecided = true;
+                _s.Logs.Add(_s.Time.CurrentMinute, e.SourceIp, e.DestinationLabel, UserLabel(e), "FW", "DENY", $"{e.RequestId} 許可できません（{forced}）");
+            }
             float now = _s.Time.CurrentMinute;
             e.PlayerAction = action;
             e.DecidedTime = now;

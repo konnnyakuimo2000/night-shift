@@ -10,6 +10,9 @@ using UnityEngine.UI;
 
 namespace NightShift.UI.Shift
 {
+    /// <summary>メインモニターで選んだものの種類</summary>
+    public enum SelectionKind { None, Request, Log, Mail }
+
     /// <summary>シフト中の社内システム デスクトップ。各業務Windowの起点。</summary>
     public class ShiftDesktop : MonoBehaviour, IShiftUi
     {
@@ -237,9 +240,69 @@ namespace NightShift.UI.Shift
         public LogEntry SelectedLog { get; private set; }
         public MailMessage SelectedMail { get; private set; }
         public event Action SelectionChanged;
-        public void SelectRequest(Events.EventInstance e) { SelectedRequest = e; SelectionChanged?.Invoke(); }
-        public void SelectLog(LogEntry e) { SelectedLog = e; SelectionChanged?.Invoke(); }
-        public void SelectMail(MailMessage m) { SelectedMail = m; SelectionChanged?.Invoke(); }
+        /// <summary>選択が変わった（何が変わったか付き）。メールの選択で遮断・隔離の対象を書き換えないために使う</summary>
+        public event Action<SelectionKind> SelectionKindChanged;
+        /// <summary>
+        /// 連動ツール（遮断・隔離など）が扱う対象の種類 = 最後に明示的に選んだ接続要求かログ。
+        /// 要求とログは画面ごとに選択を持つが、ツールが見るのはこの1つだけ（どちらが優先かを曖昧にしない）
+        /// </summary>
+        public SelectionKind TargetKind { get; private set; }
+
+        public void SelectRequest(Events.EventInstance e)
+        {
+            SelectedRequest = e;
+            // 選んだら対象になる。選択が外れたときは、それが今の対象だった場合だけ対象なしになる
+            if (e != null) TargetKind = SelectionKind.Request;
+            else if (TargetKind == SelectionKind.Request) TargetKind = SelectionKind.None;
+            Fire(SelectionKind.Request);
+        }
+
+        public void SelectLog(LogEntry e)
+        {
+            SelectedLog = e;
+            if (e != null) TargetKind = SelectionKind.Log;
+            else if (TargetKind == SelectionKind.Log) TargetKind = SelectionKind.None;
+            Fire(SelectionKind.Log);
+        }
+
+        public void SelectMail(MailMessage m) { SelectedMail = m; Fire(SelectionKind.Mail); }
+
+        void Fire(SelectionKind kind)
+        {
+            SelectionKindChanged?.Invoke(kind);
+            SelectionChanged?.Invoke();
+        }
+
+        /// <summary>対象の接続元IP（対象なし・IPでない行なら null）</summary>
+        public string TargetIp
+        {
+            get
+            {
+                string ip = TargetKind == SelectionKind.Request ? SelectedRequest?.SourceIp : TargetKind == SelectionKind.Log ? SelectedLog?.Source : null;
+                return IsIp(ip) ? ip : null;
+            }
+        }
+
+        /// <summary>対象の端末名。要求は要求の端末、ログは接続元IPが一致する社員の登録端末（一致が1台だけのとき）。なければ null</summary>
+        public string TargetDevice =>
+            TargetKind == SelectionKind.Request ? (string.IsNullOrEmpty(SelectedRequest?.Device) || SelectedRequest.Device == "-" ? null : SelectedRequest.Device)
+            : TargetKind == SelectionKind.Log ? DeviceForIp(SelectedLog?.Source) : null;
+
+        /// <summary>接続元IPから社員の登録端末を探す。名簿の順番で結果が変わらないよう、ちょうど1台のときだけ返す</summary>
+        public string DeviceForIp(string ip)
+        {
+            if (!IsIp(ip)) return null;
+            string found = null;
+            foreach (var emp in S.Employees.All)
+            {
+                if (S.Employees.GetIp(emp) != ip) continue;
+                if (found != null && found != emp.deviceId) return null;
+                found = emp.deviceId;
+            }
+            return found;
+        }
+
+        static bool IsIp(string s) => !string.IsNullOrEmpty(s) && System.Text.RegularExpressions.Regex.IsMatch(s, @"^\d{1,3}(\.\d{1,3}){3}$");
 
         // ---------------- IShiftUi ----------------
         public void OpenConnectionMonitor(EventInstance focus) => ConnectionMonitorView.Open(this, focus);
