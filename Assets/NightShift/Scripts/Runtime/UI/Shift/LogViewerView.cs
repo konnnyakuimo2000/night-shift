@@ -139,7 +139,7 @@ namespace NightShift.UI.Shift
         {
             var e = SelectedEntry;
             if (e == null) { AudioFx.Error(); return; }
-            _w.SetStatus(0, _d.S.Security.Block(e.Source));
+            BlockDialog.Open(_d, e.Source, () => _dirty = true);
         }
 
         /// <summary>選択行の接続元IPから、社員の登録端末を探して隔離する</summary>

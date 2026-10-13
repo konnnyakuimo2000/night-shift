@@ -26,6 +26,8 @@ namespace NightShift.Data
         public string adCopy;
         [Tooltip("サブクエストで解禁される商品（この記録フラグが立つまで店頭に並ばない）")]
         public string questFlag;
+        [Tooltip("販売終了（業務システムに統合した）。店頭に並ばない。所有の記録・ID は残す")]
+        public bool retired;
     }
 
     /// <summary>ツール・機材の ID（Features と同じ仕組みで有効/無効を判定する）</summary>

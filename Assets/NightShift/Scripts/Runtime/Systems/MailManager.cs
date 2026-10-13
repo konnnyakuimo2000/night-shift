@@ -21,6 +21,7 @@ namespace NightShift.Systems
         public string ActionLabel;
         public float ReceivedAt = -1;       // シフト中に届いたメールのゲーム内時刻
         public string FromAddress;          // 差出人のメールアドレス（DAY13〜表示）
+        public string FromServer;           // 送信元サーバー（メールのデータとして持つ。空ならアドレスのドメインから決める）
         public bool IsPhish;                // 偽メール（報告すべきもの）
         public bool Reported;
         public bool AttachmentOpened;       // 添付を実行した（二度は実行しない）
@@ -48,6 +49,21 @@ namespace NightShift.Systems
         public static string CompanyName = "ネクサスコーポレーション";
 
         /// <summary>社内の差出人（例: ネクサスコーポレーション 総務部 給与担当）</summary>
+        /// <summary>
+        /// 送信元サーバーの表示。メールが持っている値を使い、なければ差出人アドレスのドメインから決める
+        /// （偽メールかどうかの正解の印は使わない）
+        /// </summary>
+        public static string SendingServer(MailMessage m)
+        {
+            if (m == null) return "-";
+            if (!string.IsNullOrEmpty(m.FromServer)) return m.FromServer;
+            string addr = m.FromAddress ?? "";
+            int at = addr.IndexOf('@');
+            if (at < 0) return "-";
+            string domain = addr.Substring(at + 1);
+            return domain == CompanyDomain ? "MAIL-SRV01 (10.10.0.20)" : "mail." + domain;
+        }
+
         public static string Sender(string dept) => string.IsNullOrEmpty(CompanyName) ? dept : $"{CompanyName} {dept}";
 
         /// <summary>運用担当者宛ての宛先</summary>

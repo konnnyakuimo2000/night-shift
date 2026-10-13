@@ -81,6 +81,8 @@ namespace NightShift.RemotePC
         public const string BrowserProcess = "netvoyager.exe";
 
         public event Action Changed;
+        /// <summary>プロセスを終了した（手作業の駆除の判定に使う）</summary>
+        public event Action<VirtualProcess> ProcessKilled;
         int _nextPid = 400;
 
         // ---- derived ----
@@ -181,6 +183,7 @@ namespace NightShift.RemotePC
             if (p.Critical) return false;
             RunningProcesses.Remove(p);
             if (p.Name == BrowserProcess) FakeAlertOpen = false;
+            ProcessKilled?.Invoke(p);
             NotifyChanged();
             return true;
         }

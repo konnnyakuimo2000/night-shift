@@ -24,3 +24,4 @@ MonoBehaviour:
   icon: network
   adCopy: 
   questFlag: SQ06_INVITED
+  retired: 0

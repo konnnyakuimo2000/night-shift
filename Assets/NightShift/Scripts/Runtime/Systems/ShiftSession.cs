@@ -45,6 +45,8 @@ namespace NightShift.Systems
         public VaccineScanner Vaccine { get; }
         /// <summary>SOC-AI の依頼（受付時に検証・対象を固定）</summary>
         public SocAiService SocAi { get; }
+        /// <summary>画面に作用するウイルスの進行（BLACK INK・MIRROR・WHITEOUT）</summary>
+        public DisplayVirusOps Display { get; }
         /// <summary>メール起点のサブクエスト</summary>
         public SideQuests.SideQuestManager Quests { get; }
 
@@ -213,6 +215,7 @@ namespace NightShift.Systems
             Servers = new ServerOps(this);
             Vaccine = new VaccineScanner(this);
             SocAi = new SocAiService(this);
+            Display = new DisplayVirusOps(this);
             // 受信トレイ: これまでの業務連絡（既読）と今日の業務連絡（未読）
             for (int n = 1; n <= day.dayNumber; n++)
             {
@@ -248,6 +251,7 @@ namespace NightShift.Systems
                         HelpDesk.Tick(now, delta);
                         Servers.Tick(now);
                         Vaccine.Tick(now);
+                        Display.Tick(delta);
                         Quests.Tick(now, unscaledDelta);
                     }
                     if (!EndWarningIssued && now >= Day.endWarningMinute)
@@ -263,7 +267,7 @@ namespace NightShift.Systems
                 {
                     float delta = Time.Tick(unscaledDelta);
                     float now = Time.CurrentMinute;
-                    if (delta > 0) { HelpDesk.Tick(now, delta); Servers.Tick(now); Vaccine.Tick(now); Quests.Tick(now, unscaledDelta); }
+                    if (delta > 0) { HelpDesk.Tick(now, delta); Servers.Tick(now); Vaccine.Tick(now); Display.Tick(delta); Quests.Tick(now, unscaledDelta); }
                     // 作業が片付いたら早く終わる。復元が進行中なら完了を待つ（ただし30分の上限は延ばさない）
                     if (now >= OvertimeEnd || (Requests.Pending.Count == 0 && HelpDesk.OpenCount == 0 && !Servers.AnyRestoring)) Complete();
                     break;
@@ -309,6 +313,7 @@ namespace NightShift.Systems
             foreach (var st in Servers.Servers)
                 if (st.Restoring) Logs.Add(Time.CurrentMinute, st.Id, "-", OperatorName, "BACKUP", "UNFINISHED", "業務終了までに復元が終わりませんでした");
             SocAi.Cancel(); // 考えている途中の依頼は実行せず、トークンを返す
+            Display.Clear(); // 画面の演出を次の画面へ持ち越さない（感染そのものは記録に残る）
             Phase = ShiftPhase.Complete;
             ShiftCompleted?.Invoke();
         }

@@ -67,7 +67,31 @@ namespace NightShift.Systems
                 Route = "自律型の攻撃AI（DAY28〜30）", Spread = "拒否されると別の範囲から再挑戦する",
                 Fix = "接続元を範囲ごと遮断（ウイルス対策ソフトでは止まらない）", Recovery = "夜の結果で本編の結末が決まる",
                 Symptom = "遮断のたびに別の範囲から同じ手口の要求が届く" },
+
+            // ---- 画面に作用するウイルス（TOOL_REWORK_CLAUDE.md §7）。感染した社員PCが、監視画面へ壊れた画面データを送り続ける ----
+            // 先行実装: BLACK INK・MIRROR・WHITEOUT。GLASS・ECHO・MOLT は後続の候補（ゲームには出ない・図鑑にも載せない）
+            new VirusEntry { Id = "V9", Name = "GLASS", Kind = VirusKind.Virus, DefinitionDay = -1, Host = VirusHost.EmployeePc, Danger = 2, Implemented = false,
+                Route = "（候補）", Spread = "（候補）", Fix = "（候補）", Recovery = "（候補）", Symptom = "ウィンドウに亀裂が入り、内部がタイル状にずれる" },
+            new VirusEntry { Id = "V10", Name = "ECHO", Kind = VirusKind.Virus, DefinitionDay = -1, Host = VirusHost.EmployeePc, Danger = 2, Implemented = false,
+                Route = "（候補）", Spread = "（候補）", Fix = "（候補）", Recovery = "（候補）", Symptom = "過去の画面が残像として重なる" },
+            new VirusEntry { Id = "V11", Name = "BLACK INK", Kind = VirusKind.Virus, DefinitionDay = 23, Host = VirusHost.EmployeePc, Process = "inkwell.exe", Danger = 2,
+                Route = "社員PCの感染（T16）。そのPCから監視画面へ、壊れた画面データが送られる（ログの DISPLAY）", Spread = "約30分かけて、画面の隅から黒い染みが広がる（ほかのPCへは広がらない）",
+                Fix = "送信元の端末を隔離すると広がりが止まる。VACCINE 99 で駆除するか、そのPCで inkwell.exe を終了すると染みが引く", Recovery = "駆除すれば染みは消え、残る被害はない",
+                Symptom = "黒いインク状の染みが画面の隅から広がり、文字や顔写真を覆う" },
+            new VirusEntry { Id = "V12", Name = "MIRROR", Kind = VirusKind.Virus, DefinitionDay = 24, Host = VirusHost.EmployeePc, Process = "mirror32.exe", Danger = 2,
+                Route = "社員PCの感染（T17）。そのPCから監視画面へ、複製された画面データが送られる（ログの DISPLAY）", Spread = "時間とともに、画面の中の画面が奥へ増える（最大4重・偽の警告窓は最大3枚）",
+                Fix = "送信元の端末を隔離すると増えなくなる。そのPCのタスク マネージャーで mirror32.exe を終了するか、VACCINE 99 で駆除", Recovery = "駆除すれば複製と偽の警告は消える",
+                Symptom = "デスクトップの中に同じデスクトップが現れ、奥へ複製される。偽の警告窓が出る（押しても何も起きない）" },
+            new VirusEntry { Id = "V13", Name = "MOLT", Kind = VirusKind.Virus, DefinitionDay = -1, Host = VirusHost.EmployeePc, Danger = 3, Implemented = false,
+                Route = "（候補）", Spread = "（候補）", Fix = "（候補）", Recovery = "（候補）", Symptom = "壁紙やウィンドウの表面が剥がれ、別の社員のデスクトップが現れる" },
+            new VirusEntry { Id = "V14", Name = "WHITEOUT", Kind = VirusKind.Virus, DefinitionDay = 26, Host = VirusHost.EmployeePc, Process = "bleach.exe", Danger = 3,
+                Route = "社員PCの感染（T18）。そのPCから監視画面へ、白く焼き付いた画面データが送られる（ログの DISPLAY）", Spread = "約40分かけて、色と文字が白く薄れていく（最後まで最低限の操作はできる）",
+                Fix = "システムログの DISPLAY の送信元を隔離して止め、VACCINE 99 またはそのPCで bleach.exe を終了して駆除", Recovery = "駆除すれば色が戻る",
+                Symptom = "色や文字が少しずつ薄れ、白く焼き付いた画面になっていく" },
         };
+
+        /// <summary>画面に作用するウイルス（監視画面の表示を壊す）</summary>
+        public static bool IsDisplayVirus(string id) => id == "V11" || id == "V12" || id == "V14";
 
         public static IReadOnlyList<VirusEntry> All => _all;
 

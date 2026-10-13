@@ -119,7 +119,7 @@ namespace NightShift.Systems
                 case ScanTarget.Server:
                     foreach (var st in _s.Servers.Servers)
                     {
-                        var bad = st.Processes.FindAll(p => p.Suspicious && p.Tag == "T9");
+                        var bad = st.Processes.FindAll(p => p.Suspicious && (p.Tag == "T9" || p.Tag == "GARBLE"));
                         if (bad.Count == 0) continue;
                         if (!VirusCatalog.Detectable("V2")) { r.MissedUnknown = true; continue; }
                         foreach (var p in bad) _s.Servers.KillProcess(st, p); // 不審なプロセスの終了は、そのたびに正しい対応として数える

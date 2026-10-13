@@ -74,6 +74,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0e7a688782271b14b9b869b599b8eab0, type: 2}
   - {fileID: 11400000, guid: 1e88146394b0a20439f8075a9e3918f9, type: 2}
   - {fileID: 11400000, guid: 6d3e2024c7ad7f3408ffbe61f82c600d, type: 2}
+  - {fileID: 11400000, guid: 61a95b86721f5394fbaa8bb51fcc9fae, type: 2}
+  - {fileID: 11400000, guid: 40fadd50d044cd443940139e11a75442, type: 2}
   backgroundLogChance: 0.25
   backgroundActivityScale: 1
   randomEvents: 1

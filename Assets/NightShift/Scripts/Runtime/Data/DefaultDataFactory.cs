@@ -12,7 +12,7 @@ namespace NightShift.Data
     public static partial class DefaultDataFactory
     {
         /// <summary>初期データの版。内容を変えたら上げる（エディタが古いアセットの再生成を行う）。</summary>
-        public const int DataVersion = 37;
+        public const int DataVersion = 40;
 
         // 業務連絡で使う強調（Text のリッチテキスト）
         const string Allow = "#0030A0";   // 許可系
@@ -524,6 +524,10 @@ namespace NightShift.Data
                 "[セキュリティ情報] の画面です。迷ったときに見る場所です。",
                 $"・{B("接続審査の基本ルール")} … 今夜のルールの一覧。",
                 $"・{B("セキュリティ警告の履歴")} … これまでに出た警告。{Col("警告は自動判定ではありません。", Deny)} 内容はシステムログで確かめます。");
+            PageFrom(manualSystem, 9, "感染記録",
+                "これまでに観測・検出・駆除したウイルスの記録です（VACCINE 99 の「感染記録」タブと同じ内容）。",
+                "まだ出会っていないものは番号だけが表示されます。読んでも何も起きません。",
+                "{FIG:VIRUSDEX}");
             Page(manualSystem, "ネットワークマップ", Features.NetworkMap,
                 "通信の流れ（接続元 → 接続先）を表示します。サーバーは監視のみで、操作はできません。",
                 "社内ネットワークの区分は「社内サーバー構成資料」を参照してください。");

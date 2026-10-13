@@ -244,8 +244,7 @@ namespace NightShift.UI.Shift
         void BlockSource()
         {
             if (!(_table.Selected is EventInstance e)) { AudioFx.Error(); return; }
-            _w.SetStatus(0, _d.S.Security.Block(e.SourceIp));
-            _dirty = true;
+            BlockDialog.Open(_d, e.SourceIp, () => _dirty = true);
         }
 
         void ReportSelected()

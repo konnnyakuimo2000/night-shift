@@ -25,6 +25,31 @@ namespace NightShift.Events
         {
             _s = s;
             _s.Requests.Resolved += OnRequestResolved;
+            _s.Requests.Resolved += RouteA;
+        }
+
+        readonly HashSet<string> _routeAPlanted = new HashSet<string>();
+
+        /// <summary>
+        /// 経路 A（VIRUS_CATALOG.md §2）: 悪意ある接続要求を許可すると、接続先のサーバーに GARBLE が置かれ、約25分でページ・ログが書き換わる。
+        /// 対象はファイルサーバー・公開Web だけ（管理サーバーは T10 の流れ、メールサーバー → TINNITUS は感染させる端末がないので未接続）。
+        /// 拒否・期限切れは感染にしない。1夜に1台につき1回
+        /// </summary>
+        void RouteA(EventInstance e)
+        {
+            if (e.State != EventState.Allowed || !e.IsMalicious || e.Destination == null) return;
+            string node = e.Destination.nodeId;
+            if ((node != "FILE-SRV01" && node != "WEB-SRV01") || !_routeAPlanted.Add(node)) return;
+            if (_s.Day.dayNumber < VirusCatalog.Get("V2").DefinitionDay) return; // GARBLE は DAY17 から
+            _s.Servers.Implant(node, "svcupd.exe", "GARBLE");
+            _s.Logs.Add(_s.Time.CurrentMinute + 0.3f, node, "-", "SYSTEM", "PROCESS", "START", "svcupd.exe");
+            _scheduler?.Add(_s.Time.CurrentMinute + 25f, "ROUTE-A GARBLE " + node, () =>
+            {
+                if (!_s.Servers.HasTag(node, "GARBLE")) return; // 止めていれば何も起きない
+                _s.Servers.SetDefaced(node, true);
+                _s.Discover("V2", DiscoveryStage.Observed);
+                _s.AddDamage($"{node} のファイルとログが書き換えられた（GARBLE）");
+            });
         }
 
         public void ScheduleDay(TimelineScheduler scheduler, DayDefinition day)
@@ -160,8 +185,10 @@ namespace NightShift.Events
             {
                 run.Stopped = true;
                 _s.Logs.Add(_s.Time.CurrentMinute, "FIREWALL", "-", "-", "FW", "INFO", "攻撃者の経路がすべて遮断された");
+                _s.Discover("V8", DiscoveryStage.Removed); // DAYBREAK はウイルスではないので「封じ込め」
                 return;
             }
+            _s.Discover("V8", DiscoveryStage.Observed);
             string prefix = free[_s.Rng.Next(free.Count)];
             run.AttackerIp = prefix + _s.Rng.Next(20, 240);
             run.RelatedIp = run.AttackerIp;

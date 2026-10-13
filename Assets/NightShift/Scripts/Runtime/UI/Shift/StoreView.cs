@@ -126,6 +126,7 @@ namespace NightShift.UI.Shift
         /// <summary>サブクエストで解禁される商品は、招待・案内のあとにだけ並ぶ（新商品の通知は出さない）</summary>
         public static bool OnSale(StoreItemDefinition it, int day)
         {
+            if (it.retired) return false; // 販売終了（業務システムに統合済み。持っている記録は残る）
             if (string.IsNullOrEmpty(it.questFlag)) return true;
             var c = CareerRecord.Current;
             if (it.questFlag == CharmFlag) return Systems.SideQuests.Sq03Route.CharmOnSale(c, day);

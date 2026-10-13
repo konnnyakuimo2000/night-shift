@@ -438,5 +438,20 @@ namespace NightShift.Tests
             s.Discover("V6", DiscoveryStage.Removed);
             Assert.AreEqual((int)DiscoveryStage.Removed, VirusDex.Find(Career, "V6").stage, "暗号化が残る種類は、駆除だけでは対応済みにならない");
         }
-    }
+    
+        // 49（経路 A）
+        [TestCase(true)]
+        [TestCase(false)]
+        public void RouteA_AllowingMaliciousFileRequest_PlantsGarble_DenyingDoesNot(bool allow)
+        {
+            var s = TestData.Session(20);
+            s.StartShift();
+            NetworkNodeDefinition file = null;
+            foreach (var n in s.Network.Nodes) if (n.nodeId == "FILE-SRV01") file = n;
+            var e = new EventInstance { DisplayUser = "UNKNOWN", DisplayEmployeeId = "-", Device = "NB-X", SourceIp = "198.51.100.77", Zone = SourceZone.External, Destination = file, AccessType = "共有ファイル（閲覧）", IsMalicious = true };
+            s.Requests.Submit(e);
+            s.Requests.Decide(e, allow ? PlayerAction.Allow : PlayerAction.Block);
+            Assert.AreEqual(allow, s.Servers.HasTag("FILE-SRV01", "GARBLE"));
+        }
+}
 }

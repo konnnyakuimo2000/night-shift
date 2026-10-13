@@ -362,7 +362,45 @@ namespace NightShift.Data
             t14AdminReq.timeoutMinutes = 36;
             t14b.steps.Add(new ThreatStep { label = "侵入の試み", offsetMinutes = 0, kind = ThreatStepKind.ConnectionRequest, destination = c.admin, request = t14AdminReq });
 
-            var mainThreats = new List<ThreatScenarioDefinition> { c.scannerNoise, c.webProbe, c.scanThenAdmin, t3, t5, t5att, t5ai, t7, t8, t9, t10, t11, t13, t14, t14b };
+            // T16〜T18 画面に作用するウイルス（DAY23〜）: 感染した社員PCが監視画面へ壊れた画面データを送り続ける。
+            // ログの DISPLAY の送信元を隔離すれば広がりが止まり、駆除（VACCINE か、そのPCでプロセスを終了）で症状が引く
+            HelpDeskDefinition DisplayTicket(string id, int day, string subject, string message, string process)
+            {
+                var h = b.Add(ScriptableObject.CreateInstance<HelpDeskDefinition>(), "MainHelpDesk", "HD_" + id);
+                h.definitionId = id; h.type = HelpDeskType.Remote; h.minimumDay = day; h.maximumDay = LastDay;
+                h.subject = subject; h.message = message;
+                h.pcProfile = c.profile;
+                h.resolutionConditions.Add(new StateValue { key = "MalwareState", value = "None" });
+                h.successReply = "画面が元に戻りました。助かりました…。";
+                h.failureReply = "まだ画面がおかしいままです…。";
+                h.reminderMessage = "画面が、さっきよりひどくなっています…。";
+                h.explanation = $"見慣れないプロセス（{process}）を終了するか、ウイルス対策ソフトで駆除する。広がりを止めるだけなら、まずネットワークから切り離す。";
+                // 出典（試験問題）は付けない: 対応する過去問題を確認していないため
+                return h;
+            }
+            var hdInk = DisplayTicket("T16_SCREEN_INK", 23, "画面に黒いしみが広がる", "{dept}の{name}です。\nPCの画面の隅から、黒いしみのようなものが広がってきます。拭いても取れません…。（端末: {device}）", "inkwell.exe");
+            var t16 = Threat("T16_BLACK_INK", 23, LastDay, new Vector2(40, 240), "203.0.113.", "感染した社員PCから監視画面へ壊れた画面データ。黒い染みが広がる（V11 BLACK INK）。隔離で停止、駆除で消える。");
+            t16.chance = 0.3f;
+            t16.steps.Add(Script("被害者", 0, "PICK_VICTIM"));
+            t16.steps.Add(Script("感染", 0.1f, "INFECT:V11"));
+            t16.steps.Add(Script("画面データ", 1, "DISPLAY_SYNC", 15, 3f));
+            t16.steps.Add(Script("問い合わせ", 8, "TICKET", 1, 1, hdInk));
+            var hdMirror = DisplayTicket("T17_SCREEN_MIRROR", 24, "画面の中に画面がある", "{dept}の{name}です。\nデスクトップの中に、同じデスクトップが映っています。警告の窓も勝手に出てきて…。（端末: {device}）", "mirror32.exe");
+            var t17 = Threat("T17_MIRROR", 24, LastDay, new Vector2(40, 240), "203.0.113.", "感染した社員PCから監視画面へ複製された画面データ。画面の中に画面が増え、偽の警告窓が出る（V12 MIRROR）。");
+            t17.chance = 0.3f;
+            t17.steps.Add(Script("被害者", 0, "PICK_VICTIM"));
+            t17.steps.Add(Script("感染", 0.1f, "INFECT:V12"));
+            t17.steps.Add(Script("画面データ", 1, "DISPLAY_SYNC", 15, 3f));
+            t17.steps.Add(Script("問い合わせ", 8, "TICKET", 1, 1, hdMirror));
+            var hdWhite = DisplayTicket("T18_SCREEN_WHITE", 26, "画面が白っぽくなっていく", "{dept}の{name}です。\n画面の色がだんだん薄くなって、白く焼き付いたみたいになってきました。（端末: {device}）", "bleach.exe");
+            var t18 = Threat("T18_WHITEOUT", 26, LastDay, new Vector2(40, 220), "203.0.113.", "感染した社員PCから監視画面へ白く焼き付いた画面データ。色と文字が薄れていく（V14 WHITEOUT）。");
+            t18.chance = 0.25f;
+            t18.steps.Add(Script("被害者", 0, "PICK_VICTIM"));
+            t18.steps.Add(Script("感染", 0.1f, "INFECT:V14"));
+            t18.steps.Add(Script("画面データ", 1, "DISPLAY_SYNC", 15, 3f));
+            t18.steps.Add(Script("問い合わせ", 12, "TICKET", 1, 1, hdWhite));
+
+            var mainThreats = new List<ThreatScenarioDefinition> { c.scannerNoise, c.webProbe, c.scanThenAdmin, t3, t5, t5att, t5ai, t7, t8, t9, t10, t11, t13, t14, t14b, t16, t17, t18 };
 
             // ---------------- ルール ----------------
             string rIp = $"{B("社内の登録端末")}からの接続は、接続元の {Col("IPアドレス", Check)} が社員情報の {B("「端末IP」")} と同じか確認する。{Col("違えば拒否", Deny)}（なりすまし）。";
@@ -405,6 +443,7 @@ namespace NightShift.Data
             Page(c.manualSystem, "メールの差出人", Features.MailSender,
                 $"本日からメールに {Col("差出人のアドレス", Check)} が表示されます。社内のアドレスは {B("@nexus-corp.example")} です。",
                 $"・名前が「情報システム部」でも、{Col("アドレスが社外なら偽物", Deny)} です。",
+                $"・{B("[差出人の詳細]")} を押すと、アドレスと送信元サーバーを大きく表示できます。",
                 $"・{Col("パスワードの入力を求めるメールには、絶対に入力しないこと。", Deny)}");
             Page(c.manualSystem, "報告", Features.Report,
                 $"怪しいメール・不審な動きを見つけたら {Col("[報告]", Check)} で情報システム部に知らせます。",
@@ -425,7 +464,8 @@ namespace NightShift.Data
                 $"社員のPCから {B("社外への定期的な通信")}（数分おきに同じ宛先へ POST）が続くのは、ウイルス感染のしるしです。",
                 $"・{B("①")} システムログでその行を選びます。",
                 $"・{B("②")} {Col("[端末を隔離]", Check)} で、接続元の社員の端末をネットワークから切り離します。",
-                "・最初の1台を切り離せば広がりません。駆除はその後です。");
+                "・最初の1台を切り離せば広がりません。駆除はその後です。",
+                $"・隔離は {B("活動を止めるだけ")} で、駆除ではありません（ウイルスは残り、翌夜も隔離したままになります）。駆除は VACCINE 99 か、そのPCで見慣れないプロセスを終了します。");
             Page(c.manualSystem, "ユーザー管理", Features.UserManagement,
                 "[ユーザー管理] の画面です。社員のアカウントを一時停止できます。",
                 $"・{B("退勤しているはずの管理者")} のIDで管理サーバーへの要求が来た → 要求を {Col("拒否", Deny)} し、そのアカウントを選んで {Col("[アカウントを一時停止]", Check)}。",
@@ -671,27 +711,29 @@ namespace NightShift.Data
             I(Items.ProfilePanel, "社員情報パネル", StoreCategory.Tool, 12800, 8,
                 "接続要求を選ぶと、その社員の情報（端末・端末IP・勤務状態・在籍状態・VPN・権限）をサブモニターに表示します。見比べるのはあなたです。", "people", M);
             I(Items.LogAnalyzer, "ログ解析", StoreCategory.Tool, 9800, 8,
-                "選んだログと同じ接続元・利用者の行を色付けし、直近10分の件数を集計します。", "log", M);
-            I(Items.RemoteKit, "リモート診断キット", StoreCategory.Tool, 12800, 8,
-                "リモート接続中のPCの状態（Wi-Fi・IP・DNS・プリンター・プロセス）を一覧表示します。", "remote", M);
+                "ログ解析アプリ。選んだログと同じ接続元・利用者の記録を集め、直近10分の件数を集計します。", "log", M);
+            I(Items.RemoteKit, "端末管理: 接続中のPCの診断", StoreCategory.Tool, 12800, 8,
+                "端末管理アプリの「診断」タブ。リモート接続中のPCの状態（Wi-Fi・IP・DNS・プリンター・プロセス）を一覧表示します。", "remote", M);
             I(Items.AutoReview, "自動審査ツール", StoreCategory.Tool, 24800, 10,
                 "要求を並べ替え・絞り込み、期限までの残り時間を表示。設定した条件をすべて満たす簡単な要求を自動で許可します（拒否は自動ではしません）。自動許可の責任はあなたにあります。", "check", M, false, 1, "審査がはかどる！ 自動審査ツール");
-            I(Items.Vaccine, "VACCINE 99 Client", StoreCategory.Security, 9800, 10,
-                "ワークステーションとリモート接続中の社員PCを検査・駆除。定義ファイルに載っているウイルスだけを検出します。", "shield", M, false, 1, "VACCINE 99 新発売");
+            I(Items.Vaccine, "VACCINE 99", StoreCategory.Security, 9800, 10,
+                "担当者のワークステーションと、リモート接続中の社員PCを検査・駆除します（TINNITUS・BLUESTONE・NIGHTCRY・BRIAR ROSE）。定義ファイルに載っているウイルスだけを検出し、添付ファイルの実行も止めます。暗号化・書き換えられたファイルは元に戻せません。", "shield", M, false, 1, "VACCINE 99 新発売");
             I(Items.VaccineUpdate, "VACCINE 99 定義ファイル更新", StoreCategory.Consumable, 1000, 10,
                 "最新のウイルス定義に更新します（その時点までに出たウイルスを検出できるようになります）。", "shield", Items.Vaccine, true, 1);
-            I(Items.FwConsole, "遮断コンソール", StoreCategory.Tool, 14800, 11,
-                "IPアドレスの範囲（例: 198.51.100.*）をまとめて遮断できます。", "firewall", M);
-            I(Items.MailInspector, "メール差出人チェッカー", StoreCategory.Tool, 4800, 13,
-                "選んだメールの差出人アドレス・送信元サーバーを大きく表示します（本物かどうかは表示しません）。", "mail", M);
+            I(Items.FwConsole, "遮断コンソール（販売終了）", StoreCategory.Tool, 14800, 11,
+                "販売を終了しました。範囲の遮断は、接続監視・システムログの「接続元を遮断」で行えます。", "firewall", M);
+            c.db.storeItems[c.db.storeItems.Count - 1].retired = true;
+            I(Items.MailInspector, "メール差出人チェッカー（販売終了）", StoreCategory.Tool, 4800, 13,
+                "販売を終了しました。差出人のアドレス・送信元サーバーは、メールの「差出人の詳細」で確認できます。", "mail", M);
+            c.db.storeItems[c.db.storeItems.Count - 1].retired = true;
             I(Items.ServerMonitor, "サーバー監視ダッシュボード", StoreCategory.Tool, 24800, 15,
                 "全サーバーのサービス状態・プロセス・発行元を1画面に表示します（不審かどうかは表示しません）。", "server", M);
-            I(Items.Isolator, "端末隔離ツール", StoreCategory.Tool, 16800, 16,
-                "社員PCを一覧から選んで、ボタン1つでネットワークから隔離します。", "lock", M);
-            I(Items.VaccineServer, "VACCINE 99 Server", StoreCategory.Security, 19800, 17,
-                "社内サーバーを検査・駆除します（Client が前提）。", "shield", Items.Vaccine);
-            I(Items.Correlator, "相関タイムライン", StoreCategory.Tool, 29800, 22,
-                "同じ接続元の範囲・同じ利用者の記録を時系列に並べます（関連があるかの判断はあなた）。", "clock", M);
+            I(Items.Isolator, "端末管理: 端末一覧・隔離", StoreCategory.Tool, 16800, 16,
+                "端末管理アプリの「端末一覧・隔離」タブ。社員PCを一覧から選んで、ネットワークから隔離します。", "lock", M);
+            I(Items.VaccineServer, "VACCINE 99 サーバー検査ライセンス", StoreCategory.Security, 19800, 17,
+                "VACCINE 99 にサーバーの検査を追加するライセンスです（同じアプリにボタンが増えます。VACCINE 99 が前提）。公開Webに置かれた GARBLE を検出・駆除します。書き換えられたファイルはバックアップから復元が必要です。", "shield", Items.Vaccine);
+            I(Items.Correlator, "ログ解析: 相関タイムライン（追加機能）", StoreCategory.Tool, 29800, 22,
+                "ログ解析アプリに「相関」タブを追加します。社外の接続元を範囲ごとに、同じ利用者が別の範囲から来た記録を時系列に並べます（関連があるかの判断はあなた）。", "clock", M);
             // サブクエスト: 招待・案内のあとにだけ並ぶ。ゲーム内の架空のサービス
             I(Items.SignalDesk, "SIGNAL DESK", StoreCategory.Tool, 3000, 17,
                 "NULL SIGNAL のメール一覧・関連ログ・作業時刻・対象接続を一画面に整理します。購入は任意で、自動許可・自動送信は行いません。",

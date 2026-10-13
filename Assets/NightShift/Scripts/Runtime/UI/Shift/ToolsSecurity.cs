@@ -35,15 +35,43 @@ namespace NightShift.UI.Shift
             "C:\\MY DOCUMENTS\\見積書_0520.DOC", "C:\\WINDOWS\\SYSTEM\\WINSOCK.DLL", "C:\\AUTOEXEC.BAT", "C:\\CONFIG.SYS",
             "D:\\SHARE\\営業日報_5月.XLS", "C:\\WINDOWS\\SYSTEM\\SVCHOST.EXE", "C:\\WINDOWS\\START MENU\\STARTUP"
         };
-        FlatButton _ws, _remote, _server;
+        FlatButton _ws, _remote, _server, _tabScan, _tabDex;
+        RectTransform _scanRoot, _dexRoot;
         int _shownSerial = -1;
+
+        void ShowTab(bool dex)
+        {
+            _tabScan.SetLatched(!dex);
+            _tabDex.SetLatched(dex);
+            _scanRoot.gameObject.SetActive(!dex);
+            _dexRoot.gameObject.SetActive(dex);
+            if (!dex) return;
+            foreach (Transform t in _dexRoot) Destroy(t.gameObject);
+            var host = UIFactory.Rect("Host", _dexRoot).Stretch(ToolStyle.Pad, 0, ToolStyle.Pad / 2, ToolStyle.Pad);
+            var content = ToolStyle.ScrollArea(host, out _);
+            float w = Mathf.Max(300, ((RectTransform)W.Content).rect.width - ToolStyle.Pad * 2 - 24);
+            float h = VirusDexView.Build(content, w, S);
+            content.sizeDelta = new Vector2(0, h);
+        }
         protected override float RefreshInterval => 0.25f;
 
         VaccineScanner Scanner => S.Vaccine;
 
         protected override void Build(RectTransform p)
         {
-            float y = ToolStyle.Header(p, "VACCINE 99", "既知のウイルスを見つけて駆除します。定義ファイルにないウイルスは見つけられません。", "shield", ToolStyle.Green);
+            float hy = ToolStyle.Header(p, "VACCINE 99", "既知のウイルスを見つけて駆除します。定義ファイルにないウイルスは見つけられません。", "shield", ToolStyle.Green);
+            // タブ: 検査 ／ 感染記録（図鑑。閲覧は検査・駆除と別。何も起きない）
+            var bar = UIFactory.Rect("Tabs", p);
+            bar.StretchH(hy, 30, ToolStyle.Pad, ToolStyle.Pad);
+            _tabScan = FlatButton.Create(bar, "検査", () => ShowTab(false), ToolStyle.Green, false);
+            ToolStyle.Cell(_tabScan.Rect, 0, 2, 0, 28);
+            _tabDex = FlatButton.Create(bar, "感染記録", () => ShowTab(true), ToolStyle.Green, false);
+            ToolStyle.Cell(_tabDex.Rect, 1, 2, 0, 28);
+            _dexRoot = UIFactory.Rect("Dex", p).Stretch(0, hy + 36, 0, 0);
+            var scan = UIFactory.Rect("Scan", p).Stretch(0, hy + 36, 0, 0);
+            _scanRoot = scan;
+            p = scan;
+            float y = 0;
             var top = ToolStyle.Box(p, 0, 1, y, 84);
             var shield = UIFactory.Image(top, RetroTheme.BigIcon("shield"), Color.white, "Shield");
             shield.rectTransform.Place(0, 6, 48, 48);
@@ -71,6 +99,7 @@ namespace NightShift.UI.Shift
             _resultIcon.rectTransform.Place(8, 8, 32, 32);
             _result = ToolStyle.Text(resBg.transform, "まだ検査していません。", 13, ToolStyle.Ink);
             _result.rectTransform.Stretch(50, 10, 8, 6);
+            ShowTab(false);
         }
 
         FlatButton ScanButton(RectTransform row, int i, string label, System.Action a)
@@ -261,9 +290,7 @@ namespace NightShift.UI.Shift
 
         string Plugins()
         {
-            var names = new List<string>();
-            foreach (var it in D.Game.Database.storeItems)
-                if (it != null && string.IsNullOrEmpty(it.questFlag) && (it.category == StoreCategory.Tool || it.category == StoreCategory.Security) && CareerRecord.Current.ToolActive(it.itemId)) names.Add(it.displayName);
+            var names = ToolApps.ActiveWorkAppNames();
             return names.Count == 0 ? "（なし。ツールを買うとできることが増えます）" : string.Join("・", names);
         }
 

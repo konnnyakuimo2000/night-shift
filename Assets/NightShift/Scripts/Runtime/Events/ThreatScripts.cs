@@ -32,6 +32,7 @@ namespace NightShift.Events
                         var inf = s.Security.MarkInfected(v1.deviceId, arg);
                         run.Infection = inf != null && inf.VirusId == arg ? inf : null;
                         if (run.Infection == null) break;
+                        s.Display.Track(run.Infection, v1); // 画面に作用する種類なら、症状の進行を始める
                         if (arg == "V6") s.RequestHorror("MUSICBOX");
                         s.Logs.Add(now, s.Employees.GetIp(v1), "-", v1.fullName, "PROCESS", "START", NewProcessName(arg) + " (" + v1.deviceId + ")");
                     }
@@ -119,9 +120,12 @@ namespace NightShift.Events
                         s.Servers.Implant("ADMIN-SRV01", "upsctl.exe", "T10");
                         s.Logs.Add(now, s.Employees.GetIp(v7), "ADMIN-SRV01", $"{v7.fullName} ({v7.employeeId})", "CONFIG", "CHANGED", "UPS: 停電時の動作設定を変更");
                         s.Notifications.Notify(NotificationType.SecurityAlert, "サーバー監視", $"ADMIN-SRV01 の設定が変更されました（{v7.employeeId}）。", now, () => s.Ui?.OpenLogViewer());
+                        s.Discover("V5", DiscoveryStage.Observed);
                     }
                     break;
                 case "BLACKOUT_CHECK":
+                    if (Victim(s, run) is EmployeeData v8s && s.Security.IsSuspended(v8s.employeeId))
+                        s.Discover("V5", DiscoveryStage.Removed); // 停止して停電を防いだ（REDACT はウイルスではないので「封じ込め」）
                     if (Victim(s, run) is EmployeeData v8 && !s.Security.IsSuspended(v8.employeeId) && s.Servers.HasTag("ADMIN-SRV01", "T10"))
                     {
                         run.Compromised = true;
@@ -172,6 +176,13 @@ namespace NightShift.Events
                     }
                     break;
                 }
+
+                // ---------- 画面に作用するウイルス（V11 BLACK INK・V12 MIRROR・V14 WHITEOUT） ----------
+                case "DISPLAY_SYNC":
+                    // 感染したPCから監視画面へ、壊れた画面データが送られている（送信元を特定する手がかり）
+                    if (Victim(s, run) is EmployeeData vd && Active(s, run) && !Disconnected(s, vd))
+                        s.Logs.Add(now, s.Employees.GetIp(vd), "NIGHT-OPS", vd.fullName, "DISPLAY", "SEND", $"画面データの送信（{VirusCatalog.ProcessOf(run.Infection.VirusId)} / {vd.deviceId}）");
+                    break;
 
                 // ---------- 持ち越した感染（経路 G） ----------
                 case "BSOD_RECUR":

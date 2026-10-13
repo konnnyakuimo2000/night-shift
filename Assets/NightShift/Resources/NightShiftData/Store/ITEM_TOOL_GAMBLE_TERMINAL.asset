@@ -25,3 +25,4 @@ MonoBehaviour:
   icon: globe
   adCopy: 
   questFlag: SQ04_INVITED
+  retired: 0

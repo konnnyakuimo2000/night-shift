@@ -180,6 +180,8 @@ namespace NightShift.UI.Shift
         }
 
         readonly HashSet<string> _original = new HashSet<string>();
+        // 差出人の詳細（旧「メール差出人チェッカー」を統合）: 開いているか・大きく表示するか
+        bool _senderDetail, _senderLarge;
 
         /// <summary>怪異メールの本文の表示（文字化け）。原文は Body のまま。固定表示の手がかりは崩さない</summary>
         string BodyFor(MailMessage m)
@@ -214,6 +216,35 @@ namespace NightShift.UI.Shift
             }
             bool showAddr = _d.Unlocked(Data.Features.MailSender) && !string.IsNullOrEmpty(m.FromAddress);
             Row("差出人:", showAddr ? $"{m.From} <{m.FromAddress}>" : m.From);
+            if (showAddr)
+            {
+                // 差出人の詳細: 本当のアドレス（ドメインを目立たせる）と送信元サーバー。本物かどうかは表示しない
+                var toggle = UIFactory.Button(_preview, _senderDetail ? "差出人の詳細を閉じる" : "差出人の詳細", 0, y, 150, 22, () => { _senderDetail = !_senderDetail; Reshow(); }, "mail");
+                toggle.Label.fontSize = 11;
+                if (_senderDetail)
+                {
+                    var big = UIFactory.Button(_preview, _senderLarge ? "標準の大きさ" : "大きく表示", 156, y, 110, 22, () => { _senderLarge = !_senderLarge; Reshow(); });
+                    big.Label.fontSize = 11;
+                }
+                y += 26;
+                if (_senderDetail)
+                {
+                    string addr = m.FromAddress;
+                    int at = addr.IndexOf('@');
+                    string shown = at > 0 ? $"{addr.Substring(0, at)}<color=#B85A00>{addr.Substring(at)}</color>" : addr;
+                    int size = _senderLarge ? 26 : 18;
+                    float h = _senderLarge ? 132 : 100;
+                    var box = UIFactory.Image(_preview, RetroTheme.Field, new Color(1f, 0.98f, 0.92f), "SenderDetail");
+                    box.rectTransform.Place(0, y, 720, h);
+                    var a = UIFactory.Label(box.transform, shown, 10, 6, 700, size + 10, size);
+                    a.fontStyle = FontStyle.Bold;
+                    a.horizontalOverflow = HorizontalWrapMode.Wrap; // 長いアドレスは折り返す
+                    a.verticalOverflow = VerticalWrapMode.Overflow;
+                    UIFactory.Label(box.transform, $"送信元サーバー: {MailManager.SendingServer(m)}", 10, size + 20, 700, 20, _senderLarge ? 15 : 12);
+                    UIFactory.Label(box.transform, $"社内のアドレスは  @{MailManager.CompanyDomain}（本物かどうかは表示しません）", 10, size + 42, 700, 20, 11).color = RetroTheme.Shadow;
+                    y += h + 6;
+                }
+            }
             Row("宛先:", m.To);
             Row("日付:", m.DateLabel);
             Row("件名:", m.Subject);

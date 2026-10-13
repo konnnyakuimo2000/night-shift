@@ -160,6 +160,10 @@ namespace NightShift.Events
                     case "V1": // TINNITUS: 広がらない。夜中に鳴る
                         def.steps.Add(Step("ビープ音", 0, "TINNITUS_SIGN", 3, 40f));
                         break;
+                    case "V11": case "V12": case "V14": // 画面に作用するウイルス: 画面データの送信が続く（症状は最初から進み直す）
+                        def.steps.Add(Step("画面データ", 0, "DISPLAY_SYNC", 15, 3f));
+                        if (emp != null) _s.Display.Track(inf, emp);
+                        break;
                 }
                 if (def.steps.Count == 0) continue;
                 var run = Threats.Schedule(Scheduler, def, Rand(5f, 40f));

@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: ITEM_TOOL_ISOLATOR
   m_EditorClassIdentifier: 
   itemId: TOOL_ISOLATOR
-  displayName: "\u7AEF\u672B\u9694\u96E2\u30C4\u30FC\u30EB"
+  displayName: "\u7AEF\u672B\u7BA1\u7406: \u7AEF\u672B\u4E00\u89A7\u30FB\u9694\u96E2"
   category: 1
   price: 16800
-  description: "\u793E\u54E1PC\u3092\u4E00\u89A7\u304B\u3089\u9078\u3093\u3067\u3001\u30DC\u30BF\u30F31\u3064\u3067\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u304B\u3089\u9694\u96E2\u3057\u307E\u3059\u3002"
+  description: "\u7AEF\u672B\u7BA1\u7406\u30A2\u30D7\u30EA\u306E\u300C\u7AEF\u672B\u4E00\u89A7\u30FB\u9694\u96E2\u300D\u30BF\u30D6\u3002\u793E\u54E1PC\u3092\u4E00\u89A7\u304B\u3089\u9078\u3093\u3067\u3001\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u304B\u3089\u9694\u96E2\u3057\u307E\u3059\u3002"
   unlockDay: 16
   prerequisite: HW_MONITOR_2
   consumable: 0
@@ -24,3 +24,4 @@ MonoBehaviour:
   icon: lock
   adCopy: 
   questFlag: 
+  retired: 0

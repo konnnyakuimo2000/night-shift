@@ -272,9 +272,8 @@ namespace NightShift.Tests
                 string[][] tools =
                 {
                     new[] { Items.ProfilePanel, "社員情報パネル" }, new[] { Items.AutoReview, "自動審査ツール" }, new[] { Items.LogAnalyzer, "ログ解析" },
-                    new[] { Items.FwConsole, "遮断コンソール" }, new[] { Items.MailInspector, "メール差出人チェッカー" }, new[] { Items.RemoteKit, "リモート診断キット" },
-                    new[] { Items.Isolator, "端末隔離ツール" }, new[] { Items.ServerMonitor, "サーバー監視ダッシュボード" }, new[] { Items.Correlator, "相関タイムライン" },
-                    new[] { Items.Vaccine, "VACCINE99" }, new[] { Items.SocAi, "SOC-AI" },
+                    new[] { Items.Correlator, "ログ解析_相関" }, new[] { Items.RemoteKit, "端末管理_診断" }, new[] { Items.Isolator, "端末管理_隔離" },
+                    new[] { Items.ServerMonitor, "サーバー監視ダッシュボード" }, new[] { Items.Vaccine, "VACCINE99" }, new[] { Items.SocAi, "SOC-AI" },
                 };
                 int n = 1;
                 foreach (var t in tools)
@@ -292,7 +291,6 @@ namespace NightShift.Tests
                     }
                     // ログ解析・メール差出人チェッカー用: 社外からのログの行と、偽メールを選んでおく
                     foreach (var l in d.S.Logs.Entries) if (l.Source != null && l.Source.StartsWith("203.")) { d.SelectLog(l); break; }
-                    if (t[0] == Items.MailInspector) d.SelectMail(PhishingMail.Send(d.S, false));
                     if (t[0] == Items.LogAnalyzer && d.SelectedLog == null && d.S.Logs.Entries.Count > 0) d.SelectLog(d.S.Logs.Entries[d.S.Logs.Entries.Count - 1]);
                     d.RebuildMonitors();
                     var ws = d.Stations[0];
@@ -301,6 +299,15 @@ namespace NightShift.Tests
                     yield return Shot($"T{n:00}_{t[1]}", 1.2f);
                     n++;
                 }
+                // 統合した機能: 業務システムの遮断（範囲指定）・メールの差出人の詳細
+                d = NewDesktop(25, null, 30f);
+                BlockDialog.Open(d, "198.51.100.23");
+                yield return Shot($"T{n++:00}_遮断_範囲指定", 1f);
+                d = NewDesktop(25, null, 30f);
+                var phish = PhishingMail.Send(d.S, false);
+                MailboxView.Open(d, null, phish);
+                foreach (var b in d.GetComponentsInChildren<RetroButton>(true)) if (b.Label != null && b.Label.text == "差出人の詳細") { b.Button.onClick.Invoke(); break; }
+                yield return Shot($"T{n++:00}_メール_差出人の詳細", 1f);
                 // サブモニター全体（デスクトップのアイコン）
                 d = NewDesktop(25, null, 30f);
                 d.RebuildMonitors();
@@ -641,6 +648,61 @@ namespace NightShift.Tests
         }
 
         /// <summary>マニュアルの全ページを撮る（DAY20 時点で見えるページ）。出力: Logs/Screenshots/M*.png</summary>
+        /// <summary>画面に作用するウイルス（発生・最大・軽減設定・駆除後）と感染記録の各段階</summary>
+        [UnityTest, Category("Screenshots"), Explicit("画面の確認用"), Timeout(900000)]
+        public IEnumerator CaptureDisplayViruses()
+        {
+            _original = CareerRecord.Current;
+            CareerRecord.SaveDisabled = true;
+            try
+            {
+                yield return Setup(false);
+                foreach (var f in Directory.GetFiles(_dir, "V*.png")) File.Delete(f);
+                foreach (var v in new[] { "V11", "V12", "V14" })
+                {
+                    CareerRecord.SetCurrentForTests(new CareerRecord { seed = 7, trust = 70 });
+                    var d = NewDesktop(26, null, 20f);
+                    var emp = d.S.Employees.All.First(e => e.IsActive && e.onShift);
+                    var run = new NightShift.Events.ThreatScenarioRun { Definition = ScriptableObject.CreateInstance<ThreatScenarioDefinition>(), Victim = emp };
+                    NightShift.Events.ThreatScripts.Run(d.S.Director.Threats, run, new ThreatStep { kind = ThreatStepKind.Script, script = "INFECT:" + v }, 0);
+                    d.S.Display.Tick(6);
+                    yield return Shot($"V_{v}_1_発生", 3f);
+                    for (int i = 0; i < 10; i++) d.S.Display.Tick(10);
+                    yield return Shot($"V_{v}_2_最大", 4f);
+                    GameSettings.Current.reduceFlashing = true; GameSettings.Current.horrorMild = true;
+                    yield return Shot($"V_{v}_3_軽減", 2f);
+                    GameSettings.Current.reduceFlashing = false; GameSettings.Current.horrorMild = false;
+                    d.S.Security.ClearInfection(emp.deviceId);
+                    d.S.Display.Tick(10);
+                    yield return Shot($"V_{v}_4_駆除後", 2f);
+                }
+                // 感染記録: 未遭遇 → 観測 → 検出 → 駆除 → 復旧
+                var c = new CareerRecord { seed = 7, trust = 70 };
+                c.AddItem(Items.Monitor1); c.AddItem(Items.Vaccine);
+                CareerRecord.SetCurrentForTests(c);
+                c.Quest("SQ03");
+                var dd = NewDesktop(26, null, 0);
+                string[] stages = { "0_未遭遇", "1_観測", "2_検出", "3_駆除", "4_復旧" };
+                for (int st = 0; st < stages.Length; st++)
+                {
+                    if (st > 0) foreach (var id in new[] { "V1", "V3", "V11", "V6" }) dd.S.Discover(id, (DiscoveryStage)st);
+                    dd.RebuildMonitors();
+                    dd.ShowMonitor(1);
+                    Tools.Launch(dd.Stations[0], Items.Vaccine);
+                    yield return null;
+                    foreach (var b in dd.GetComponentsInChildren<FlatButton>(true)) if (b.Label != null && b.Label.text == "感染記録") { b.OnClick?.Invoke(); break; }
+                    yield return Shot($"V_図鑑_{stages[st]}", 1f);
+                    foreach (var w in dd.GetComponentsInChildren<VaccineTool>(true)) w.Win.Close();
+                    yield return null;
+                }
+            }
+            finally
+            {
+                CareerRecord.SetCurrentForTests(_original);
+                CareerRecord.SaveDisabled = false;
+            }
+        }
+
         [UnityTest, Category("Screenshots"), Explicit("画面の確認用"), Timeout(900000)]
         public IEnumerator CaptureManuals()
         {

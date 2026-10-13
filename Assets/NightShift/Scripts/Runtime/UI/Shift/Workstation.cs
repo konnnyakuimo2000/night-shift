@@ -41,21 +41,22 @@ namespace NightShift.UI.Shift
         {
             foreach (Transform t in _icons) Destroy(t.gameObject);
             float x = 10, y = 10;
-            foreach (var it in Desktop.Game.Database.storeItems)
+            foreach (var app in ToolApps.All)
             {
-                if (it == null || it.category == StoreCategory.Hardware || it.category == StoreCategory.Consumable) continue;
-                if (!CareerRecord.Current.Owns(it.itemId)) continue;
-                var item = it;
-                var root = UIFactory.Rect("Icon:" + it.itemId, _icons).Place(x, y, 86, 66);
+                if (!ToolApps.Owns(app)) continue;
+                var a = app;
+                // 権利の一部だけ持っている場合も、持っている権利のタブで開く
+                string launch = CareerRecord.Current.Owns(app.Id) ? app.Id : System.Array.Find(app.Rights, r => CareerRecord.Current.Owns(r));
+                var root = UIFactory.Rect("Icon:" + app.Id, _icons).Place(x, y, 86, 66);
                 var hit = root.gameObject.AddComponent<Image>();
                 hit.color = new Color(0, 0, 0, 0);
-                var ic = UIFactory.Image(root, RetroTheme.BigIcon(it.icon), Color.white, "Icon");
+                var ic = UIFactory.Image(root, RetroTheme.BigIcon(app.Icon), Color.white, "Icon");
                 ic.raycastTarget = false;
                 ic.rectTransform.Place(27, 2, 32, 32);
-                var label = UIFactory.Label(root, it.displayName, 11, TextAnchor.UpperCenter, Color.white);
+                var label = UIFactory.Label(root, app.Name, 11, TextAnchor.UpperCenter, Color.white);
                 label.rectTransform.Place(0, 36, 86, 30);
                 var ch = root.gameObject.AddComponent<ClickHandler>();
-                ch.OnDoubleClick = () => { AudioFx.Click(); Tools.Launch(this, item.itemId); };
+                ch.OnDoubleClick = () => { AudioFx.Click(); Tools.Launch(this, launch); };
                 y += 72;
                 if (y > 520) { y = 10; x += 92; }
             }
@@ -140,12 +141,11 @@ namespace NightShift.UI.Shift
         {
             if (PopupMenu.IsOpen) { PopupMenu.CloseAll(); return; }
             var items = new List<MenuItem>();
-            foreach (var it in Desktop.Game.Database.storeItems)
+            foreach (var app in ToolApps.All)
             {
-                if (it == null || it.category == StoreCategory.Hardware || it.category == StoreCategory.Consumable) continue;
-                if (!CareerRecord.Current.Owns(it.itemId)) continue;
-                var id = it.itemId;
-                items.Add(new MenuItem(it.displayName, () => Tools.Launch(this, id)) { Icon = it.icon });
+                if (!ToolApps.Owns(app)) continue;
+                string id = CareerRecord.Current.Owns(app.Id) ? app.Id : System.Array.Find(app.Rights, r => CareerRecord.Current.Owns(r));
+                items.Add(new MenuItem(app.Name, () => Tools.Launch(this, id)) { Icon = app.Icon });
             }
             if (items.Count == 0) items.Add(new MenuItem("（ツールがありません）", null, null, false));
             items.Add(MenuItem.Sep());

@@ -55,6 +55,8 @@ namespace NightShift.UI.Shift
             d._monitorLayer = UIFactory.Rect("Monitors", root.transform).Stretch();
             d.RebuildMonitors();
             d.InventoryChanged += d.RebuildMonitors;
+            // 画面に作用するウイルスの演出（タスクバーには重ねない・クリックは受けない）
+            DisplayVirusFx.Attach(d, UIFactory.Rect("DisplayFx", root.transform).Stretch(0, 0, 0, Taskbar.Height));
             HorrorFx.Attach(d, UIFactory.Rect("Fx", root.transform).Stretch());
             d._questUi = QuestUi.Attach(d, UIFactory.Rect("QuestFx", root.transform).Stretch());
             d._toaster = NotificationToaster.Build(root.transform, d);

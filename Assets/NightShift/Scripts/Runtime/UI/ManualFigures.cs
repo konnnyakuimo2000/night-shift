@@ -45,6 +45,7 @@ namespace NightShift.UI
                 case "NETWORK_ZONES": return NetworkZones(holder, ctx);
                 case "REMOTE_FLOW": return RemoteFlow(holder);
                 case "EXTERNAL_FLOW": return ExternalFlow(holder);
+                case "VIRUSDEX": return VirusDexView.Build(holder, Width, null); // 感染記録（VACCINE がなくても読める）
                 default: return ManualUiFigures.Build(id, holder, ctx);
             }
         }

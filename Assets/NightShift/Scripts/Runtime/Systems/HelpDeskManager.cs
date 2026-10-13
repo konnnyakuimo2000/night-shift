@@ -97,6 +97,8 @@ namespace NightShift.Systems
                 ApplyFault(t, def);
                 // 隔離済みの端末なら、後から作った PC も通信できない状態で始まる
                 t.PC.Quarantined = _s.Security.IsIsolated(employee.deviceId);
+                var tt = t;
+                t.PC.ProcessKilled += p => OnProcessKilled(tt, p);
                 // 感染している端末なら、見慣れないプロセスが動いている（手がかり）
                 string virus = _s.Security.InfectionOf(employee.deviceId);
                 if (virus != null)
@@ -121,6 +123,23 @@ namespace NightShift.Systems
                 $"{t.TicketId} {employee.fullName}: {t.Subject}", t.CreatedAt, () => _s.Ui?.OpenHelpDesk(t));
             Changed?.Invoke(t);
             return t;
+        }
+
+        /// <summary>
+        /// リモートPCで、感染しているウイルスのプロセスを終了した = 手作業で駆除した（VACCINE がなくても対処できる）。
+        /// 加点は実際に感染を消したときに一度だけ
+        /// </summary>
+        void OnProcessKilled(Ticket t, VirtualProcess p)
+        {
+            string host = t.PC.Hostname;
+            string v = _s.Security.InfectionOf(host);
+            if (v == null || VirusCatalog.ProcessOf(v) != p.Name) return;
+            if (!_s.Security.ClearInfection(host)) return;
+            _s.Evaluation.SecurityActionsCorrect++;
+            foreach (var other in _tickets)
+                if (other.PC != null && other.PC.Hostname == host) { other.PC.MalwareState = "None"; if (other.PC != t.PC) other.PC.RunningProcesses.RemoveAll(x => x.Name == p.Name); }
+            _s.Logs.Add(_s.Time.CurrentMinute, host, "-", _s.OperatorName, "PROCESS", "KILL", $"{p.Name}（手作業で駆除）");
+            _s.Discover(v, DiscoveryStage.Removed);
         }
 
         void ApplyFault(Ticket t, HelpDeskDefinition def)

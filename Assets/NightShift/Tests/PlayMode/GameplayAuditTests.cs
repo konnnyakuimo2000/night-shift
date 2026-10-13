@@ -186,7 +186,14 @@ namespace NightShift.Tests
                 Items.MailInspector, Items.RemoteKit, Items.Isolator, Items.ServerMonitor, Items.Correlator, Items.Vaccine, Items.SocAi })
             {
                 Tools.Launch(desktop.Stations[0], id); yield return null;
-                var w = desktop.Stations[0].Windows.Find("tool:" + id);
+                if (ToolApps.IsRetired(id))
+                {
+                    // 販売終了した商品は、統合先の業務画面が開く（アプリはない）
+                    Assert.IsNull(desktop.Stations[0].Windows.Find("tool:" + id), id);
+                    continue;
+                }
+                var app = ToolApps.ForItem(id);
+                var w = desktop.Stations[0].Windows.Find("tool:" + app.Id);
                 Assert.IsNotNull(w, id); w.Close(); yield return null;
             }
         }
