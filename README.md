@@ -2,11 +2,11 @@
 
 Corporate IT Operations / Cyber Security Task Management Game（Unity）
 
-**v1.0.0** — 1998年の深夜のオフィスで、社内ネットワークの接続審査と IT サポートを担当する30日間。DAY1〜7 の研修と DAY8〜30 の本番を通しでプレイできる。変更点は [CHANGELOG](CHANGELOG.md) を参照。
+**v1.1.0** — 1998年の深夜のオフィスで、社内ネットワークの接続審査と IT サポートを担当する30日間。DAY1〜7 の研修と DAY8〜30 の本番を通しでプレイできる。変更点は [CHANGELOG](CHANGELOG.md) を参照。
 
 ## 遊ぶ
 
-- ビルド済み: `Builds/NIGHT_SHIFT_v1.0.0/NIGHT_SHIFT.exe`（Windows 64bit）を起動
+- ビルド済み: `Builds/NIGHT_SHIFT_v1.1.0/NIGHT_SHIFT.exe`（Windows 64bit）を起動
 - ビルドのしかた: Unity のメニュー `NightShift > リリース版をビルド（Windows）`、またはコマンドライン
   `Unity.exe -batchmode -quit -projectPath <このフォルダー> -executeMethod NightShift.EditorTools.ReleaseBuild.BuildWindows`
 

@@ -13,7 +13,7 @@ namespace NightShift.EditorTools
     /// </summary>
     public static class ReleaseBuild
     {
-        public const string Version = "1.0.0";
+        public const string Version = "1.1.0";
 
         [MenuItem("NightShift/リリース版をビルド（Windows）")]
         public static void BuildWindows()
