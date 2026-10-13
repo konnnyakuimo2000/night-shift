@@ -166,6 +166,7 @@ namespace NightShift.Core
                 CareerRecord.Current.extraTokensTonight = 0;
                 _careerSnapshot = CareerRecord.Current.Snapshot();
                 _walletSnapshot = Wallet.Snapshot();
+                _accountSnapshot = Account.Snapshot();
                 _snapshotDay = CurrentDay;
                 SaveWeekSnapshot(CurrentDay);
                 SaveCheckpoint(CurrentDay);
@@ -174,6 +175,8 @@ namespace NightShift.Core
             {
                 if (!string.IsNullOrEmpty(_careerSnapshot)) CareerRecord.Restore(_careerSnapshot);
                 if (!string.IsNullOrEmpty(_walletSnapshot)) Wallet.Restore(_walletSnapshot);
+                // パスワード・付箋・初期化回数も、その夜の開始時点に戻す
+                if (!string.IsNullOrEmpty(_accountSnapshot)) Account = OperatorAccount.Restore(_accountSnapshot);
             }
             Session = new ShiftSession(Database, day, System.Environment.TickCount, OperatorName);
             Session.ShiftCompleted += OnShiftCompleted;
@@ -206,6 +209,8 @@ namespace NightShift.Core
 
         void ShowEvaluation()
         {
+            // 夜の終わりに確定する被害（バックアップの喪失など）を、評価・給与の計算より先に確定する
+            NightClosing.ConfirmEndOfNightDamage(Session);
             var result = Session.Evaluation.Compute();
             var day = Session.Day;
             ClearScreen();
@@ -321,14 +326,13 @@ namespace NightShift.Core
             return ws;
         }
         static string WeekKey(int day) => "NightShift.Week." + day;
-        const string WeekSep = "#WALLET#";
 
         void SaveWeekSnapshot(int day)
         {
             if (System.Array.IndexOf(WeekStarts, day) < 0) return;
             try
             {
-                PlayerPrefs.SetString(WeekKey(day), CareerRecord.Current.Snapshot() + WeekSep + Wallet.Snapshot());
+                PlayerPrefs.SetString(WeekKey(day), WeekSnapshot.Pack(CareerRecord.Current.Snapshot(), Wallet.Snapshot(), Account.Snapshot()));
                 PlayerPrefs.Save();
             }
             catch { }
@@ -338,8 +342,13 @@ namespace NightShift.Core
         {
             try
             {
-                var parts = PlayerPrefs.GetString(WeekKey(day), "").Split(new[] { WeekSep }, System.StringSplitOptions.None);
-                if (parts.Length == 2) { CareerRecord.Restore(parts[0]); Wallet.Restore(parts[1]); }
+                if (WeekSnapshot.TryUnpack(PlayerPrefs.GetString(WeekKey(day), ""), out var career, out var wallet, out var account))
+                {
+                    CareerRecord.Restore(career);
+                    Wallet.Restore(wallet);
+                    // 旧形式（アカウントなし）は、今のアカウントのまま（過去のパスワードを推測して作らない）
+                    if (account != null) Account = OperatorAccount.Restore(account);
+                }
             }
             catch { }
             CurrentDay = day;
@@ -413,7 +422,7 @@ namespace NightShift.Core
             if (record == null || !record.Quest("SQ06").IsOpen || !record.Quest("SQ06").Has("N3_DONE")) return false;
             // やり直しは同じ夜の朝へ戻す。二択から通常業務へ抜ける経路は作らない。
             if (!TryReadCheckpoint(out int morning, out var original) || morning != day) return false;
-            _careerSnapshot = original[1]; _walletSnapshot = original[2]; _snapshotDay = day;
+            _careerSnapshot = original[1]; _walletSnapshot = original[2]; _accountSnapshot = original[3]; _snapshotDay = day;
             CareerRecord.Restore(saved[1]); Wallet.Restore(saved[2]); Account = OperatorAccount.Restore(saved[3]);
             CurrentDay = day;
             ClearScreen(); DisposeShift();
@@ -570,7 +579,7 @@ namespace NightShift.Core
             }, false);
         }
 
-        string _careerSnapshot, _walletSnapshot;
+        string _careerSnapshot, _walletSnapshot, _accountSnapshot;
         int _snapshotDay = -1;
 
         void StartNewGame()
@@ -757,6 +766,31 @@ namespace NightShift.Core
             }
             var keys = ShortcutInput.Poll();
             if (_desktop != null) _desktop.HandleShortcuts(keys);
+        }
+    }
+
+    /// <summary>
+    /// 週のやり直し用の保存（記録・財布・アカウント）。旧形式は「記録#WALLET#財布」でアカウントがない。
+    /// </summary>
+    public static class WeekSnapshot
+    {
+        public const string WalletSep = "#WALLET#";
+        public const string AccountSep = "#ACCOUNT#";
+
+        public static string Pack(string career, string wallet, string account) => career + WalletSep + wallet + AccountSep + account;
+
+        /// <summary>account は旧形式なら null</summary>
+        public static bool TryUnpack(string packed, out string career, out string wallet, out string account)
+        {
+            career = wallet = account = null;
+            if (string.IsNullOrEmpty(packed)) return false;
+            var parts = packed.Split(new[] { WalletSep }, System.StringSplitOptions.None);
+            if (parts.Length != 2) return false;
+            career = parts[0];
+            var rest = parts[1].Split(new[] { AccountSep }, System.StringSplitOptions.None);
+            wallet = rest[0];
+            if (rest.Length == 2 && rest[1].Length > 0) account = rest[1];
+            return career.Length > 0 && wallet.Length > 0;
         }
     }
 }

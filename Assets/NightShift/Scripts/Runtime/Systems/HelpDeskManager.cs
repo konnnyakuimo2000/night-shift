@@ -156,20 +156,11 @@ namespace NightShift.Systems
             t.Messages.Add(new TicketMessage { Time = now, From = operatorName, Text = t.Options[index] });
             t.Messages.Add(new TicketMessage { Time = now + 0.5f, From = t.Employee.fullName, Text = Voice.Reply(t.Employee, Fill(t.Definition.replyAfterAnswer, t.Employee), Voice.RngFor(t.Employee, t.TicketId + "r")) });
             if (index == t.CorrectIndex) _s.Evaluation.HelpDeskCorrect++; else _s.Evaluation.HelpDeskIncorrect++;
-            AddReference(t, now + 1f);
             _s.Logs.Add(now, "HELPDESK", t.Employee.deviceId, t.Employee.fullName, "TICKET", "ANSWERED", t.TicketId);
             Changed?.Invoke(t);
         }
 
-        /// <summary>対応の後に、解説と出典（IPA試験の過去問題）を表示する</summary>
-        void AddReference(Ticket t, float time)
-        {
-            var d = t.Definition;
-            if (string.IsNullOrEmpty(d.explanation) && string.IsNullOrEmpty(d.sourceNote)) return;
-            string text = d.explanation ?? "";
-            if (!string.IsNullOrEmpty(d.sourceNote)) text += (text.Length > 0 ? "\n" : "") + "出典：" + d.sourceNote;
-            t.Messages.Add(new TicketMessage { Time = time, From = "【参考】", Text = text });
-        }
+        // 解説と出典（IPA試験の過去問題）は業務中の会話には出さず、夜の振り返り（NightReview）で読む
 
         public RemoteSession Connect(Ticket t)
         {
@@ -211,7 +202,6 @@ namespace NightShift.Systems
                 _s.Evaluation.RemoteResolved++;
                 t.Messages.Add(new TicketMessage { Time = now + 0.5f, From = t.Employee.fullName, Text = Voice.Reply(t.Employee, Fill(t.Definition.successReply, t.Employee), Voice.RngFor(t.Employee, t.TicketId + "ok")) });
                 _s.Logs.Add(now, "HELPDESK", t.Employee.deviceId, t.Employee.fullName, "TICKET", "RESOLVED", t.TicketId);
-                AddReference(t, now + 1f);
                 if (ActiveSession != null && ActiveSession.Ticket == t) Disconnect();
             }
             else

@@ -57,6 +57,8 @@ namespace NightShift.Systems
         public int RansomEncryptedFiles;
         public int CorrectReports, WrongReports, AiHandled, AutoAllowed, AiTokensUsed;
         public bool OperatorCompromised;
+        /// <summary>夜の終わりの被害を確定済み（NightClosing.ConfirmEndOfNightDamage を二度適用しない）</summary>
+        public bool EndOfNightDamageConfirmed, BackupLostConfirmed;
         public bool Overtime;
         /// <summary>業務終了時に「残業する／退勤する」を尋ねている（答えるまで猶予は進まない）</summary>
         public bool OvertimeOffered { get; private set; }
@@ -66,7 +68,7 @@ namespace NightShift.Systems
         bool CanOfferOvertime() =>
             Day.dayNumber >= DefaultDataFactory.MainStartDay && !Overtime
             && Core.CareerRecord.Current.ItemCount(Items.Coffee) > 0
-            && (Requests.Pending.Count > 0 || HelpDesk.OpenCount > 0);
+            && (Requests.Pending.Count > 0 || HelpDesk.OpenCount > 0 || Servers.AnyRestoring);
 
         /// <summary>缶コーヒーを1本飲んで、30分だけ残業する（新しい仕事は来ない・要求は期限切れにならない）</summary>
         public void StartOvertime()
@@ -262,7 +264,8 @@ namespace NightShift.Systems
                     float delta = Time.Tick(unscaledDelta);
                     float now = Time.CurrentMinute;
                     if (delta > 0) { HelpDesk.Tick(now, delta); Servers.Tick(now); Vaccine.Tick(now); Quests.Tick(now, unscaledDelta); }
-                    if (now >= OvertimeEnd || (Requests.Pending.Count == 0 && HelpDesk.OpenCount == 0)) Complete();
+                    // 作業が片付いたら早く終わる。復元が進行中なら完了を待つ（ただし30分の上限は延ばさない）
+                    if (now >= OvertimeEnd || (Requests.Pending.Count == 0 && HelpDesk.OpenCount == 0 && !Servers.AnyRestoring)) Complete();
                     break;
                 }
                 case ShiftPhase.Grace:
@@ -302,6 +305,9 @@ namespace NightShift.Systems
             if (Phase == ShiftPhase.Running) EndShift();
             Requests.ExpireAll();
             HelpDesk.CloseShift();
+            // 終わる前に復元が終わらなかったサーバーは、復元済みにしない（記録だけ残す）
+            foreach (var st in Servers.Servers)
+                if (st.Restoring) Logs.Add(Time.CurrentMinute, st.Id, "-", OperatorName, "BACKUP", "UNFINISHED", "業務終了までに復元が終わりませんでした");
             SocAi.Cancel(); // 考えている途中の依頼は実行せず、トークンを返す
             Phase = ShiftPhase.Complete;
             ShiftCompleted?.Invoke();

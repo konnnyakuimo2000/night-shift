@@ -41,9 +41,36 @@ namespace NightShift.Core
             }
 
             foreach (var d in s.Damage) { sb.AppendLine($"<color=#B00000>被害:</color> {d}"); n++; }
+            foreach (var st in s.Servers.Servers)
+                if (st.Restoring) { sb.AppendLine($"<color=#B07000>未完了:</color> {st.Id} のバックアップからの復元が終わる前に業務が終了した（復元は済んでいません）"); n++; }
 
-            if (n == 0) return "今夜は、判断の誤り・解決できなかった問い合わせ・被害はありませんでした。";
-            return $"今夜の見落とし・誤り: {n} 件\n\n" + sb;
+            string head = n == 0 ? "今夜は、判断の誤り・解決できなかった問い合わせ・被害はありませんでした。" : $"今夜の見落とし・誤り: {n} 件\n\n" + sb;
+            string refs = References(s);
+            return refs.Length == 0 ? head : head.TrimEnd() + "\n\n" + refs;
+        }
+
+        /// <summary>
+        /// ITサポートの解説・参考（業務中の会話からここへ移した）。正解・解決したものも含め、今夜届いた問い合わせだけ。
+        /// 誤り・未解決の問い合わせは上の一覧に解説が出ているので、ここには重ねない（件数にも数えない）
+        /// </summary>
+        public static string References(ShiftSession s)
+        {
+            var sb = new StringBuilder();
+            foreach (var t in s.HelpDesk.Tickets)
+            {
+                var d = t.Definition;
+                bool hasExp = !string.IsNullOrEmpty(d.explanation), hasSrc = !string.IsNullOrEmpty(d.sourceNote);
+                if (!hasExp && !hasSrc) continue;
+                bool wrongAnswer = t.Type == Data.HelpDeskType.Binary && t.AnsweredIndex >= 0 && t.AnsweredIndex != t.CorrectIndex;
+                bool unsolved = t.State == TicketState.Failed || t.State == TicketState.Unresolved || t.IsOpen;
+                if (wrongAnswer || unsolved) continue;
+                string result = t.Type == Data.HelpDeskType.Binary ? "正しく回答" : "解決";
+                sb.AppendLine($"<b>{t.TicketId}</b>  {t.Subject}（{(t.Employee != null ? t.Employee.fullName : "-")}）　<color=#1F7F40>{result}</color>");
+                if (hasExp) sb.AppendLine($"   解説: {d.explanation}");
+                if (hasSrc) sb.AppendLine($"   出典: {d.sourceNote}");
+                sb.AppendLine();
+            }
+            return sb.Length == 0 ? "" : "<b>ITサポートの解説・参考</b>\n\n" + sb.ToString().TrimEnd();
         }
 
         static string Verdict(DecisionOutcome o)

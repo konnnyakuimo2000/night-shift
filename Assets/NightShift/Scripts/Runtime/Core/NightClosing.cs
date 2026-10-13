@@ -18,11 +18,32 @@ namespace NightShift.Core
         public static bool BackupLost(ShiftSession s, CareerRecord career)
             => s.RansomEncryptedFiles > 0 && string.IsNullOrEmpty(s.FatalIncident) && career.HasFlag(BackupFlag);
 
+        /// <summary>
+        /// 夜の終わりに確定する被害を、評価・給与・夜の記録を計算する前に確定する（一度だけ）。
+        /// バックアップの喪失は AddDamage を通すので、被害一覧・件数・夜の記録がそろう。専用の信用の減点（-3）は Close で一度だけ。
+        /// </summary>
+        public static void ConfirmEndOfNightDamage(ShiftSession s)
+        {
+            if (s.EndOfNightDamageConfirmed) return;
+            s.EndOfNightDamageConfirmed = true;
+            var career = CareerRecord.Current;
+            // 脅威による被害（シナリオが成立したのに、まだ一覧にないもの）
+            foreach (var run in s.Director.Threats.Runs)
+                if (run.Compromised && !s.Damage.Contains(run.Definition.compromiseLog)) s.Damage.Add(run.Definition.compromiseLog);
+            if (s.Day.dayNumber >= DefaultDataFactory.MainStartDay && BackupLost(s, career))
+            {
+                s.BackupLostConfirmed = true;
+                career.ClearFlag(BackupFlag);
+                s.AddDamage(BackupLostDamage);
+            }
+        }
+
         public static NightRecord Close(ShiftSession s, EvaluationResult result, PaySlip slip)
         {
             var career = CareerRecord.Current;
             var ev = s.Evaluation;
             var day = s.Day;
+            ConfirmEndOfNightDamage(s); // 呼び忘れても、ここで一度だけ確定する
             var n = new NightRecord
             {
                 day = day.dayNumber,
@@ -36,9 +57,6 @@ namespace NightShift.Core
                 correctReports = s.CorrectReports
             };
 
-            // 脅威による被害
-            foreach (var run in s.Director.Threats.Runs)
-                if (run.Compromised && !s.Damage.Contains(run.Definition.compromiseLog)) s.Damage.Add(run.Definition.compromiseLog);
             n.damaged = s.Damage.Count > 0 || ev.MaliciousAllow > 0;
 
             // 自分のアカウントの被害（自分のIDの要求を許可した）
@@ -62,19 +80,16 @@ namespace NightShift.Core
                 int delta = 0;
                 delta -= ev.MaliciousAllow;
                 delta -= (ev.ExpiredLegit + ev.FalsePositive + ev.Unresolved + 2) / 4;
-                // 被害: 1件 -1（1夜で最大 -3）
-                delta -= System.Math.Min(3, s.Damage.Count);
-                if (!n.damaged) delta += 2;
+                // 被害: 1件 -1（1夜で最大 -3）。バックアップの喪失は下の専用の減点で数える（以前と同じ合計にする）
+                delta -= System.Math.Min(3, s.Damage.Count - (s.BackupLostConfirmed ? 1 : 0));
+                // 被害ゼロの夜の +2: バックアップの喪失は専用の減点で数えるので、ここでは被害に含めない（以前と同じ合計）
+                bool damagedExceptBackup = s.Damage.Count - (s.BackupLostConfirmed ? 1 : 0) > 0 || ev.MaliciousAllow > 0;
+                if (!damagedExceptBackup) delta += 2;
                 delta += result.Rank == "S" ? 3 : result.Rank == "A" ? 2 : result.Rank == "B" ? 1 : result.Rank == "D" ? -1 : 0;
                 delta += System.Math.Min(3, s.CorrectReports);
                 // バックアップの問い合わせ（A11・A21・Y6）を間違えていた: 身代金ウイルスを途中で止めても、
                 // 暗号化されたファイルをバックアップから戻せない（正しく答えていれば、バックアップから戻せる）
-                if (BackupLost(s, career))
-                {
-                    delta -= BackupLostTrust;
-                    career.ClearFlag(BackupFlag);
-                    s.Damage.Add(BackupLostDamage);
-                }
+                if (s.BackupLostConfirmed) delta -= BackupLostTrust;
                 n.trustDelta = delta;
                 career.AddTrust(delta);
             }

@@ -99,6 +99,9 @@ namespace NightShift.Systems
 
         public ServerState Find(string nodeId) => _servers.Find(x => x.Id == nodeId);
 
+        /// <summary>バックアップからの復元が進行中のサーバーがある（未完了の作業として数える）</summary>
+        public bool AnyRestoring => _servers.Exists(x => x.Restoring);
+
         // ---------------- 脅威スクリプトから ----------------
         public ServerProcess Implant(string nodeId, string name, string tag, int kb = 2600)
         {
