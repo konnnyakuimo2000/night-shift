@@ -12,9 +12,14 @@ namespace NightShift.UI
         public static float Volume
         {
             get => _volume;
-            set { _volume = Mathf.Clamp01(value); if (_src != null) _src.volume = _volume; }
+            set { _volume = Mathf.Clamp01(value); if (_src != null) _src.volume = Focused ? _volume : 0; }
         }
-        public static bool Focused = true;
+        static bool _focused = true;
+        public static bool Focused
+        {
+            get => _focused;
+            set { _focused = value; if (_src != null) _src.volume = value ? _volume : 0; }
+        }
         static readonly Dictionary<string, float> LastPlayed = new Dictionary<string, float>();
         public static bool ClickEnabled = true;
         public static bool NotifyEnabled = true;

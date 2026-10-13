@@ -138,21 +138,34 @@ namespace NightShift.UI
         void Sound()
         {
             float y = 0;
-            UIFactory.Label(_page, "音量:", 0, y, 120, 20);
-            var bar = UIFactory.Image(_page, RetroTheme.Field, Color.white, "Bar");
-            bar.rectTransform.Place(130, y + 2, 204, 16);
-            var fill = UIFactory.Solid(bar.transform, RetroTheme.Navy, "Fill");
-            var value = UIFactory.Label(_page, "", 380, y, 60, 20);
-            void UpdateBar()
+            void VolumeRow(string label, Func<float> read, Action<float> write)
             {
-                fill.rectTransform.Place(2, 2, 200 * Mathf.Clamp01(S.volume), 12);
-                value.text = Mathf.RoundToInt(S.volume * 100) + " %";
+                float row = y;
+                UIFactory.Label(_page, label, 0, row, 120, 20);
+                var bar = UIFactory.Image(_page, RetroTheme.Field, Color.white, "Bar");
+                bar.rectTransform.Place(130, row + 2, 204, 16);
+                var fill = UIFactory.Solid(bar.transform, RetroTheme.Navy, "Fill");
+                var value = UIFactory.Label(_page, "", 380, row, 60, 20);
+                void UpdateBar()
+                {
+                    fill.rectTransform.Place(2, 2, 200 * Mathf.Clamp01(read()), 12);
+                    value.text = Mathf.RoundToInt(read() * 100) + " %";
+                }
+                void Adjust(float delta)
+                {
+                    write(Mathf.Clamp01(Mathf.Round((read() + delta) * 10) / 10f));
+                    S.ApplyAudio(); UpdateBar(); Saved();
+                }
+                UpdateBar();
+                UIFactory.Button(_page, "－", 340, row, 18, 20, () => Adjust(-0.1f));
+                UIFactory.Button(_page, "＋", 360, row, 18, 20, () => Adjust(0.1f));
+                y += 28;
             }
-            UpdateBar();
-            UIFactory.Button(_page, "－", 340, y, 18, 20, () => { S.volume = Mathf.Clamp01(Mathf.Round((S.volume - 0.1f) * 10) / 10f); S.ApplyAudio(); UpdateBar(); AudioFx.Notify(); Saved(); });
-            UIFactory.Button(_page, "＋", 360, y, 18, 20, () => { S.volume = Mathf.Clamp01(Mathf.Round((S.volume + 0.1f) * 10) / 10f); S.ApplyAudio(); UpdateBar(); AudioFx.Notify(); Saved(); });
-            y += 32;
-
+            VolumeRow("全体音量:", () => S.volume, v => S.volume = v);
+            VolumeRow("BGM:", () => S.musicVolume, v => S.musicVolume = v);
+            VolumeRow("環境音:", () => S.ambienceVolume, v => S.ambienceVolume = v);
+            VolumeRow("効果音:", () => S.effectsVolume, v => S.effectsVolume = v);
+            y += 4;
             var click = UIFactory.Check(_page, "クリック音", S.clickSound, v => { S.clickSound = v; S.ApplyAudio(); Saved(); });
             click.GetComponent<RectTransform>().Place(130, y, 200, 20);
             y += 26;
