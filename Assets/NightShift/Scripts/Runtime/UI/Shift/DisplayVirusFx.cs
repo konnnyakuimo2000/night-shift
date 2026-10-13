@@ -7,20 +7,25 @@ using UnityEngine.UI;
 namespace NightShift.UI.Shift
 {
     /// <summary>
-    /// 画面に作用するウイルスの演出（BLACK INK・MIRROR・WHITEOUT）。状態は ShiftSession.Display が持ち、ここは見せるだけ。
+    /// 画面に作用するウイルスの演出（GLASS・ECHO・BLACK INK・MIRROR・MOLT・WHITEOUT）。状態は ShiftSession.Display が持ち、ここは見せるだけ。
     /// - すべてゲーム画面の中だけ。クリックは一切受けない（審査ボタンの位置・当たり判定・対象は変わらない）
-    /// - 描画する部品の数には上限がある（染み 12・複製 4重・偽の警告 3枚・白 1枚）。長時間でも増え続けない
-    /// - 重なる順: 複製（下）→ 染み → 白（上）。白は最大でも 0.75 までで、最低限の操作は見える
+    /// - 描画する部品の数には上限がある（亀裂 10・残像 4・剥がれ 6・染み 12・複製 4重・偽の警告 3枚・白 1枚）。長時間でも増え続けない
+    /// - 重なる順: 複製（下）→ 残像 → 剥がれ → 亀裂 → 染み → 白（上）。白は最大でも 0.75 までで、最低限の操作は見える
+    /// - GLASS は駆除の後も亀裂が残る。画面の下の［画面の再起動］（この演出の外にある本物のボタン）で消える
     /// - 「点滅を減らす」「控えめ」でも、強さ（進み具合）は同じ。動き・ちらつきだけを止める
     /// - タスクバー（一時停止・設定への入口）には重ねない
     /// </summary>
     public class DisplayVirusFx : MonoBehaviour
     {
-        public const int MaxStains = 12, MaxMirrorDepth = 4, MaxFakeAlerts = 3;
+        public const int MaxStains = 12, MaxMirrorDepth = 4, MaxFakeAlerts = 3, MaxCracks = 10, MaxEchoes = 4, MaxMoltPatches = 6;
         public const float MaxWhite = 0.75f;
 
         ShiftDesktop _d;
-        RectTransform _mirrorLayer, _inkLayer, _whiteLayer;
+        RectTransform _mirrorLayer, _echoLayer, _moltLayer, _glassLayer, _inkLayer, _whiteLayer;
+        readonly List<Image> _cracks = new List<Image>();
+        readonly List<GameObject> _echoes = new List<GameObject>();
+        readonly List<GameObject> _molts = new List<GameObject>();
+        RetroButton _restart;
         readonly List<Image> _stains = new List<Image>();
         readonly List<Image> _mirrors = new List<Image>();
         readonly List<GameObject> _alerts = new List<GameObject>();
@@ -30,7 +35,8 @@ namespace NightShift.UI.Shift
         static GameSettings Set => GameSettings.Current;
 
         /// <summary>今ある演出の部品の数（上限の確認用）</summary>
-        public int ObjectCount => _stains.Count + _mirrors.Count + _alerts.Count + (_white != null ? 1 : 0);
+        public int ObjectCount => _stains.Count + _mirrors.Count + _alerts.Count + _cracks.Count + _echoes.Count + _molts.Count + (_white != null ? 1 : 0);
+        public const int MaxObjects = MaxStains + MaxMirrorDepth + MaxFakeAlerts + MaxCracks + MaxEchoes + MaxMoltPatches + 1;
 
         public static DisplayVirusFx Attach(ShiftDesktop d, RectTransform layer)
         {
@@ -40,9 +46,27 @@ namespace NightShift.UI.Shift
             cg.blocksRaycasts = false;
             cg.interactable = false;
             fx._mirrorLayer = UIFactory.Rect("Mirror", layer).Stretch();
+            fx._echoLayer = UIFactory.Rect("Echo", layer).Stretch();
+            fx._moltLayer = UIFactory.Rect("Molt", layer).Stretch();
+            fx._glassLayer = UIFactory.Rect("Glass", layer).Stretch();
             fx._inkLayer = UIFactory.Rect("Ink", layer).Stretch();
             fx._whiteLayer = UIFactory.Rect("White", layer).Stretch();
+            // 画面の再起動（復旧の操作）は、クリックを通す演出の層の外に置く
+            fx._restart = UIFactory.Button(layer.parent, "画面の再起動", () => fx.Restart(), "pc");
+            var rt = fx._restart.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0); rt.pivot = new Vector2(0.5f, 0);
+            rt.sizeDelta = new Vector2(150, 26);
+            rt.anchoredPosition = new Vector2(0, Taskbar.Height + 6);
+            fx._restart.gameObject.SetActive(false);
             return fx;
+        }
+
+        void Restart()
+        {
+            if (_d == null || _d.S == null) return;
+            bool any = _d.S.Display.RestartScreens();
+            _d.ShowStatus(any ? "監視画面の表示を再起動しました。亀裂は消えました。" : "監視画面の表示を再起動しました。");
+            AudioFx.Click();
         }
 
         void Update()
@@ -50,7 +74,11 @@ namespace NightShift.UI.Shift
             if (_d == null || _d.S == null) return;
             _t += Time.unscaledDeltaTime;
             var ops = _d.S.Display;
+            if (_restart != null && _restart.gameObject.activeSelf != ops.NeedsScreenRestart) _restart.gameObject.SetActive(ops.NeedsScreenRestart);
             UpdateMirror(ops.Level("V12"));
+            UpdateEcho(ops.Level("V10"));
+            UpdateMolt(ops.Level("V13"), SourceOf(ops, "V13"));
+            UpdateGlass(ops.Level("V9"));
             UpdateInk(ops.Level("V11"));
             UpdateWhite(ops.Level("V14"));
         }
@@ -167,7 +195,110 @@ namespace NightShift.UI.Shift
 
         void OnDestroy()
         {
-            _stains.Clear(); _mirrors.Clear(); _alerts.Clear();
+            _stains.Clear(); _mirrors.Clear(); _alerts.Clear(); _cracks.Clear(); _echoes.Clear(); _molts.Clear();
+            if (_restart != null) Destroy(_restart.gameObject);
+        }
+
+        static string SourceOf(DisplayVirusOps ops, string id)
+        {
+            foreach (var d in ops.Active) if (d.VirusId == id && d.Source != null) return d.Source.deviceId;
+            return null;
+        }
+
+        // ---------------- GLASS: ウィンドウに亀裂が入り、内部がタイル状にずれる ----------------
+        void UpdateGlass(float level)
+        {
+            int want = Mathf.Clamp(Mathf.CeilToInt(level * MaxCracks), 0, MaxCracks);
+            while (_cracks.Count < want)
+            {
+                int i = _cracks.Count;
+                var r = new System.Random(i * 3571 + 7);
+                // ずれたタイル（下の画面がずれて見えるように、半透明の板を少しずらして置く）
+                var tile = UIFactory.Image(_glassLayer, RetroTheme.White, new Color(0.55f, 0.65f, 0.75f, 0.28f), "Tile");
+                tile.raycastTarget = false;
+                tile.rectTransform.anchorMin = tile.rectTransform.anchorMax = new Vector2((float)r.NextDouble(), (float)r.NextDouble());
+                tile.rectTransform.sizeDelta = new Vector2(r.Next(90, 220), r.Next(40, 110));
+                tile.rectTransform.anchoredPosition = new Vector2(r.Next(-12, 12), r.Next(-8, 8));
+                var crack = UIFactory.Image(tile.transform, Crack, new Color(0.95f, 0.97f, 1f, 0.9f), "Crack");
+                crack.raycastTarget = false;
+                crack.rectTransform.Stretch(-20, -20, -20, -20);
+                crack.rectTransform.localRotation = Quaternion.Euler(0, 0, r.Next(0, 360));
+                _cracks.Add(tile);
+            }
+            while (_cracks.Count > want) { Destroy(_cracks[_cracks.Count - 1].gameObject); _cracks.RemoveAt(_cracks.Count - 1); }
+        }
+
+        // ---------------- ECHO: 処理済みの要求が残像として重なる（押せない・時刻に「残像」） ----------------
+        void UpdateEcho(float level)
+        {
+            int want = Mathf.Clamp(Mathf.CeilToInt(level * MaxEchoes), 0, MaxEchoes);
+            var past = _d.S.Requests.Processed;
+            while (_echoes.Count < want && past.Count > 0)
+            {
+                int i = _echoes.Count;
+                var e = past[Mathf.Max(0, past.Count - 1 - i)];
+                var box = UIFactory.Panel(_echoLayer, RetroTheme.Raised, "Echo");
+                box.raycastTarget = false;
+                box.color = new Color(1, 1, 1, 0.38f);
+                var rt = box.rectTransform;
+                rt.anchorMin = rt.anchorMax = new Vector2(0, 1); rt.pivot = new Vector2(0, 1);
+                rt.sizeDelta = new Vector2(330, 70);
+                rt.anchoredPosition = new Vector2(260 + i * 60, -140 - i * 90);
+                var t = UIFactory.Label(box.transform, $"［残像 {TimeManager.Format(e.GeneratedTime)}］ {e.RequestId}\n{e.DisplayUser}　{e.SourceLabel} → {e.DestinationLabel}", 12, TextAnchor.UpperLeft, new Color(0.1f, 0.1f, 0.2f, 0.75f));
+                t.raycastTarget = false;
+                t.rectTransform.Stretch(10, 8, 8, 6);
+                _echoes.Add(box.gameObject);
+            }
+            while (_echoes.Count > want) { Destroy(_echoes[_echoes.Count - 1]); _echoes.RemoveAt(_echoes.Count - 1); }
+            // 残像はゆっくり揺らぐ（軽減設定では止める）
+            if (!(Set.reduceFlashing || Set.horrorMild))
+                for (int i = 0; i < _echoes.Count; i++)
+                    if (_echoes[i]) _echoes[i].GetComponent<Image>().color = new Color(1, 1, 1, 0.3f + 0.08f * Mathf.Sin(_t * 0.8f + i));
+        }
+
+        // ---------------- MOLT: 表面が剥がれ、別の社員のデスクトップが現れる（端末名が手がかり） ----------------
+        void UpdateMolt(float level, string sourceDevice)
+        {
+            int want = Mathf.Clamp(Mathf.CeilToInt(level * MaxMoltPatches), 0, MaxMoltPatches);
+            while (_molts.Count < want)
+            {
+                int i = _molts.Count;
+                var r = new System.Random(i * 6151 + 29);
+                var patch = UIFactory.Solid(_moltLayer, new Color(0.0f, 0.5f, 0.5f, 0.85f), "Molt");
+                patch.raycastTarget = false;
+                var rt = patch.rectTransform;
+                rt.anchorMin = rt.anchorMax = new Vector2(0.1f + 0.8f * (float)r.NextDouble(), 0.15f + 0.75f * (float)r.NextDouble());
+                rt.sizeDelta = new Vector2(r.Next(140, 240), r.Next(90, 150));
+                // 剥がれた縁
+                var edge = UIFactory.Solid(patch.transform, new Color(0.85f, 0.82f, 0.75f, 0.9f), "Edge");
+                edge.raycastTarget = false;
+                edge.rectTransform.StretchH(0, 6, 0, 0);
+                // 別の社員のデスクトップ（アイコンと、その端末の名前）
+                var ic = UIFactory.Image(patch.transform, RetroTheme.BigIcon("pc"), new Color(1, 1, 1, 0.85f), "Icon");
+                ic.raycastTarget = false;
+                ic.rectTransform.Place(10, 14, 32, 32);
+                var name = UIFactory.Label(patch.transform, "\\\\" + (sourceDevice ?? "???") + "\nデスクトップ", 12, TextAnchor.UpperLeft, new Color(1, 1, 1, 0.9f), true);
+                name.raycastTarget = false;
+                name.rectTransform.Stretch(48, 14, 6, 6);
+                _molts.Add(patch.gameObject);
+            }
+            while (_molts.Count > want) { Destroy(_molts[_molts.Count - 1]); _molts.RemoveAt(_molts.Count - 1); }
+        }
+
+        static Sprite _crack;
+        /// <summary>放射状の亀裂</summary>
+        static Sprite Crack
+        {
+            get
+            {
+                if (_crack != null) return _crack;
+                var c = new PixelCanvas(64, 64);
+                var w = Color.white;
+                c.Line(32, 32, 2, 10, w); c.Line(32, 32, 60, 6, w); c.Line(32, 32, 62, 44, w); c.Line(32, 32, 8, 60, w); c.Line(32, 32, 30, 63, w);
+                c.Line(16, 20, 4, 30, w); c.Line(48, 18, 56, 28, w);
+                _crack = c.ToSprite();
+                return _crack;
+            }
         }
 
         static Sprite _stain;

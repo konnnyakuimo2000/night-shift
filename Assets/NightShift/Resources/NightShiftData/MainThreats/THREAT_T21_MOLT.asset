@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69480d95aa136a4eb81b0f1916e5012, type: 3}
+  m_Name: THREAT_T21_MOLT
+  m_EditorClassIdentifier: 
+  scenarioId: T21_MOLT
+  designNote: "\u611F\u67D3\u3057\u305F\u793E\u54E1PC\u306E\u753B\u9762\u304C\u76E3\u8996\u753B\u9762\u306B\u6DF7\u3056\u308B\u3002\u5265\u304C\u308C\u305F\u6240\u306B\u767A\u751F\u5143\u306E\u7AEF\u672B\u540D\u304C\u6620\u308B\uFF08V13
+    MOLT\uFF09\u3002"
+  minimumDay: 27
+  maximumDay: 30
+  startWindow: {x: 40, y: 230}
+  sourceIpPrefix: 203.0.113.
+  steps:
+  - label: "\u88AB\u5BB3\u8005"
+    offsetMinutes: 0
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: PICK_VICTIM
+    helpDesk: {fileID: 0}
+  - label: "\u611F\u67D3"
+    offsetMinutes: 0.1
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: INFECT:V13
+    helpDesk: {fileID: 0}
+  - label: "\u753B\u9762\u30C7\u30FC\u30BF"
+    offsetMinutes: 1
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 15
+    repeatIntervalMinutes: 3
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: DISPLAY_SYNC
+    helpDesk: {fileID: 0}
+  - label: "\u554F\u3044\u5408\u308F\u305B"
+    offsetMinutes: 10
+    kind: 3
+    useRelatedSource: 0
+    destination: {fileID: 0}
+    eventType: HTTP
+    result: OK
+    detail: 
+    repeat: 1
+    repeatIntervalMinutes: 1
+    compromiseUnlessBlocked: 0
+    request: {fileID: 0}
+    script: TICKET
+    helpDesk: {fileID: 11400000, guid: 062076e82472f0d469f98b0513bb903b, type: 2}
+  compromiseLog: "\u7BA1\u7406\u30B3\u30F3\u30BD\u30FC\u30EB\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u306B\u6210\u529F"
+  stopOnBlock: 1
+  chance: 0.25
+  adaptive: 0
+  maxAttempts: 4
+  fatalIfAllowed: 0

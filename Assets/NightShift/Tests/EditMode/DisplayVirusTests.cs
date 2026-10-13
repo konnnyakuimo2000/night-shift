@@ -24,8 +24,11 @@ namespace NightShift.Tests
         class ThreatScenarioRunHelper { public Events.ThreatScenarioRun Run; public EmployeeData Victim; }
 
         // 16
+        [TestCase("V9")]
+        [TestCase("V10")]
         [TestCase("V11")]
         [TestCase("V12")]
+        [TestCase("V13")]
         [TestCase("V14")]
         public void Progress_Isolation_Removal_Recovery(string virus)
         {
@@ -49,6 +52,16 @@ namespace NightShift.Tests
             Assert.IsFalse(s.Security.IsInfected(h.Victim.deviceId));
             Assert.AreEqual(before + 1, s.Evaluation.SecurityActionsCorrect, "加点は一度だけ");
             s.Display.Tick(1);
+            if (VirusDex.HasResidualDamage(virus))
+            {
+                // GLASS: 駆除しても亀裂は残り、画面の再起動で消える
+                s.Display.Tick(10);
+                Assert.IsTrue(d.Residual);
+                Assert.AreEqual(1, s.Display.Active.Count, "再起動までは残る");
+                Assert.IsTrue(s.Display.NeedsScreenRestart);
+                Assert.IsTrue(s.Display.RestartScreens());
+                s.Display.Tick(1);
+            }
             Assert.IsTrue(d.Receding);
             s.Display.Tick(10);
             Assert.AreEqual(0, s.Display.Active.Count, "症状が引いて消える");
@@ -72,7 +85,10 @@ namespace NightShift.Tests
             Assert.IsTrue(VirusCatalog.Detectable("V11", 23));
             Assert.IsFalse(VirusCatalog.Detectable("V14", 25));
             Assert.IsTrue(VirusCatalog.Detectable("V14", 26));
-            foreach (var id in new[] { "V9", "V10", "V13" }) Assert.IsFalse(VirusCatalog.Detectable(id, 99), id + " は後続候補");
+            Assert.IsFalse(VirusCatalog.Detectable("V9", 21)); Assert.IsTrue(VirusCatalog.Detectable("V9", 22));
+            Assert.IsFalse(VirusCatalog.Detectable("V10", 24)); Assert.IsTrue(VirusCatalog.Detectable("V10", 25));
+            Assert.IsFalse(VirusCatalog.Detectable("V13", 26)); Assert.IsTrue(VirusCatalog.Detectable("V13", 27));
+            Assert.IsTrue(VirusCatalog.All.All(v => v.Implemented), "全種類を実装した");
             foreach (var id in new[] { "V5", "V7", "V8" }) Assert.IsFalse(VirusCatalog.Detectable(id, 99), id + " はウイルスではない");
             Assert.IsTrue(VirusCatalog.All.Where(v => v.Implemented).All(v => System.Text.RegularExpressions.Regex.IsMatch(v.Name, "^[A-Z ]+$")), "名前は英語だけ");
         }
@@ -122,7 +138,7 @@ namespace NightShift.Tests
                 string all = string.Join("\n", go.GetComponentsInChildren<UnityEngine.UI.Text>(true).Select(t => t.text));
                 StringAssert.DoesNotContain("BLACK INK", all, "未遭遇の名前を出さない");
                 StringAssert.DoesNotContain("黒いインク", all, "未遭遇の症状も出さない");
-                StringAssert.DoesNotContain("GLASS", all, "後続候補は載せない");
+                StringAssert.DoesNotContain("GLASS", all, "未遭遇の名前は出さない");
                 StringAssert.Contains("分類不能の観測記録", all);
                 StringAssert.DoesNotContain("駆除で解決", all);
                 Assert.AreEqual(before, CareerRecord.Current.Snapshot(), "閲覧で記録・クエストが変わらない");
@@ -147,5 +163,27 @@ namespace NightShift.Tests
             }
             finally { Object.DestroyImmediate(go); }
         }
-    }
+    
+        [Test]
+        public void Echo_NeverAddsRequestsToTheQueue()
+        {
+            var s = TestData.Session(26);
+            s.StartShift();
+            int before = s.Requests.Pending.Count + s.Requests.Processed.Count;
+            Infect(s, "V10");
+            for (int i = 0; i < 10; i++) s.Display.Tick(10);
+            Assert.AreEqual(before, s.Requests.Pending.Count + s.Requests.Processed.Count, "残像は審査の待ち行列に入らない");
+        }
+
+        [Test]
+        public void ScreenRestart_DoesNotClearActiveInfections()
+        {
+            var s = TestData.Session(26);
+            var h = Infect(s, "V9");
+            s.Display.Tick(10);
+            Assert.IsFalse(s.Display.RestartScreens(), "感染が続いている間は、再起動しても消えない");
+            Assert.AreEqual(1, s.Display.Active.Count);
+            Assert.IsTrue(s.Security.IsInfected(h.Victim.deviceId));
+        }
+}
 }

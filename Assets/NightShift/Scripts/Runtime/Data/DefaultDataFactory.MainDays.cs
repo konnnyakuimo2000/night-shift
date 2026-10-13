@@ -400,7 +400,24 @@ namespace NightShift.Data
             t18.steps.Add(Script("画面データ", 1, "DISPLAY_SYNC", 15, 3f));
             t18.steps.Add(Script("問い合わせ", 12, "TICKET", 1, 1, hdWhite));
 
-            var mainThreats = new List<ThreatScenarioDefinition> { c.scannerNoise, c.webProbe, c.scanThenAdmin, t3, t5, t5att, t5ai, t7, t8, t9, t10, t11, t13, t14, t14b, t16, t17, t18 };
+            ThreatScenarioDefinition DisplayThreat(string id, int day, float chance, string virus, string note, HelpDeskDefinition hd, float ticketAt)
+            {
+                var t = Threat(id, day, LastDay, new Vector2(40, 230), "203.0.113.", note);
+                t.chance = chance;
+                t.steps.Add(Script("被害者", 0, "PICK_VICTIM"));
+                t.steps.Add(Script("感染", 0.1f, "INFECT:" + virus));
+                t.steps.Add(Script("画面データ", 1, "DISPLAY_SYNC", 15, 3f));
+                t.steps.Add(Script("問い合わせ", ticketAt, "TICKET", 1, 1, hd));
+                return t;
+            }
+            var hdGlass = DisplayTicket("T19_SCREEN_GLASS", 22, "画面にひびが入ったように見える", "{dept}の{name}です。\n画面にひびのような線が入って、中身がずれて見えます。落としてはいないんですが…。（端末: {device}）", "pane32.exe");
+            var t19 = DisplayThreat("T19_GLASS", 22, 0.3f, "V9", "感染した社員PCから監視画面へ割れた画面データ。亀裂が増え、内部がずれる（V9 GLASS）。駆除の後も亀裂が残り、画面の再起動で消える。", hdGlass, 8);
+            var hdEcho = DisplayTicket("T20_SCREEN_ECHO", 25, "閉じた画面が戻ってくる", "{dept}の{name}です。\n閉じたはずの画面が、うっすら重なって戻ってきます。いつの画面なのか…。（端末: {device}）", "reverb.exe");
+            var t20 = DisplayThreat("T20_ECHO", 25, 0.3f, "V10", "感染した社員PCから監視画面へ過去の画面データ。処理済みの要求の残像が重なる（V10 ECHO）。残像は押せず、時刻に「残像」と出る。", hdEcho, 8);
+            var hdMolt = DisplayTicket("T21_SCREEN_MOLT", 27, "他の人の画面が映る", "{dept}の{name}です。\n画面の表面がはがれるみたいになって、その下に知らない人のデスクトップが見えます…。（端末: {device}）", "molt.exe");
+            var t21 = DisplayThreat("T21_MOLT", 27, 0.25f, "V13", "感染した社員PCの画面が監視画面に混ざる。剥がれた所に発生元の端末名が映る（V13 MOLT）。", hdMolt, 10);
+
+            var mainThreats = new List<ThreatScenarioDefinition> { c.scannerNoise, c.webProbe, c.scanThenAdmin, t3, t5, t5att, t5ai, t7, t8, t9, t10, t11, t13, t14, t14b, t16, t17, t18, t19, t20, t21 };
 
             // ---------------- ルール ----------------
             string rIp = $"{B("社内の登録端末")}からの接続は、接続元の {Col("IPアドレス", Check)} が社員情報の {B("「端末IP」")} と同じか確認する。{Col("違えば拒否", Deny)}（なりすまし）。";

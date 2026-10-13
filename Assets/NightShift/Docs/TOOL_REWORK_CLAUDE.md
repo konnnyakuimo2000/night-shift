@@ -446,7 +446,7 @@ PhishingMail.OpenAttachmentは二重実行防止としてReported=trueを設定�
 | 3 SOC-AI | 済 | `SocAiService`（受付時に検証→消費・対象固定・返却は1回・プラグイン＝有効なツール・全自動は自動審査が必要・感染は観測できる手がかりだけ） |
 | 4 購入制限 | 済 | 追加トークン1夜3回（`tokenPacksDay/Bought`）、当日版の定義は購入不可、確認後に再検証 |
 | 5 統合 | 済 | `ToolApps`／`TabbedTool`: ログ解析（基本＋相関）、端末管理（隔離＋診断）、`BlockDialog`（範囲遮断を業務システムへ）、メールの「差出人の詳細」（送信元はメールのデータ）、販売終了は `retired`（所有・ID は残す）、サーバー監視の固定メーター廃止 |
-| 7 新種・図鑑 | 一部済 | BLACK INK・MIRROR・WHITEOUT（`DisplayVirusOps`／`DisplayVirusFx`）、感染記録（`VirusDex`／`VirusDexView`、VACCINE のタブとマニュアル）。GLASS・ECHO・MOLT は後続候補（未実装） |
+| 7 新種・図鑑 | 済 | 6種すべて（GLASS・ECHO・BLACK INK・MIRROR・MOLT・WHITEOUT。`DisplayVirusOps`／`DisplayVirusFx`）、感染記録（`VirusDex`／`VirusDexView`、VACCINE のタブとマニュアル）。GLASS は駆除後の亀裂を［画面の再起動］で消す |
 | 8 参考文章 | 済 | 業務中の【参考】を廃止、`NightReview.References` |
 | 9 防御の整合 | 済 | 強制拒否の優先、隔離で保留要求を拒否、`Quarantined`、名前解決の共通化、文字化けの統一、復元で正規プロセスを戻す |
 | 10 やり直し等 | 済 | アカウントのスナップショット（週は `WeekSnapshot`・旧形式互換）、復元中の残業、`ConfirmEndOfNightDamage` |

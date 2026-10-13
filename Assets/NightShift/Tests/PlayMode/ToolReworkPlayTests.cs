@@ -187,12 +187,18 @@ namespace NightShift.Tests
             yield return null;
             var allow = d.GetComponentsInChildren<RetroButton>(true).First(b => b.Label != null && b.Label.text.StartsWith("接続を許可"));
             var before = allow.GetComponent<RectTransform>().position;
-            foreach (var v in new[] { "V11", "V12", "V14" }) Infect(d.S, v);
+            foreach (var v in new[] { "V9", "V10", "V11", "V12", "V13", "V14" })
+            {
+                // 1台に1種類なので、種類ごとに別の社員を感染させる
+                var emp = d.S.Employees.All.Where(e => e.IsActive && e.onShift && !d.S.Security.IsInfected(e.deviceId)).First();
+                var run = new Events.ThreatScenarioRun { Definition = ScriptableObject.CreateInstance<ThreatScenarioDefinition>(), Victim = emp };
+                Events.ThreatScripts.Run(d.S.Director.Threats, run, new ThreatStep { kind = ThreatStepKind.Script, script = "INFECT:" + v }, 0);
+            }
             for (int i = 0; i < 20; i++) d.S.Display.Tick(10); // 最大まで（長時間）
             for (int i = 0; i < 30; i++) yield return null;
             var fx = d.GetComponentInChildren<DisplayVirusFx>();
             Assert.IsNotNull(fx);
-            Assert.LessOrEqual(fx.ObjectCount, DisplayVirusFx.MaxStains + DisplayVirusFx.MaxMirrorDepth + DisplayVirusFx.MaxFakeAlerts + 1, "部品の数に上限");
+            Assert.LessOrEqual(fx.ObjectCount, DisplayVirusFx.MaxObjects, "部品の数に上限");
             Assert.IsFalse(fx.GetComponentsInChildren<Graphic>(true).Any(g => g.raycastTarget), "クリックを受ける部品がない");
             Assert.IsFalse(fx.GetComponent<CanvasGroup>().blocksRaycasts);
             Assert.AreEqual(before, allow.GetComponent<RectTransform>().position, "審査ボタンの位置は変わらない");

@@ -49,7 +49,7 @@ namespace NightShift.Systems
         }
 
         /// <summary>駆除のあとにも被害が残る（復元が必要な）種類</summary>
-        public static bool HasResidualDamage(string id) => id == "V2" || id == "V6";
+        public static bool HasResidualDamage(string id) => id == "V2" || id == "V6" || id == "V9";
 
         public static string Label(DiscoveryStage s)
         {

@@ -170,6 +170,21 @@ namespace NightShift.UI
                     c.Rect(0, 0, 64, 48, new Color(0.05f, 0.05f, 0.1f));
                     for (int i = 0; i < 5; i++) c.Line(4, 6 + i * 9, 58, 24, new Color(0.3f + i * 0.12f, 0.3f, 0.8f));
                     break;
+                case "V9": // 亀裂とずれたタイル
+                    c.Rect(0, 0, 64, 48, new Color(0.1f, 0.35f, 0.4f));
+                    c.Rect(10, 8, 30, 16, new Color(0.75f, 0.75f, 0.75f)); c.Rect(14, 12, 30, 16, new Color(0.6f, 0.66f, 0.72f));
+                    c.Line(32, 24, 4, 4, white); c.Line(32, 24, 60, 10, white); c.Line(32, 24, 50, 46, white); c.Line(32, 24, 10, 44, white);
+                    break;
+                case "V10": // 残像が重なる
+                    c.Rect(0, 0, 64, 48, new Color(0.1f, 0.35f, 0.4f));
+                    for (int i = 0; i < 3; i++) { c.Rect(6 + i * 8, 6 + i * 8, 34, 18, new Color(0.75f, 0.75f, 0.78f, 1f - i * 0.25f)); c.Rect(6 + i * 8, 6 + i * 8, 34, 3, new Color(0.2f, 0.25f, 0.6f, 1f - i * 0.25f)); }
+                    break;
+                case "V13": // 剥がれて別のデスクトップが見える
+                    c.Rect(0, 0, 64, 48, new Color(0.75f, 0.75f, 0.75f));
+                    c.Rect(18, 12, 34, 26, new Color(0f, 0.5f, 0.5f));
+                    c.Rect(18, 12, 34, 3, new Color(0.88f, 0.85f, 0.78f));
+                    c.Rect(24, 20, 8, 7, white);
+                    break;
                 case "V11": // 黒い染み
                     c.Rect(0, 0, 64, 48, new Color(0.85f, 0.88f, 0.9f));
                     c.Disc(6, 6, 10, black); c.Disc(58, 42, 12, black); c.Disc(18, 40, 6, black); c.Rect(57, 0, 2, 30, black);

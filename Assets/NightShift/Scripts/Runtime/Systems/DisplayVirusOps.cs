@@ -15,11 +15,13 @@ namespace NightShift.Systems
         public bool Paused;
         /// <summary>駆除された（症状が引いていく）</summary>
         public bool Receding;
+        /// <summary>駆除されたが、画面に跡が残っている（GLASS の亀裂。画面の再起動で消える）</summary>
+        public bool Residual;
         public bool MaxDamageRecorded;
     }
 
     /// <summary>
-    /// 画面に作用するウイルス（BLACK INK・MIRROR・WHITEOUT）の進行。状態はここだけが持ち、画面演出（DisplayVirusFx）は読むだけ。
+    /// 画面に作用するウイルス（GLASS・ECHO・BLACK INK・MIRROR・MOLT・WHITEOUT）の進行。状態はここだけが持ち、画面演出（DisplayVirusFx）は読むだけ。
     /// 進行 → 隔離で停止 → 駆除で症状が引く。最大まで進んだら、その夜に一度だけ被害を記録する。
     /// 演出の軽減設定があっても、進み方・止まる条件・戻る条件は同じ。
     /// </summary>
@@ -33,7 +35,22 @@ namespace NightShift.Systems
         public DisplayVirusOps(ShiftSession s) { _s = s; }
 
         /// <summary>最大になるまでの時間（ゲーム内の分）</summary>
-        public static float GrowMinutes(string id) => id == "V14" ? 40f : 30f;
+        public static float GrowMinutes(string id) => id == "V14" ? 40f : id == "V13" ? 35f : 30f;
+
+        /// <summary>駆除の後も跡が残っている（画面の再起動が必要）</summary>
+        public bool NeedsScreenRestart => _list.Exists(x => x.Residual);
+
+        /// <summary>
+        /// 画面の再起動（監視画面の表示だけを作り直す。業務の状態・時間・要求は変わらない）。
+        /// 駆除した後の GLASS の亀裂が消える。感染が続いているものは、再起動しても消えない
+        /// </summary>
+        public bool RestartScreens()
+        {
+            bool any = false;
+            foreach (var d in _list) if (d.Residual) { d.Residual = false; d.Receding = true; any = true; }
+            _s.Logs.Add(_s.Time.CurrentMinute, "NIGHT-OPS", "-", _s.OperatorName, "DISPLAY", "RESTART", "監視画面の表示を再起動");
+            return any;
+        }
 
         public DisplayInfection Track(Infection inf, EmployeeData source)
         {
@@ -60,7 +77,10 @@ namespace NightShift.Systems
                 var d = _list[i];
                 if (!_s.Security.IsActive(d.Infection))
                 {
-                    // 駆除された: 症状が引く。消えきったら記録を「対応済み」に
+                    // 駆除された。GLASS は亀裂が残り、画面の再起動を待つ
+                    if (!d.Receding && !d.Residual && VirusDex.HasResidualDamage(d.VirusId)) d.Residual = true;
+                    if (d.Residual) continue;
+                    // 症状が引く。消えきったら記録を「対応済み」に
                     d.Receding = true;
                     d.Progress -= delta / RecedeMinutes;
                     if (d.Progress <= 0)

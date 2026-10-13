@@ -658,10 +658,12 @@ namespace NightShift.Tests
             {
                 yield return Setup(false);
                 foreach (var f in Directory.GetFiles(_dir, "V*.png")) File.Delete(f);
-                foreach (var v in new[] { "V11", "V12", "V14" })
+                foreach (var v in new[] { "V9", "V10", "V11", "V12", "V13", "V14" })
                 {
                     CareerRecord.SetCurrentForTests(new CareerRecord { seed = 7, trust = 70 });
                     var d = NewDesktop(26, null, 20f);
+                    // ECHO の残像のもとになる、処理済みの要求をつくる
+                    foreach (var pe in d.S.Requests.Pending.ToList()) d.S.Requests.Decide(pe, NightShift.Events.PlayerAction.Block);
                     var emp = d.S.Employees.All.First(e => e.IsActive && e.onShift);
                     var run = new NightShift.Events.ThreatScenarioRun { Definition = ScriptableObject.CreateInstance<ThreatScenarioDefinition>(), Victim = emp };
                     NightShift.Events.ThreatScripts.Run(d.S.Director.Threats, run, new ThreatStep { kind = ThreatStepKind.Script, script = "INFECT:" + v }, 0);
@@ -675,6 +677,12 @@ namespace NightShift.Tests
                     d.S.Security.ClearInfection(emp.deviceId);
                     d.S.Display.Tick(10);
                     yield return Shot($"V_{v}_4_駆除後", 2f);
+                    if (d.S.Display.NeedsScreenRestart)
+                    {
+                        d.S.Display.RestartScreens();
+                        d.S.Display.Tick(10);
+                        yield return Shot($"V_{v}_5_画面の再起動後", 2f);
+                    }
                 }
                 // 感染記録: 未遭遇 → 観測 → 検出 → 駆除 → 復旧
                 var c = new CareerRecord { seed = 7, trust = 70 };
