@@ -95,25 +95,76 @@ namespace NightShift.Events
             }
         }
 
-        /// <summary>前の夜に駆除・隔離しなかった感染の続き（定期通信 → 30分後に周りへ広がる）</summary>
+        /// <summary>持ち越した感染の記録（"V3:SALES-PC05"、隔離中なら "V3:SALES-PC05:ISO"）</summary>
+        public struct CarriedInfection
+        {
+            public string VirusId, Device;
+            public bool Isolated;
+
+            public static bool TryParse(string entry, out CarriedInfection c)
+            {
+                c = default;
+                var parts = (entry ?? "").Split(':');
+                if (parts.Length < 2 || parts[0].Length == 0 || parts[1].Length == 0) return false;
+                c.VirusId = parts[0];
+                c.Device = parts[1];
+                c.Isolated = parts.Length >= 3 && parts[2] == "ISO";
+                return true;
+            }
+
+            public override string ToString() => VirusId + ":" + Device + (Isolated ? ":ISO" : "");
+        }
+
+        readonly System.Collections.Generic.HashSet<string> _carriedScheduled = new System.Collections.Generic.HashSet<string>();
+
+        /// <summary>
+        /// 前の夜に駆除しなかった感染の続き（経路 G）。種類ごとに続きを再開する（別の種類の処理に変えない）。
+        /// 隔離したままの感染は活動を止めたまま残す。夜の開始を繰り返しても重複させない
+        /// </summary>
         void ScheduleCarriedInfections()
         {
             foreach (var entry in Core.CareerRecord.Current.infections)
             {
-                var parts = entry.Split(':');
-                if (parts.Length != 2) continue;
-                var emp = _s.Employees.FindByDevice(parts[1]);
-                if (emp == null) continue;
-                _s.Security.MarkInfected(parts[1], parts[0]);
+                if (!CarriedInfection.TryParse(entry, out var c) || !_carriedScheduled.Add(c.Device)) continue;
+                bool ws = c.Device == VaccineScanner.WorkstationHost;
+                var emp = ws ? null : _s.Employees.FindByDevice(c.Device);
+                if (!ws && emp == null)
+                {
+                    // 名簿にない端末でも、黙って捨てずに記録を残す（感染は続いている）
+                    _s.Security.MarkInfected(c.Device, c.VirusId);
+                    _s.Logs.Add(_s.Time.CurrentMinute, c.Device, "-", "-", "PROCESS", "CARRIED", $"前の夜からの感染（{VirusCatalog.Name(c.VirusId)}）");
+                    continue;
+                }
+                var inf = _s.Security.MarkInfected(c.Device, c.VirusId);
+                if (c.Isolated) { _s.Security.RestoreIsolation(c.Device); continue; } // 活動停止中のまま
                 var def = UnityEngine.ScriptableObject.CreateInstance<ThreatScenarioDefinition>();
-                def.scenarioId = "CARRY_" + parts[0] + "_" + parts[1];
+                def.scenarioId = "CARRY_" + c.VirusId + "_" + c.Device;
                 def.minimumDay = 1; def.maximumDay = 99;
                 def.sourceIpPrefix = "203.0.113.";
                 def.stopOnBlock = false;
-                def.steps.Add(new ThreatStep { label = "定期通信", offsetMinutes = 0, kind = ThreatStepKind.Script, script = "BEACON", repeat = 10, repeatIntervalMinutes = 3f });
-                def.steps.Add(new ThreatStep { label = "拡大の判定", offsetMinutes = 31, kind = ThreatStepKind.Script, script = "SPREAD_CHECK" });
+                ThreatStep Step(string label, float at, string script, int repeat = 1, float interval = 1f) =>
+                    new ThreatStep { label = label, offsetMinutes = at, kind = ThreatStepKind.Script, script = script, repeat = repeat, repeatIntervalMinutes = interval };
+                switch (c.VirusId)
+                {
+                    case "V3": // NIGHTCRY: 定期通信 → 30分後に周りへ広がる
+                        def.steps.Add(Step("定期通信", 0, "BEACON", 10, 3f));
+                        def.steps.Add(Step("拡大の判定", 31, "SPREAD_CHECK"));
+                        break;
+                    case "V6": // BRIAR ROSE: 書き換えの続き → 45分で致命的
+                        def.steps.Add(Step("書き換え", 1, "RANSOM_WRITE", 45, 1f));
+                        def.steps.Add(Step("暗号化の判定", 46, "RANSOM_CHECK"));
+                        break;
+                    case "V4": // BLUESTONE: ブルースクリーンの再発
+                        def.steps.Add(Step("再発", 0, "BSOD_RECUR"));
+                        break;
+                    case "V1": // TINNITUS: 広がらない。夜中に鳴る
+                        def.steps.Add(Step("ビープ音", 0, "TINNITUS_SIGN", 3, 40f));
+                        break;
+                }
+                if (def.steps.Count == 0) continue;
                 var run = Threats.Schedule(Scheduler, def, Rand(5f, 40f));
                 run.Victim = emp;
+                run.Infection = inf != null && inf.VirusId == c.VirusId ? inf : null;
             }
         }
 

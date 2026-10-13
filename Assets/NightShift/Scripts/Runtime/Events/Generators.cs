@@ -216,6 +216,7 @@ namespace NightShift.Events
         public int Attempts;            // 自律型: 経路を変えた回数
         public string C2Ip;             // 感染PCの通信先
         public bool RequestAllowed;     // シナリオの悪意ある要求を、プレイヤーが許可した
+        public Infection Infection;     // このシナリオが起こした（引き継いだ）感染。駆除されたら後続の処理は止まる
     }
 
     /// <summary>

@@ -110,21 +110,52 @@ namespace NightShift.Systems
             return "給与明細.txt.exe";
         }
 
-        /// <summary>添付を開いた。VACCINE 99 の常駐監視（定義ファイルが新しければ）が止める</summary>
+        /// <summary>
+        /// 添付を開いた。VACCINE 99 の常駐監視（定義ファイルが対応していれば）が止める。
+        /// 実行・阻止はそれぞれ一度だけ。報告とは別の状態なので、開いてしまった後でも報告できる（感染は取り消さない）
+        /// </summary>
         public static void OpenAttachment(ShiftSession s, MailMessage m, bool vaccine)
         {
-            if (m.Reported) return;
-            if (vaccine && Core.CareerRecord.Current.vaccineDefinitionDay >= 13)
+            if (m.AttachmentOpened || m.AttachmentBlocked) return;
+            if (vaccine && VirusCatalog.Detectable("V4"))
             {
+                m.AttachmentBlocked = true;
                 s.Logs.Add(s.Time.CurrentMinute, "NIGHT-OPS", "-", s.OperatorName, "VACCINE", "BLOCKED", $"{AttachmentName(m)}（BLUESTONE を検出・隔離）");
                 s.Notifications.Notify(NotificationType.SecurityAlert, "VACCINE 99", $"ウイルスを検出しました: BLUESTONE（{AttachmentName(m)}）", s.Time.CurrentMinute);
+                s.Discover("V4", DiscoveryStage.Detected);
                 return;
             }
-            m.Reported = true; // 二度は開けない
-            s.Security.MarkInfected("NIGHT-OPS-WS", "V4");
+            m.AttachmentOpened = true;
+            s.Security.MarkInfected(VaccineScanner.WorkstationHost, "V4");
             s.Logs.Add(s.Time.CurrentMinute, "NIGHT-OPS", "-", s.OperatorName, "PROCESS", "START", AttachmentName(m));
             s.AddDamage("担当者のワークステーションが感染した（BLUESTONE）");
+            s.Discover("V4", DiscoveryStage.Observed);
             s.RequestHorror("BSOD");
+        }
+
+        /// <summary>
+        /// リモート対応中に、社員PCの見慣れないファイルを実行した（経路 D）。実際のファイルは実行しない。
+        /// 感染するのはそのPC（BLUESTONE）。担当者の画面にも、そのPCのブルースクリーンが映る
+        /// </summary>
+        public static bool RunRemoteFile(ShiftSession s, RemotePC.VirtualPCState pc, string file)
+        {
+            if (pc == null || pc.ExecutedBait) return false;
+            pc.ExecutedBait = true;
+            if (Core.CareerRecord.Current.ToolActive(Data.Items.Vaccine) && VirusCatalog.Detectable("V4"))
+            {
+                s.Logs.Add(s.Time.CurrentMinute, pc.Hostname, "-", s.OperatorName, "VACCINE", "BLOCKED", $"{file}（BLUESTONE を検出・隔離）");
+                s.Notifications.Notify(NotificationType.SecurityAlert, "VACCINE 99", $"ウイルスを検出しました: BLUESTONE（{pc.Hostname} の {file}）", s.Time.CurrentMinute);
+                s.Discover("V4", DiscoveryStage.Detected);
+                return false;
+            }
+            s.Security.MarkInfected(pc.Hostname, "V4");
+            pc.MalwareState = "V4";
+            pc.StartProcess("update32.exe");
+            s.Logs.Add(s.Time.CurrentMinute, pc.Hostname, "-", s.OperatorName, "PROCESS", "START", file + "（リモート操作で実行）");
+            s.AddDamage($"リモート対応中に不審なファイルを実行し、{pc.Hostname} が感染した（BLUESTONE）");
+            s.Discover("V4", DiscoveryStage.Observed);
+            s.RequestHorror("BSOD");
+            return true;
         }
 
         /// <summary>偽のフォームにIDとパスワードを入力してしまった</summary>

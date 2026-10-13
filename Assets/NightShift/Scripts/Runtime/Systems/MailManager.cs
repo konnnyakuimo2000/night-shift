@@ -23,6 +23,8 @@ namespace NightShift.Systems
         public string FromAddress;          // 差出人のメールアドレス（DAY13〜表示）
         public bool IsPhish;                // 偽メール（報告すべきもの）
         public bool Reported;
+        public bool AttachmentOpened;       // 添付を実行した（二度は実行しない）
+        public bool AttachmentBlocked;      // VACCINE の常駐監視が実行前に止めた
         // ---- サブクエスト ----
         public string QuestId;              // サブクエストのメール（null = 通常のメール）
         public List<string> Replies;        // 選べる返信（null = 返信なし）

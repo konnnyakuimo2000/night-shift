@@ -654,7 +654,19 @@ namespace NightShift.UI.Remote
                     b.Rect.Place(2, 2 + i * 24, 126, 22);
                 }
                 _table = TableView.Create(c, 134, 24, 360, 270, new TableColumn("名前", 190), new TableColumn("サイズ", 60), new TableColumn("種類", 90));
-                _table.DoubleClicked += o => { if (o is Item it && it.Target != null) Navigate(it.Target); };
+                _table.DoubleClicked += o =>
+                {
+                    if (!(o is Item it)) return;
+                    if (it.Target != null) { Navigate(it.Target); return; }
+                    if (it.Name == _d.PC.BaitFile)
+                    {
+                        // 見慣れないファイルを実行する（経路 D）。実際には何も実行しない
+                        Systems.PhishingMail.RunRemoteFile(_d.Session, _d.PC, it.Name);
+                        return;
+                    }
+                    if (it.Name.EndsWith(".doc") || it.Name.EndsWith(".xls") || it.Name.EndsWith(".txt"))
+                        _d.Message(it.Name, "社員のファイルです。内容はサポートの対象外のため開きません。", "info");
+                };
                 w.Accelerators[KeyCode.Backspace] = () => Navigate("マイ コンピュータ");
             }
 
@@ -711,6 +723,7 @@ namespace NightShift.UI.Remote
                 if (name.EndsWith(".xls")) return "ワークシート";
                 if (name.EndsWith(".txt")) return "テキスト文書";
                 if (name.EndsWith(".lnk")) return "ショートカット";
+                if (name.EndsWith(".exe")) return "アプリケーション";
                 return "ファイル";
             }
         }

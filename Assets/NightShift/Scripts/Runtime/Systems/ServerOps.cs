@@ -187,6 +187,7 @@ namespace NightShift.Systems
                 if (!st.Restoring || now < st.RestoreDoneAt) continue;
                 st.Restoring = false;
                 bool wasBad = st.Defaced || st.Garbled;
+                if (st.Garbled) _s.Discover("V2", DiscoveryStage.Recovered);
                 st.Defaced = false; st.Garbled = false;
                 st.Processes.RemoveAll(p => p.Suspicious);
                 ReturnKilled(st); // バックアップの状態に戻るので、終了させた正規のプロセスも動いている

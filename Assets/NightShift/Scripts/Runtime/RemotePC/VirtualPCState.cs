@@ -76,6 +76,8 @@ namespace NightShift.RemotePC
         public bool FileServerReachable = true;     // ファイルサーバーの障害（R9）
         public string ReportKind = "PC";            // 報告の種類（PC側で解決 / サーバー側の障害）
         public bool Quarantined;                    // 端末隔離ツールで社内ネットワークから切り離されている（リモート管理の接続だけ残る）
+        public string BaitFile;                     // デスクトップの見慣れないファイル（実行すると感染。実際には何も実行しない）
+        public bool ExecutedBait;
         public const string BrowserProcess = "netvoyager.exe";
 
         public event Action Changed;

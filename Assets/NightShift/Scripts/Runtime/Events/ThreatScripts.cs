@@ -28,7 +28,10 @@ namespace NightShift.Events
                 case "INFECT":
                     if (Victim(s, run) is EmployeeData v1)
                     {
-                        s.Security.MarkInfected(v1.deviceId, arg);
+                        // すでに別のウイルスに感染している端末には重ねない（その場合このシナリオの感染は成立しない）
+                        var inf = s.Security.MarkInfected(v1.deviceId, arg);
+                        run.Infection = inf != null && inf.VirusId == arg ? inf : null;
+                        if (run.Infection == null) break;
                         if (arg == "V6") s.RequestHorror("MUSICBOX");
                         s.Logs.Add(now, s.Employees.GetIp(v1), "-", v1.fullName, "PROCESS", "START", NewProcessName(arg) + " (" + v1.deviceId + ")");
                     }
@@ -40,25 +43,31 @@ namespace NightShift.Events
 
                 // ---------- T7 感染した社員PC（V3 NIGHTCRY） ----------
                 case "BEACON":
-                    if (Victim(s, run) is EmployeeData v3 && !Disconnected(s, v3))
+                    if (Victim(s, run) is EmployeeData v3 && Active(s, run) && !Disconnected(s, v3))
                     {
+                        s.Discover(run.Infection?.VirusId ?? "V3", DiscoveryStage.Observed);
                         s.Network.Emit(true, null, TrafficResult.Delivered);
                         s.Logs.Add(now, s.Employees.GetIp(v3), run.C2Ip, v3.fullName, "HTTPS", "OK", "POST /gate.php (" + v3.deviceId + ")");
                     }
                     break;
                 case "SPREAD_CHECK":
-                    if (Victim(s, run) is EmployeeData v4 && !Disconnected(s, v4))
+                    // 感染が続いていて、感染元も感染先も通信できるときだけ広がる。実際に感染した台数だけ記録する
+                    if (Victim(s, run) is EmployeeData v4 && Active(s, run) && !Disconnected(s, v4))
                     {
                         int spread = 0;
                         foreach (var e in s.Employees.All)
                         {
                             if (spread >= 2 || e == v4 || !e.IsActive || !e.onShift || e.department != v4.department && spread > 0) continue;
-                            if (s.Security.IsInfected(e.deviceId)) continue;
+                            if (s.Security.IsInfected(e.deviceId) || Disconnected(s, e)) continue;
                             s.Security.MarkInfected(e.deviceId, "V3");
+                            s.Logs.Add(now, s.Employees.GetIp(e), "-", e.fullName, "PROCESS", "START", "svch0st.exe (" + e.deviceId + ")");
                             spread++;
                         }
-                        run.Compromised = true;
-                        s.AddDamage("社内のPCでウイルス感染が広がった（NIGHTCRY）");
+                        if (spread > 0)
+                        {
+                            run.Compromised = true;
+                            s.AddDamage($"社内のPCでウイルス感染が広がった（NIGHTCRY・{spread}台）");
+                        }
                     }
                     break;
 
@@ -83,6 +92,12 @@ namespace NightShift.Events
 
                 // ---------- T9 公開Webの改ざん（V2 GARBLE） ----------
                 case "WEB_IMPLANT":
+                    // 探索した接続元を、書き込みの前に遮断していれば侵入できない（書き込みはその接続を使う）
+                    if (s.Security.IsBlocked(run.AttackerIp))
+                    {
+                        s.Logs.Add(now, run.AttackerIp, "WEB-SRV01", "-", "FW", "DENY", "POST /cgi-bin/upload.cgi（遮断中の接続元）");
+                        break;
+                    }
                     s.Servers.Implant("WEB-SRV01", "httpd_cache.exe", "T9");
                     s.Logs.Add(now, run.AttackerIp, "WEB-SRV01", "-", "HTTP", "200", "POST /cgi-bin/upload.cgi (16 KB)");
                     s.Logs.Add(now + 0.3f, "WEB-SRV01", "-", "SYSTEM", "PROCESS", "START", "httpd_cache.exe");
@@ -91,6 +106,7 @@ namespace NightShift.Events
                     if (s.Servers.HasTag("WEB-SRV01", "T9"))
                     {
                         s.Servers.SetDefaced("WEB-SRV01", true);
+                        s.Discover("V2", DiscoveryStage.Observed);
                         run.Compromised = true;
                         s.AddDamage("公開Webのページが書き換えられた（GARBLE）");
                     }
@@ -122,8 +138,10 @@ namespace NightShift.Events
 
                 // ---------- T11 身代金ウイルス（V6 BRIAR ROSE） ----------
                 case "RANSOM_WRITE":
-                    if (Victim(s, run) is EmployeeData v9 && !Disconnected(s, v9))
+                    // 駆除・隔離した後は書き換えない（すでに暗号化されたファイルは戻らない）
+                    if (Victim(s, run) is EmployeeData v9 && Active(s, run) && !Disconnected(s, v9))
                     {
+                        s.Discover("V6", DiscoveryStage.Observed);
                         string[] docs = { "見積書_0520.doc", "営業日報_5月.xls", "請求書控え.xls", "会議メモ.txt", "顧客名簿_関東.xls", "契約書_雛形.doc" };
                         string f = docs[index % docs.Length];
                         s.Logs.Add(now, s.Employees.GetIp(v9), "FILE-SRV01", v9.fullName, "SMB", "OK", $"FILE WRITE {f} → {f}.briar");
@@ -134,7 +152,7 @@ namespace NightShift.Events
                     }
                     break;
                 case "RANSOM_CHECK":
-                    if (Victim(s, run) is EmployeeData v10 && !Disconnected(s, v10))
+                    if (Victim(s, run) is EmployeeData v10 && Active(s, run) && !Disconnected(s, v10))
                     {
                         run.Compromised = true;
                         s.AddDamage("全社のファイルが暗号化された（BRIAR ROSE）", true);
@@ -155,6 +173,25 @@ namespace NightShift.Events
                     break;
                 }
 
+                // ---------- 持ち越した感染（経路 G） ----------
+                case "BSOD_RECUR":
+                    // 駆除していないワークステーションの BLUESTONE は、翌夜も再発する
+                    if (Active(s, run))
+                    {
+                        s.Logs.Add(now, "NIGHT-OPS", "-", "SYSTEM", "PROCESS", "START", "update32.exe（" + VaccineScanner.WorkstationHost + "）");
+                        s.Discover("V4", DiscoveryStage.Observed);
+                        s.RequestHorror("BSOD");
+                    }
+                    break;
+                case "TINNITUS_SIGN":
+                    // TINNITUS は広がらない。駆除するまで、夜中に勝手に鳴る（手がかりのログが残る）
+                    if (Victim(s, run) is EmployeeData vt && Active(s, run) && !Disconnected(s, vt))
+                    {
+                        s.Logs.Add(now, s.Employees.GetIp(vt), "-", vt.fullName, "SOUND", "PLAY", "tinnitus.scr (" + vt.deviceId + ")");
+                        s.Discover("V1", DiscoveryStage.Observed);
+                    }
+                    break;
+
                 // ---------- T5 担当者宛ての偽メール ----------
                 case "PHISH_MAIL":
                     if (arg == "ATTACH") PhishingMail.SendAttachment(s);
@@ -164,6 +201,9 @@ namespace NightShift.Events
         }
 
         static EmployeeData Victim(ShiftSession s, ThreatScenarioRun run) => run.Victim;
+
+        /// <summary>このシナリオの感染が今も続いているか（駆除されたら後続の活動・拡大・暗号化は起きない）</summary>
+        static bool Active(ShiftSession s, ThreatScenarioRun run) => s.Security.IsActive(run.Infection);
 
         /// <summary>隔離された・ネットワークから切り離された端末か</summary>
         public static bool Disconnected(ShiftSession s, EmployeeData e)

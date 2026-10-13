@@ -49,7 +49,9 @@ namespace NightShift.Core
         public List<IdCount> items = new List<IdCount>();   // 所持品（機材・ツールは 1、消耗品は個数）
         public List<string> disabledTools = new List<string>(); // 持っているが使わない設定にしたツール
         public int vaccineDefinitionDay;                    // ウイルス定義ファイルを最後に更新した日
-        public int extraTokensTonight;                      // 今夜の追加トークン
+        public int extraTokensTonight;                      // 今夜の追加トークン（量）
+        public int tokenPacksDay;                           // 追加トークンを買った夜
+        public int tokenPacksBought;                        // その夜に買った回数（量とは別に数える）
         public List<string> autoReviewConditions = new List<string>(); // 自動審査ツールの条件
         public bool autoReviewEnabled;                                  // 自動審査ツールの自動許可（初めは停止）
         // ---- サブクエスト（SUBQUEST_SPEC.md） ----
@@ -59,6 +61,7 @@ namespace NightShift.Core
         public List<string> doneTx = new List<string>();                // 一度だけ適用する処理の ID（報酬・終端など）
         public LeisureState leisure = new LeisureState();               // SQ04/05 の遊興口座
         public CharmState charm = new CharmState();                     // SQ03 の機器保護札
+        public List<Systems.VirusDexEntry> virusDex = new List<Systems.VirusDexEntry>(); // 感染記録（図鑑。旧セーブでは空から始まる）
 
         const int CurrentVersion = 1;
         const string Key = "NightShift.Career";

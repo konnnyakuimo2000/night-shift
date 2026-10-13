@@ -101,8 +101,16 @@ namespace NightShift.Systems
                 string virus = _s.Security.InfectionOf(employee.deviceId);
                 if (virus != null)
                 {
-                    t.PC.StartProcess(virus == "V6" ? "briar.exe" : virus == "V1" ? "tinnitus.scr" : "svch0st.exe");
+                    t.PC.StartProcess(VirusCatalog.ProcessOf(virus) ?? "svch0st.exe");
                     t.PC.MalwareState = virus;
+                    _s.Discover(virus, DiscoveryStage.Observed);
+                }
+                // DAY13〜: 見慣れないファイル（二重の拡張子）がデスクトップに置かれていることがある（経路 D の手がかり）
+                if (_s.Day.dayNumber >= 13 && (virus != null || _s.Rng.NextDouble() < 0.2))
+                {
+                    string[] baits = { "請求書_最終.doc.exe", "写真.jpg.exe", "議事録.txt.exe" };
+                    t.PC.BaitFile = baits[_s.Rng.Next(baits.Length)];
+                    t.PC.Files.Add(new FileEntry { folder = "デスクトップ", name = t.PC.BaitFile, sizeKb = 48 });
                 }
             }
 

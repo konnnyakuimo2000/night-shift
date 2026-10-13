@@ -5,6 +5,15 @@ using NightShift.Events;
 
 namespace NightShift.Systems
 {
+    /// <summary>端末1台の感染（発生ごとに番号が変わる。駆除後の再感染に古い予約処理が作用しないように）</summary>
+    public class Infection
+    {
+        public string Device;
+        public string VirusId;
+        public int Serial;
+        public float Since;
+    }
+
     /// <summary>
     /// 本番業務の「対応手段」: 接続元の遮断（ファイアウォール）・端末の隔離・アカウントの一時停止・報告。
     /// どれも自動では判断しない。正しかったかは夜の評価で数える。
@@ -15,7 +24,8 @@ namespace NightShift.Systems
         readonly List<string> _blocked = new List<string>();          // "198.51.100.23" または範囲 "198.51.100.*"
         readonly HashSet<string> _isolated = new HashSet<string>();     // 端末名
         readonly HashSet<string> _suspended = new HashSet<string>();    // 社員番号
-        readonly Dictionary<string, string> _infected = new Dictionary<string, string>(); // 端末名 → ウイルスID
+        readonly Dictionary<string, Infection> _infected = new Dictionary<string, Infection>(); // 端末名 → 感染
+        int _infectionSerial;
         readonly HashSet<string> _compromisedAccounts = new HashSet<string>(); // 乗っ取られている社員番号
         readonly HashSet<string> _hostileIps = new HashSet<string>();   // 攻撃に使われた接続元（評価用）
 
@@ -33,11 +43,45 @@ namespace NightShift.Systems
         // ---------------- 攻撃の記録（評価・判定用。プレイヤーには見せない） ----------------
         public void MarkHostile(string ip) { if (!string.IsNullOrEmpty(ip)) _hostileIps.Add(ip); }
         public bool IsHostile(string ip) => !string.IsNullOrEmpty(ip) && _hostileIps.Contains(ip);
-        public void MarkInfected(string device, string virusId) { if (!string.IsNullOrEmpty(device)) _infected[device] = virusId; Changed?.Invoke(); }
-        public void ClearInfection(string device) { _infected.Remove(device); Changed?.Invoke(); }
+        /// <summary>
+        /// 感染させる。1台に同時に感染するのは1種類だけで、すでに感染している端末は先の感染をそのまま残す
+        /// （別のウイルスで上書きして消さない）。戻り値はその端末の感染（新しい感染でなければ既存のもの）
+        /// </summary>
+        public Infection MarkInfected(string device, string virusId)
+        {
+            if (string.IsNullOrEmpty(device) || string.IsNullOrEmpty(virusId)) return null;
+            if (_infected.TryGetValue(device, out var cur)) return cur;
+            cur = new Infection { Device = device, VirusId = virusId, Serial = ++_infectionSerial, Since = _s.Time.CurrentMinute };
+            _infected[device] = cur;
+            Changed?.Invoke();
+            return cur;
+        }
+
+        /// <summary>駆除。実際に感染を消したときだけ true（二重の駆除・加点を防ぐ）</summary>
+        public bool ClearInfection(string device)
+        {
+            if (device == null || !_infected.Remove(device)) return false;
+            Changed?.Invoke();
+            return true;
+        }
+
         public bool IsInfected(string device) => !string.IsNullOrEmpty(device) && _infected.ContainsKey(device);
-        public string InfectionOf(string device) => device != null && _infected.TryGetValue(device, out var v) ? v : null;
-        public IEnumerable<KeyValuePair<string, string>> Infections => _infected;
+        public string InfectionOf(string device) => device != null && _infected.TryGetValue(device, out var v) ? v.VirusId : null;
+        public Infection InfectionRecord(string device) => device != null && _infected.TryGetValue(device, out var v) ? v : null;
+        /// <summary>その感染が今も続いているか（駆除後の再感染は別の感染として扱う）</summary>
+        public bool IsActive(Infection inf) => inf != null && _infected.TryGetValue(inf.Device, out var cur) && ReferenceEquals(cur, inf);
+        public IEnumerable<KeyValuePair<string, string>> Infections
+        {
+            get { foreach (var kv in _infected) yield return new KeyValuePair<string, string>(kv.Key, kv.Value.VirusId); }
+        }
+
+        /// <summary>前の夜から隔離したままの端末（評価には数えない）</summary>
+        public void RestoreIsolation(string device)
+        {
+            if (string.IsNullOrEmpty(device) || !_isolated.Add(device)) return;
+            _s.Logs.Add(_s.Time.CurrentMinute, device, "-", "-", "ISOLATE", "CARRIED", "前の夜から隔離中");
+            Changed?.Invoke();
+        }
         public void MarkCompromised(string employeeId) { if (!string.IsNullOrEmpty(employeeId)) _compromisedAccounts.Add(employeeId); }
         public bool IsCompromised(string employeeId) => _compromisedAccounts.Contains(employeeId);
 

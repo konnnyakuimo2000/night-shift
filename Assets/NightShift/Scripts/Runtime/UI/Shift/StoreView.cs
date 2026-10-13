@@ -171,14 +171,37 @@ namespace NightShift.UI.Shift
             RefreshDetail();
         }
 
-        /// <summary>所持数による購入制限。確認画面を出した後にも照合する。</summary>
-        public static string StockBlockedReason(StoreItemDefinition it)
+        /// <summary>
+        /// 所持数・回数による購入制限。確認画面を出した後にも照合する。
+        /// 定義ファイル更新と追加トークンは所持品にならないので、それぞれの記録で判定する（today = 今の夜）
+        /// </summary>
+        public static string StockBlockedReason(StoreItemDefinition it, int today = 0)
         {
             var career = CareerRecord.Current;
+            if (it.itemId == Data.Items.VaccineUpdate)
+                return today > 0 && career.vaccineDefinitionDay >= today ? $"定義ファイルは最新です（DAY{career.vaccineDefinitionDay} 版）。" : null;
+            if (it.itemId == Data.Items.TokenPack)
+                return today > 0 && career.tokenPacksDay == today && career.tokenPacksBought >= it.maxStock ? $"1夜に{it.maxStock}回までです。" : null;
             if (!it.consumable && career.Owns(it.itemId)) return "購入済みです。";
             if (it.consumable && career.ItemCount(it.itemId) >= it.maxStock) return "これ以上は持てません。";
             if (it.itemId == Data.Items.Charm && career.charm.boughtToday >= 1) return "1夜に1枚までです。";
             return null;
+        }
+
+        /// <summary>代金を払った後に、品物を記録へ反映する</summary>
+        public static void ApplyPurchase(CareerRecord career, StoreItemDefinition it, int today)
+        {
+            if (it.itemId == Data.Items.VaccineUpdate) career.vaccineDefinitionDay = today;
+            else if (it.itemId == Data.Items.TokenPack)
+            {
+                if (career.tokenPacksDay != today) { career.tokenPacksDay = today; career.tokenPacksBought = 0; }
+                career.tokenPacksBought++;
+                career.extraTokensTonight += 20000;
+            }
+            else career.AddItem(it.itemId);
+            if (it.itemId == Data.Items.Charm) career.charm.boughtToday++;
+            // 買った時点の定義ファイルが付いている
+            if (it.itemId == Data.Items.Vaccine) career.vaccineDefinitionDay = Mathf.Max(career.vaccineDefinitionDay, today);
         }
 
         /// <summary>買えない理由（null = 買える）</summary>
@@ -186,7 +209,7 @@ namespace NightShift.UI.Shift
         {
             var career = CareerRecord.Current;
             if (_d.ShiftStarted) return "業務時間中は注文できません。";
-            string stock = StockBlockedReason(it);
+            string stock = StockBlockedReason(it, _d.S.Day.dayNumber);
             if (stock != null) return stock;
             if (!string.IsNullOrEmpty(it.prerequisite) && !career.Owns(it.prerequisite))
             {
@@ -237,15 +260,12 @@ namespace NightShift.UI.Shift
             if (reason != null) { AudioFx.Error(); _w.SetStatus(0, reason); return; }
             MessageBox.Confirm(_d, "ご注文の確認", $"「{it.displayName}」を {OperatorWallet.Yen(it.price)} で注文します。\n代金は給与から精算されます。よろしいですか？", () =>
             {
-                if (Reason(it) != null) { AudioFx.Error(); return; }
+                // 確認画面の間に状況が変わっていないか、上限・残高・前提をもう一度確かめる
+                string again = Reason(it);
+                if (again != null) { AudioFx.Error(); _w.SetStatus(0, again); Refresh(); return; }
                 if (!_d.Game.Wallet.TrySpend(it.price)) { AudioFx.Error(); return; }
                 var career = CareerRecord.Current;
-                if (it.itemId == Data.Items.VaccineUpdate) career.vaccineDefinitionDay = _d.S.Day.dayNumber;
-                else if (it.itemId == Data.Items.TokenPack) career.extraTokensTonight += 20000;
-                else career.AddItem(it.itemId);
-                if (it.itemId == Data.Items.Charm) career.charm.boughtToday++;
-                // 買った時点の定義ファイルが付いている
-                if (it.itemId == Data.Items.Vaccine) career.vaccineDefinitionDay = Mathf.Max(career.vaccineDefinitionDay, _d.S.Day.dayNumber);
+                ApplyPurchase(career, it, _d.S.Day.dayNumber);
                 career.Save();
                 AudioFx.Chime();
                 _w.SetStatus(0, $"「{it.displayName}」を注文しました。");

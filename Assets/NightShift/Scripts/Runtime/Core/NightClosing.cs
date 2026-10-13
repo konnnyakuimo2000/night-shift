@@ -79,10 +79,11 @@ namespace NightShift.Core
                 career.AddTrust(delta);
             }
 
-            // 駆除・隔離していない感染は、次の夜に残る（経路 G）
+            // 駆除していない感染は、次の夜に残る（経路 G）。隔離しただけの感染は消さず、活動停止中として残す。
+            // 担当者のワークステーションも対象（社員名簿にない端末も捨てない）
             career.infections.Clear();
             foreach (var kv in s.Security.Infections)
-                if (kv.Key != "NIGHT-OPS-WS" && !s.Security.IsIsolated(kv.Key)) career.infections.Add(kv.Value + ":" + kv.Key);
+                career.infections.Add(new EventDirector.CarriedInfection { VirusId = kv.Value, Device = kv.Key, Isolated = s.Security.IsIsolated(kv.Key) }.ToString());
 
             // 翌朝のネットニュースに載る出来事
             career.ClearFlag("NEWS_DEFACED"); career.ClearFlag("NEWS_BLACKOUT");
