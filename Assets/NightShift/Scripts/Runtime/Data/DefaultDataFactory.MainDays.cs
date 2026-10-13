@@ -732,7 +732,7 @@ namespace NightShift.Data
                 "端末管理アプリの「端末一覧・隔離」タブ。社員PCを一覧から選んで、ネットワークから隔離します。", "lock", M);
             I(Items.VaccineServer, "VACCINE 99 サーバー検査ライセンス", StoreCategory.Security, 19800, 17,
                 "VACCINE 99 にサーバーの検査を追加するライセンスです（同じアプリにボタンが増えます。VACCINE 99 が前提）。公開Webに置かれた GARBLE を検出・駆除します。書き換えられたファイルはバックアップから復元が必要です。", "shield", Items.Vaccine);
-            I(Items.Correlator, "ログ解析: 相関タイムライン（追加機能）", StoreCategory.Tool, 29800, 22,
+            I(Items.Correlator, "ログ解析: 相関タイムライン（追加機能）", StoreCategory.Tool, 19800, 22,
                 "ログ解析アプリに「相関」タブを追加します。社外の接続元を範囲ごとに、同じ利用者が別の範囲から来た記録を時系列に並べます（関連があるかの判断はあなた）。", "clock", M);
             // サブクエスト: 招待・案内のあとにだけ並ぶ。ゲーム内の架空のサービス
             I(Items.SignalDesk, "SIGNAL DESK", StoreCategory.Tool, 3000, 17,

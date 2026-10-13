@@ -79,7 +79,7 @@ namespace NightShift.Tests
             StringAssert.StartsWith("端末管理", TestData.Db.FindItem(Items.RemoteKit).displayName);
             StringAssert.StartsWith("ログ解析", TestData.Db.FindItem(Items.Correlator).displayName);
             // 価格・解禁日は変えない
-            Assert.AreEqual(29800, TestData.Db.FindItem(Items.Correlator).price);
+            Assert.AreEqual(19800, TestData.Db.FindItem(Items.Correlator).price);
             Assert.AreEqual(22, TestData.Db.FindItem(Items.Correlator).unlockDay);
             Assert.AreEqual(16800, TestData.Db.FindItem(Items.Isolator).price);
         }

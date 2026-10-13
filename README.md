@@ -2,7 +2,13 @@
 
 Corporate IT Operations / Cyber Security Task Management Game（Unity）
 
-**ベータ版 v0.1.0-beta** — DAY1〜7 のチュートリアル（研修期間）を通しでプレイ可能。変更点は [CHANGELOG](CHANGELOG.md) を参照。
+**v1.0.0** — 1998年の深夜のオフィスで、社内ネットワークの接続審査と IT サポートを担当する30日間。DAY1〜7 の研修と DAY8〜30 の本番を通しでプレイできる。変更点は [CHANGELOG](CHANGELOG.md) を参照。
+
+## 遊ぶ
+
+- ビルド済み: `Builds/NIGHT_SHIFT_v1.0.0/NIGHT_SHIFT.exe`（Windows 64bit）を起動
+- ビルドのしかた: Unity のメニュー `NightShift > リリース版をビルド（Windows）`、またはコマンドライン
+  `Unity.exe -batchmode -quit -projectPath <このフォルダー> -executeMethod NightShift.EditorTools.ReleaseBuild.BuildWindows`
 
 ## 動作環境
 
@@ -13,7 +19,7 @@ Corporate IT Operations / Cyber Security Task Management Game（Unity）
 
 1. Unity Hub にログインし、`night_shift` フォルダーをプロジェクトとして追加して開く
 2. 初回オープン時に自動で以下が生成される（手動: メニュー `NightShift > ...`）
-   - `Assets/NightShift/Resources/NightShiftData/` … DAY1 データアセット（社員・権限・ネットワーク・イベント・Help Desk・Threat）
+   - `Assets/NightShift/Resources/NightShiftData/` … DAY1〜30 のデータアセット（社員・権限・ネットワーク・イベント・Help Desk・攻撃シナリオ・商品・マニュアル）。`DefaultDataFactory.DataVersion` が上がると自動で作り直す
    - `Assets/NightShift/Scenes/NightShift.unity` … メインシーン（Build Settings に登録済み）
 3. `NightShift.unity` を開いて Play
 
@@ -46,4 +52,13 @@ Win キー系・Alt+Tab・Ctrl+Shift+Esc は OS が処理するため、ゲー�
 
 ## ドキュメント
 
-- [DAY1 要件定義](Assets/NightShift/Docs/DAY1_Requirements.md)
+- [DAY1 要件定義](Assets/NightShift/Docs/DAY1_Requirements.md) ／ [DAY8〜 要件定義](Assets/NightShift/Docs/DAY8_Requirements.md)
+- [ツール一覧](Assets/NightShift/Docs/TOOL_CATALOG.md) ／ [ウイルスと被害](Assets/NightShift/Docs/VIRUS_CATALOG.md) ／ [攻撃シナリオ](Assets/NightShift/Docs/THREAT_CATALOG.md)
+- [ITサポートの問題](Assets/NightShift/Docs/HELPDESK_CATALOG.md) ／ [エンディング](Assets/NightShift/Docs/ENDINGS.md) ／ [ネットニュース](Assets/NightShift/Docs/NEWS_DESIGN.md) ／ [前任者](Assets/NightShift/Docs/PREDECESSOR.md)
+- [サブクエスト](Assets/NightShift/Docs/SUBQUEST_SPEC.md) ／ [バランス](Assets/NightShift/Docs/BALANCE.md)
+- テスト: [30日の通しプレイの結果](Assets/NightShift/Docs/CAMPAIGN_PLAYTEST.md) ／ [PlayMode の監査](Assets/NightShift/Docs/PLAYMODE_AUDIT.md)（隔離したプロジェクトのコピーで実行。セーブを消すため）
+
+## テスト
+
+- EditMode: Unity の Test Runner、または `Unity.exe -batchmode -runTests -testPlatform EditMode -projectPath <コピー>`（プレイヤーのセーブには触れない）
+- PlayMode: `Tools/Run-PlayModeAudit.ps1` が プロジェクトのコピー（会社名 NightShiftPlayModeAudit）で実行する。30日の通しプレイは `NightShift.Tests.CampaignPlayTests`
