@@ -6,7 +6,7 @@ Corporate IT Operations / Cyber Security Task Management Game（Unity）
 
 ## 遊ぶ
 
-- ビルド済み: `Builds/NIGHT_SHIFT_v1.1.0/NIGHT_SHIFT.exe`（Windows 64bit）を起動
+- [Releases](https://github.com/konnnyakuimo2000/night-shift/releases/latest) から `NIGHT_SHIFT_v1.1.0_Windows.zip` をダウンロードして展開し、`NIGHT_SHIFT.exe` を起動（Windows 64bit）
 - ビルドのしかた: Unity のメニュー `NightShift > リリース版をビルド（Windows）`、またはコマンドライン
   `Unity.exe -batchmode -quit -projectPath <このフォルダー> -executeMethod NightShift.EditorTools.ReleaseBuild.BuildWindows`
 
@@ -62,3 +62,7 @@ Win キー系・Alt+Tab・Ctrl+Shift+Esc は OS が処理するため、ゲー�
 
 - EditMode: Unity の Test Runner、または `Unity.exe -batchmode -runTests -testPlatform EditMode -projectPath <コピー>`（プレイヤーのセーブには触れない）
 - PlayMode: `Tools/Run-PlayModeAudit.ps1` が プロジェクトのコピー（会社名 NightShiftPlayModeAudit）で実行する。30日の通しプレイは `NightShift.Tests.CampaignPlayTests`
+
+## ライセンス
+
+All Rights Reserved。遊ぶことと、ソースコードの閲覧は自由です。複製・再配布・改変は許可していません。詳しくは [LICENSE](LICENSE) を参照してください。

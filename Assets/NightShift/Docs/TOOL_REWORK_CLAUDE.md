@@ -1,7 +1,7 @@
 # Claude向け：業務ツールの不具合修正・統合指示
 
 作成日：2026-10-08
-対象：Unity NIGHT//SHIFT（`C:\Users\toshi\my_project\night_shift`）
+対象：Unity NIGHT//SHIFT
 
 ## 依頼
 
